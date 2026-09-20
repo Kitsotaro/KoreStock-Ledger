@@ -11,8 +11,23 @@
 
 // CONFIGURACIÓN CENTRAL
 const CLIENT_ID = '1070607567316-mdbd97lbkprgpc4spj71e5f8anovr6it.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+// SCOPE REDUCIDO (antes incluía también .../auth/spreadsheets, un scope
+// "sensible" que exige revisión manual de Google y dispara el aviso feo de
+// "sitio no verificado"). Con solo drive.file, la app únicamente puede ver
+// archivos que ella misma crea o que el usuario le muestra explícitamente
+// con el selector de Google (ver abrirSelectorArchivo más abajo) — nunca
+// puede listar ni tocar el resto del Drive del usuario.
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DB_FILE_NAME = 'StockCentral_DB';
+
+// CLAVE Y APP ID DEL PICKER DE GOOGLE (selector de archivos) — distintos
+// del CLIENT_ID de OAuth. Se generan en Cloud Console → Credenciales
+// (clave de API, restringida solo a "Google Picker API") y en el
+// Dashboard del proyecto (Número de proyecto), respectivamente. Es normal
+// y seguro que queden visibles aquí: no dan acceso a nada por sí solas,
+// solo identifican el proyecto ante la Picker API.
+const API_KEY = 'AIzaSyB812PW3rt74DVzSuy21Kr6uv4WLUR1GjI';
+const PICKER_APP_ID = '1070607567316';
 
 // CONTROL DE ACCESO: quién puede usar la app además de vos.
 //
@@ -41,6 +56,7 @@ let SPREADSHEET_ID = '';
 let tokenClient;
 let gapiInited = false;
 let gsisInited = false;
+let pickerInited = false; // true cuando la librería del selector de Google ya cargó
 
 // ESTADO GLOBAL COMPARTIDO ENTRE MÓDULOS
 // (tipoMovimiento vive aquí porque tanto registro.js como el folio de
@@ -72,6 +88,10 @@ function gapiLoaded() {
     gapiInited = true;
     checkAuthReady();
   });
+  // Carga aparte, independiente del 'client' de arriba — el Picker no
+  // necesita discoveryDocs ni afecta checkAuthReady() (que solo controla
+  // el botón de login).
+  gapi.load('picker', () => { pickerInited = true; });
 }
 
 function gisLoaded() {
@@ -229,6 +249,41 @@ function mostrarDialogo({ titulo = 'Aviso', mensaje = '', textoConfirmar = 'Ente
 
 function cerrarDialogo() {
   document.getElementById('dialogo-personalizado').classList.add('hidden');
+}
+
+// ===== VISOR DE DOCUMENTOS LEGALES (Términos / Privacidad) =====
+// TERMS.md y PRIVACY.md viven en el repo como Markdown plano; enlazados
+// directo se abrían como texto crudo, sin formato. Esto los trae con
+// fetch() y los convierte a HTML con marked.js (cargado en index.html)
+// para mostrarlos ya formateados, dentro del modal de la propia app.
+async function mostrarDocumento(event, archivo, titulo) {
+  event.preventDefault(); // no navegar al .md crudo — ver el fallback en el catch
+
+  document.getElementById('modal-documento-titulo').textContent = titulo;
+  const contenido = document.getElementById('modal-documento-contenido');
+  contenido.innerHTML = '<p class="placeholder-busqueda">Cargando...</p>';
+  document.getElementById('modal-documento').classList.remove('hidden');
+
+  try {
+    const resp = await fetch(archivo);
+    const texto = await resp.text();
+    // SEGURIDAD: a diferencia del texto libre de catálogo/historial (que
+    // sí pasa por escaparHTML antes de innerHTML), este archivo lo
+    // escribe el propio dueño de la app en su repo, no un usuario —
+    // escaparHTML aquí solo rompería el HTML que genera marked.js.
+    contenido.innerHTML = marked.parse(texto);
+  } catch (err) {
+    // Si falla el fetch (sin internet, CDN de marked.js caído, etc.) se
+    // ofrece el enlace directo al archivo crudo como respaldo, en vez de
+    // dejar el modal con un error sin salida.
+    contenido.innerHTML = `<p>No se pudo cargar el documento con formato. <a href="${archivo}" target="_blank" rel="noopener">Ábrelo directamente aquí</a>.</p>`;
+  }
+
+  return false; // refuerza el preventDefault de arriba (algunos navegadores lo requieren en el onclick inline)
+}
+
+function cerrarModalDocumento() {
+  document.getElementById('modal-documento').classList.add('hidden');
 }
 
 // TOOLTIPS INFORMATIVOS (ⓘ) — funcionan con tap (móvil) y hover (desktop)
@@ -655,6 +710,82 @@ async function crearBaseDatosNueva() {
   return newSpreadsheetId;
 }
 
+// ===== SELECTOR DE ARCHIVO EXISTENTE (Google Picker) =====
+// Con el scope reducido a drive.file, la app YA NO puede listar ni buscar
+// libremente en todo el Drive del usuario — solo ve archivos que ella
+// misma creó o que el usuario le "mostró" explícitamente con este
+// selector. Por eso ya no basta con buscarArchivoPorNombre() para
+// encontrar un archivo que el usuario tenía de antes (ej. cuentas que
+// usaban la app cuando todavía tenía el scope amplio): hace falta que el
+// usuario lo elija una vez aquí. Después de esa primera vez, Google
+// recuerda el permiso sobre ESE archivo para esta app, y buscarOCrearBaseDatos
+// vuelve a encontrarlo solo, sin pedir el Picker de nuevo.
+function abrirSelectorArchivo() {
+  return new Promise((resolve, reject) => {
+    if (!pickerInited) {
+      reject(new Error('El selector de Google todavía no está listo. Espera unos segundos e intenta de nuevo.'));
+      return;
+    }
+
+    const token = gapi.client.getToken();
+    const vista = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS)
+      .setMimeTypes('application/vnd.google-apps.spreadsheet');
+
+    const picker = new google.picker.PickerBuilder()
+      .addView(vista)
+      .setOAuthToken(token.access_token)
+      .setDeveloperKey(API_KEY)
+      .setAppId(PICKER_APP_ID)
+      .setCallback((data) => {
+        if (data.action === google.picker.Action.PICKED) {
+          resolve(data.docs[0].id);
+        } else if (data.action === google.picker.Action.CANCEL) {
+          reject(new Error('CANCELADO'));
+        }
+      })
+      .build();
+
+    picker.setVisible(true);
+  });
+}
+
+// Confirma que el archivo elegido con el Picker sea de verdad una base de
+// datos de esta app, y no cualquier otro Excel o un backup incompleto
+// (ej. exportado a mano y al que le faltan hojas). Solo revisa las 2 hojas
+// más antiguas/esenciales — si esas existen, el resto de asegurarHojaExiste()
+// en cargarDatosIniciales ya se encarga de completar lo que falte.
+async function validarArchivoBD(id) {
+  try {
+    const meta = await gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: id,
+      fields: 'sheets.properties.title'
+    });
+    const hojas = meta.result.sheets.map(h => h.properties.title);
+    return hojas.includes('LOG_TRANS') && hojas.includes('CATALOGO');
+  } catch (err) {
+    return false;
+  }
+}
+
+// Diálogo de confirmación: en vez de crear una base de datos vacía en
+// automático apenas no se encuentra ninguna accesible, se pregunta —
+// porque "no encontrada" puede significar tanto "cuenta nueva de verdad"
+// como "ya tenía datos, pero esta app todavía no tiene permiso sobre ese
+// archivo bajo el scope reducido". Reutiliza mostrarDialogo() ya existente:
+// Confirmar = seleccionar archivo propio, Cancelar = crear uno nuevo.
+function preguntarOrigenBaseDatos() {
+  return new Promise((resolve) => {
+    mostrarDialogo({
+      titulo: 'Base de datos no encontrada',
+      mensaje: '¿Ya tenías una base de datos de esta app en tu Google Drive, o es la primera vez que la usas en esta cuenta?',
+      textoConfirmar: 'Ya tengo una, seleccionarla',
+      textoCancelar: 'Es la primera vez, crear nueva',
+      onConfirmar: () => resolve('SELECCIONAR'),
+      onCancelar: () => resolve('CREAR')
+    });
+  });
+}
+
 // BUSCAR O CREAR LA BASE DE DATOS
 //
 // Camino normal (la enorme mayoría de las veces): ya guardamos el ID
@@ -665,10 +796,12 @@ async function crearBaseDatosNueva() {
 // buscar por nombre — siempre se vuelve a apuntar al mismo ID de la vez
 // anterior, sin ambigüedad.
 //
-// La búsqueda por NOMBRE queda como respaldo: la primerísima vez que se
-// conecta esta cuenta (todavía no hay nada guardado), o si el ID guardado
-// dejara de servir (el archivo se borró, o se limpió el almacenamiento
-// del navegador/PWA).
+// La búsqueda por NOMBRE queda como respaldo, pero ahora solo encuentra
+// archivos a los que esta app YA tiene acceso bajo drive.file (los que
+// ella creó, o los que el usuario ya seleccionó antes con el Picker) — no
+// busca en todo el Drive como antes. Si ninguna de las dos vías encuentra
+// nada, se pregunta al usuario en vez de asumir que es una cuenta nueva
+// (ver preguntarOrigenBaseDatos).
 async function buscarOCrearBaseDatos() {
   const idGuardado = localStorage.getItem(CLAVE_SPREADSHEET_ID);
   if (idGuardado && await verificarSpreadsheetExiste(idGuardado)) {
@@ -676,10 +809,44 @@ async function buscarOCrearBaseDatos() {
   }
 
   const existente = await buscarArchivoPorNombre(DB_FILE_NAME);
-  const id = existente ? existente.id : await crearBaseDatosNueva();
+  if (existente) {
+    localStorage.setItem(CLAVE_SPREADSHEET_ID, existente.id);
+    return existente.id;
+  }
 
-  localStorage.setItem(CLAVE_SPREADSHEET_ID, id);
-  return id;
+  const origen = await preguntarOrigenBaseDatos();
+
+  if (origen === 'CREAR') {
+    const id = await crearBaseDatosNueva();
+    localStorage.setItem(CLAVE_SPREADSHEET_ID, id);
+    return id;
+  }
+
+  // origen === 'SELECCIONAR' — se repite hasta que elija un archivo válido
+  // o cancele (si cancela, se le vuelve a preguntar desde cero en vez de
+  // dejar la app trabada a medio cargar).
+  while (true) {
+    let idElegido;
+    try {
+      idElegido = await abrirSelectorArchivo();
+    } catch (err) {
+      if (err.message === 'CANCELADO') {
+        return await buscarOCrearBaseDatos();
+      }
+      throw err;
+    }
+
+    if (await validarArchivoBD(idElegido)) {
+      localStorage.setItem(CLAVE_SPREADSHEET_ID, idElegido);
+      return idElegido;
+    }
+
+    mostrarDialogo({
+      titulo: 'Archivo incorrecto',
+      mensaje: 'Ese archivo no parece ser una base de datos válida (le faltan hojas como LOG_TRANS o CATALOGO). Selecciona el archivo correcto.'
+    });
+    // el bucle vuelve a abrir el Picker automáticamente
+  }
 }
 
 // Verifica que una hoja exista en el spreadsheet actual; si no, la crea

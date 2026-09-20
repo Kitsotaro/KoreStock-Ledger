@@ -20,6 +20,19 @@ window.addEventListener('DOMContentLoaded', () => {
   const fechaInput = document.getElementById('costo-fecha');
   if (fechaInput) fechaInput.value = obtenerFechaLocal();
 
+  // Filtro de período del Historial (mismo patrón que ROI/Equilibrio/
+  // Combustible en analitica.js — poblarSelectPeriodo y
+  // calcularFechasPreset son funciones globales de ese archivo, que se
+  // carga ANTES que este en index.html).
+  poblarSelectPeriodo('filter-periodo-costos');
+  const fechasCostos = calcularFechasPreset('MES');
+  const inicioCostosEl = document.getElementById('costos-fecha-inicio');
+  const finCostosEl = document.getElementById('costos-fecha-fin');
+  if (inicioCostosEl && finCostosEl) {
+    inicioCostosEl.value = fechasCostos.inicio;
+    finCostosEl.value = fechasCostos.fin;
+  }
+
   crearAutocomplete(
     'costo-categoria', 'ac-categoria-costo',
     (query) => sugerirCategoriasCosto(query),
@@ -128,8 +141,34 @@ async function guardarCostoOperativo(event) {
   }
 }
 
+// Cambia el selector de período (Este Mes, Trimestre, etc.) → recalcula
+// Desde/Hasta con calcularFechasPreset() y vuelve a renderizar. Igual
+// patrón que onCambioPeriodoCombustible()/onCambioPeriodoEquilibrio() en
+// analitica.js.
+function onCambioPeriodoCostos() {
+  const preset = document.getElementById('filter-periodo-costos').value;
+  const fechas = calcularFechasPreset(preset);
+  if (fechas) {
+    document.getElementById('costos-fecha-inicio').value = fechas.inicio;
+    document.getElementById('costos-fecha-fin').value = fechas.fin;
+  }
+  renderizarListaCostos();
+}
+
+// Tocar Desde/Hasta a mano pasa el selector a "Personalizado" (mismo
+// comportamiento que el resto de los selectores de período de la app).
+function onCambioFechaPersonalizadaCostos() {
+  document.getElementById('filter-periodo-costos').value = 'PERSONALIZADO';
+  renderizarListaCostos();
+}
+
 // LISTADO: más reciente arriba (la hoja solo AGREGA filas al final, igual
 // que LOG_TRANS, así que basta con invertir el orden de lectura).
+//
+// costosCache guarda SIEMPRE el historial COMPLETO (sin filtrar) — lo usa
+// sugerirCategoriasCosto() para ofrecer categorías ya usadas en cualquier
+// momento, no solo en el período que se esté viendo. El filtro de fecha
+// se aplica aparte, solo para decidir qué filas se DIBUJAN.
 async function renderizarListaCostos() {
   const contenedor = document.getElementById('lista-costos');
   if (!contenedor) return;
@@ -147,7 +186,28 @@ async function renderizarListaCostos() {
       return;
     }
 
-    costosCache.forEach(({ r, filaSheet }) => {
+    // Si los inputs de fecha todavía no tienen valor (primera carga antes
+    // de que el DOMContentLoaded de arriba corra), usa "Este Mes" como
+    // respaldo — mismo criterio que recalcularCombustibleAnalitica().
+    let fechaInicio = document.getElementById('costos-fecha-inicio')?.value;
+    let fechaFin = document.getElementById('costos-fecha-fin')?.value;
+    if (!fechaInicio || !fechaFin) {
+      const fechas = calcularFechasPreset('MES');
+      fechaInicio = fechas.inicio;
+      fechaFin = fechas.fin;
+    }
+
+    const filasEnPeriodo = costosCache.filter(({ r }) => {
+      const fecha = r[2] || '';
+      return fecha >= fechaInicio && fecha <= fechaFin;
+    });
+
+    if (filasEnPeriodo.length === 0) {
+      contenedor.innerHTML = `<div class="placeholder-busqueda">No hay costos registrados en este período</div>`;
+      return;
+    }
+
+    filasEnPeriodo.forEach(({ r, filaSheet }) => {
       const folio = r[0] || '';
       const fecha = r[2] || '';
       const categoria = r[3] || '';

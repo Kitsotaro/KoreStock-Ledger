@@ -20,6 +20,19 @@ window.addEventListener('DOMContentLoaded', () => {
   const fechaInput = document.getElementById('combustible-fecha');
   if (fechaInput) fechaInput.value = obtenerFechaLocal();
   inicializarBuscadorVehiculo();
+
+  // Filtro de período del Historial de Combustible (mismo patrón que
+  // Costos Operativos en costos.js) — poblarSelectPeriodo y
+  // calcularFechasPreset son globales de analitica.js, que se carga
+  // ANTES que este archivo en index.html.
+  poblarSelectPeriodo('filter-periodo-costos-combustible');
+  const fechasCC = calcularFechasPreset('MES');
+  const inicioCCEl = document.getElementById('costos-combustible-fecha-inicio');
+  const finCCEl = document.getElementById('costos-combustible-fecha-fin');
+  if (inicioCCEl && finCCEl) {
+    inicioCCEl.value = fechasCC.inicio;
+    finCCEl.value = fechasCC.fin;
+  }
 });
 
 // ===== BUSCADOR DE VEHÍCULO (Omnibox, mismo patrón que producto en Registrar) =====
@@ -343,6 +356,21 @@ async function cargarHistorialCombustible() {
   }
 }
 
+function onCambioPeriodoCostosCombustible() {
+  const preset = document.getElementById('filter-periodo-costos-combustible').value;
+  const fechas = calcularFechasPreset(preset);
+  if (fechas) {
+    document.getElementById('costos-combustible-fecha-inicio').value = fechas.inicio;
+    document.getElementById('costos-combustible-fecha-fin').value = fechas.fin;
+  }
+  renderizarListaCombustible();
+}
+
+function onCambioFechaPersonalizadaCostosCombustible() {
+  document.getElementById('filter-periodo-costos-combustible').value = 'PERSONALIZADO';
+  renderizarListaCombustible();
+}
+
 function renderizarListaCombustible() {
   const contenedor = document.getElementById('lista-combustible');
   if (!contenedor) return;
@@ -354,11 +382,31 @@ function renderizarListaCombustible() {
     return;
   }
 
-  // El cálculo necesita orden cronológico real (más viejo primero); se usa
-  // una copia — combustibleCache se queda invertido, para mostrarse.
+  // El cálculo de rendimiento necesita el historial COMPLETO en orden
+  // cronológico (para saber el odómetro anterior de cada vehículo, aunque
+  // esa carga anterior quede fuera del período que se está viendo) —
+  // combustibleCache nunca se filtra, solo se filtra qué filas se DIBUJAN.
   const rendimientos = calcularRendimientos([...combustibleCache].reverse());
 
-  combustibleCache.forEach(({ r, filaSheet }) => {
+  let fechaInicio = document.getElementById('costos-combustible-fecha-inicio')?.value;
+  let fechaFin = document.getElementById('costos-combustible-fecha-fin')?.value;
+  if (!fechaInicio || !fechaFin) {
+    const fechas = calcularFechasPreset('MES');
+    fechaInicio = fechas.inicio;
+    fechaFin = fechas.fin;
+  }
+
+  const filasEnPeriodo = combustibleCache.filter(({ r }) => {
+    const fecha = r[2] || '';
+    return fecha >= fechaInicio && fecha <= fechaFin;
+  });
+
+  if (filasEnPeriodo.length === 0) {
+    contenedor.innerHTML = `<div class="placeholder-busqueda">No hay cargas de combustible en este período</div>`;
+    return;
+  }
+
+  filasEnPeriodo.forEach(({ r, filaSheet }) => {
     const folio = r[0] || '';
     const fecha = r[2] || '';
     const placa = r[3] || '';
