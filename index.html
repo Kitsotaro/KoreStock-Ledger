@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/tema-claro.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.13/lib/marked.umd.js"></script>
 </head>
 <body>
 
@@ -30,8 +31,8 @@
     <p class="subtext">Sistema PWA para el control de inventario, registro de ventas y gestión de costos. Conéctate con Google Drive para almacenar y gestionar tu base de datos de forma ptivada y personal.</p>
     <button id="btn-login" class="btn-primary" onclick="handleAuthClick()">Iniciar Sesión con Google</button>
     <footer class="auth-footer">
-      <a href="PRIVACY.md" target="_blank" rel="noopener">Política de Privacidad</a>
-      <a href="TERMS.md" target="_blank" rel="noopener">Términos de Servicio</a>
+      <a href="PRIVACY.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'PRIVACY.md', 'Política de Privacidad')">Política de Privacidad</a>
+      <a href="TERMS.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'TERMS.md', 'Términos de Servicio')">Términos de Servicio</a>
     </footer>
   </div>
 
@@ -120,7 +121,7 @@
               <span id="hint-marca" class="hint-nuevo-valor hidden">Nuevo valor</span>
             </div>
             <div class="form-group autocomplete-wrapper">
-              <label>Producto / Línea</label>
+              <label>Producto / Línea <span class="info-icon" onclick="toggleInfoTip(this, 'Nombre principal o comercial del artículo que estás registrando.')">ⓘ</span></label>
               <input type="text" id="prod-linea" placeholder="Ej: Pepsi" autocomplete="off" required />
               <div id="ac-linea" class="autocomplete-dropdown hidden"></div>
               <span id="hint-linea" class="hint-nuevo-valor hidden">Nuevo valor</span>
@@ -130,19 +131,19 @@
           <!-- Fila 3: Tipo de Empaque + Presentación + Contenido/Vol. -->
           <div class="form-row">
             <div class="form-group autocomplete-wrapper">
-              <label>Empaque</label>
+              <label>Empaque <span class="info-icon" onclick="toggleInfoTip(this, 'Formato de agrupación o embalaje logístico (ej. Caja, Sixpack, Fardo, Display).')">ⓘ</span></label>
               <input type="text" id="prod-tipo-empaque" placeholder="Caja, Sixpack, etc." autocomplete="off" required />
               <div id="ac-tipoempaque" class="autocomplete-dropdown hidden"></div>
               <span id="hint-tipoempaque" class="hint-nuevo-valor hidden">Nuevo valor</span>
             </div>
             <div class="form-group autocomplete-wrapper">
-              <label>Presentación</label>
+              <label>Presentación <span class="info-icon" onclick="toggleInfoTip(this, 'Envase primario o formato individual de venta (ej. Botella, Lata, Bolsa, Tetrapack).')">ⓘ</span></label>
               <input type="text" id="prod-presentacion" placeholder="Botella, Lata, Tetra" autocomplete="off" required />
               <div id="ac-presentacion" class="autocomplete-dropdown hidden"></div>
               <span id="hint-presentacion" class="hint-nuevo-valor hidden">Nuevo valor</span>
             </div>
             <div class="form-group autocomplete-wrapper">
-              <label>Contenido / Vol.</label>
+              <label>Contenido / Vol. <span class="info-icon" onclick="toggleInfoTip(this, 'Medida, peso o volumen neto de cada unidad (ej. 1.5 Lts, 355 ml, 500g).')">ⓘ</span></label>
               <input type="text" id="prod-volumen" placeholder="Ej: 1.5 Lts, 600g" autocomplete="off" required />
               <div id="ac-volumen" class="autocomplete-dropdown hidden"></div>
               <span id="hint-volumen" class="hint-nuevo-valor hidden">Nuevo valor</span>
@@ -152,13 +153,13 @@
           <!-- Fila 4: Variante + Cantidad Bonificada -->
           <div class="form-row">
             <div class="form-group autocomplete-wrapper">
-              <label>Variante (Opcional)</label>
+              <label>Variante (Opcional) <span class="info-icon" onclick="toggleInfoTip(this, 'Característica específica como sabor, color, olor o edición (ej. Uva, Fresa, Menta).')">ⓘ</span></label>
               <input type="text" id="prod-variante" placeholder="Uva Fresa Crunch" autocomplete="off" />
               <div id="ac-variante" class="autocomplete-dropdown hidden"></div>
               <span id="hint-variante" class="hint-nuevo-valor hidden">Nuevo valor</span>
             </div>
             <div class="form-group" id="group-bonificacion">
-              <label>Cantidad Bonificada (Regalo / Promoción)</label>
+              <label>Cant. Bonificada <span class="info-icon" onclick="toggleInfoTip(this, 'Unidades adicionales sin costo otorgadas por promociones o regalías.')">ⓘ</span></label>
               <input type="number" step="any" id="mov-bonificacion" placeholder="0" />
             </div>
           </div>
@@ -572,6 +573,23 @@
 
         <div class="card">
           <h3>📋 Historial de Costos Operativos</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Período</label>
+              <!-- Opciones rellenadas por JS desde PRESETS_PERIODO (analitica.js) — mismo selector que ROI/Equilibrio/Combustible. -->
+              <select id="filter-periodo-costos" class="chart-view-select" onchange="onCambioPeriodoCostos()" style="width: 100%; max-width: none;"></select>
+            </div>
+            <div class="form-group">
+              <label>Desde</label>
+              <input type="date" id="costos-fecha-inicio" onchange="onCambioFechaPersonalizadaCostos()" />
+            </div>
+            <div class="form-group">
+              <label>Hasta</label>
+              <input type="date" id="costos-fecha-fin" onchange="onCambioFechaPersonalizadaCostos()" />
+            </div>
+          </div>
+
           <div id="lista-costos" class="product-list"></div>
         </div>
       </div>
@@ -624,6 +642,25 @@
 
         <div class="card">
           <h3>📋 Historial de Combustible</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Período</label>
+              <!-- IDs propios (costos-combustible-*), distintos de los de
+                   Panorama → Combustible (combustible-fecha-*): son 2
+                   filtros independientes sobre la misma hoja. -->
+              <select id="filter-periodo-costos-combustible" class="chart-view-select" onchange="onCambioPeriodoCostosCombustible()" style="width: 100%; max-width: none;"></select>
+            </div>
+            <div class="form-group">
+              <label>Desde</label>
+              <input type="date" id="costos-combustible-fecha-inicio" onchange="onCambioFechaPersonalizadaCostosCombustible()" />
+            </div>
+            <div class="form-group">
+              <label>Hasta</label>
+              <input type="date" id="costos-combustible-fecha-fin" onchange="onCambioFechaPersonalizadaCostosCombustible()" />
+            </div>
+          </div>
+
           <div id="lista-combustible" class="product-list"></div>
         </div>
       </div>
@@ -746,6 +783,20 @@
     <div class="modal-actions">
       <button id="dialogo-btn-confirmar" class="btn-primary">Entendido</button>
       <button id="dialogo-btn-cancelar" class="btn-secondary hidden">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE DOCUMENTOS LEGALES (Términos / Privacidad) — antes se abrían
+     como archivo .md crudo en una pestaña nueva, sin formato. Ahora se
+     leen con fetch() y se convierten a HTML con marked.js, mostrados aquí
+     dentro del propio tema de la app. -->
+<div id="modal-documento" class="modal hidden">
+  <div class="modal-content card">
+    <h3 id="modal-documento-titulo">Documento</h3>
+    <div id="modal-documento-contenido" class="subtext"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-primary" onclick="cerrarModalDocumento()">Cerrar</button>
     </div>
   </div>
 </div>

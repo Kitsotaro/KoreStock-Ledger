@@ -1,5 +1,35 @@
 # Changelog — Kytos Ledger (Finanzas Privadas)
 
+## v2.1 — 2026-09-20
+
+### 🔐 Login y permisos de Google
+- Permisos reducidos a solo lo necesario (`drive.file`): antes la app también pedía acceso completo a TODAS las hojas de cálculo de la cuenta, sin necesitarlo. Menos permisos, menos advertencias raras de Google.
+- Selector de archivo de Google agregado para cuando la app no encuentra la base de datos sola (por ejemplo, la primera vez con el permiso reducido) — deja elegir el archivo correcto y revisa que tenga las hojas necesarias antes de aceptarlo.
+- Control de acceso por lista de correos autorizados.
+- Agregado LICENSE (todos los derechos reservados) y PRIVACY.md.
+- Términos de Servicio y Política de Privacidad ahora se ven con formato dentro de la app (antes abrían el archivo en texto plano, sin estilo).
+
+### 💵 Costos Operativos
+- Pestaña nueva completa: Costos Fijos (Mantenimiento, Alquiler, Seguro, Luz, Agua, Viáticos, categorías libres) y Combustible (vehículos, carga por odómetro/galones/monto, rendimiento km/galón calculado solo).
+- El Historial ahora se filtra por período (mismo selector que Panorama) en vez de mostrar todo sin límite — aplica tanto a Costos Fijos como a Combustible, cada uno con su propio filtro independiente.
+
+### 📈 Panorama
+- Punto de Equilibrio agregado.
+- Presets Quincenal y Semanal en los selectores de período.
+- Arreglado: en celular, los números grandes de ROI/Equilibrio/Combustible se salían de su tarjeta y se veían cortados.
+
+### 📦 Stock
+- Separado "Valor Total de Bodega" de "Valor Invertido" (con y sin bonificaciones).
+- Arreglado: en celular, la tarjeta "Total en Bodega" quedaba más alta que "Valor Total" y se veían desalineadas.
+
+### 🎨 Diseño
+- Nav, estado de conexión y botón de tema agrupados en una sola barra fija al fondo (antes arriba) — más cómodo para usar con el pulgar en celular.
+- Infobox (ⓘ) agregado a cada campo del formulario de Entrada (Producto/Línea, Empaque, Presentación, Contenido/Vol., Variante, Cant. Bonificada) explicando qué va en cada uno.
+
+### 🐛 Datos
+- Arreglado bug de decimales: con la hoja de Sheets en español, los números con coma ("8,5") se truncaban en toda la app.
+- Arreglado bug de fechas relacionado con el fix anterior.
+
 ## v2.0
 
 ### 🏗️ Arquitectura
