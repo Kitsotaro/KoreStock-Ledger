@@ -525,6 +525,7 @@ input::placeholder {
 .filter-col {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* mismo motivo que en .roi-negocio-card — ver ese comentario */
 }
 
 .filter-col-buscar {
@@ -566,6 +567,13 @@ input::placeholder {
 
 .roi-negocio-card {
   flex: 1;
+  /* min-width:0 es la corrección real del corte en móvil: sin esto, un
+     hijo flex nunca se encoge más allá del tamaño de su contenido (aquí,
+     el número con white-space:nowrap), y esa "resistencia" es lo que
+     empujaba a toda la fila fuera de la tarjeta en pantallas angostas.
+     Con esto, la etiqueta de texto (que sí puede partirse en 2 líneas)
+     cede el espacio que el número necesita, en vez de forzar el desborde. */
+  min-width: 0;
   background: var(--input-bg);
   border-radius: 10px;
   padding: 10px 14px;
@@ -594,6 +602,31 @@ input::placeholder {
   font-weight: 600;
   color: var(--text);
   margin: 4px 0 10px;
+}
+
+/* ===== AJUSTES SOLO PARA PANTALLAS ANGOSTAS (móvil) =====
+   Primer @media del proyecto. El fix real del corte en Panorama ya está
+   arriba (min-width:0, aplica siempre). Esto de aquí es solo pulido: menos
+   espacio desperdiciado y tarjetas de Stock más parejas en pantallas
+   angostas — en desktop no cambia nada. */
+@media (max-width: 480px) {
+  .roi-resumen-row {
+    gap: 16px; /* antes 40px — con el ancho real de un celular, sobraba */
+  }
+
+  .roi-negocio-valor {
+    font-size: 1.5rem; /* antes 2rem — de paso da más margen extra */
+  }
+
+  /* La tarjeta accent-blue trae "flex: 2" escrito directo en el HTML
+     (style="flex: 2"), así que hace falta !important para ganarle en
+     pantallas angostas — en accent-blue (Valor Total) le sobra espacio y
+     en accent-green (Total en Bodega) le falta; repartido a la mitad,
+     "Total en Bodega ⓘ" ya cabe en una sola línea y las 2 tarjetas quedan
+     de la misma altura. */
+  .metrics-grid .metric-card {
+    flex: 1 !important;
+  }
 }
 
 .hidden { display: none !important; }
