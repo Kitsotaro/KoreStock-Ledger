@@ -1,6 +1,6 @@
 {
-  "name": "Finanzas Privadas",
-  "short_name": "Finanzas",
+  "name": "KoreStock Ledger",
+  "short_name": "KoreStock",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",

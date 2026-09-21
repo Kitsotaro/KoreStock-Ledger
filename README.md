@@ -1,4 +1,4 @@
-# Kytos Ledger
+# KoreStock Ledger
 
 PWA de inventario, ventas y costos operativos para pequeños negocios de
 distribución. Corre 100% en el navegador (sin servidor propio) y guarda

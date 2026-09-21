@@ -1,6 +1,5 @@
-# Changelog — Kytos Ledger (Finanzas Privadas)
-
-## v2.1 — 2026-09-20
+# Changelog — KoreStock Ledger
+## v2.1 — 2026-09-21
 
 ### 🔐 Login y permisos de Google
 - Permisos reducidos a solo lo necesario (`drive.file`): antes la app también pedía acceso completo a TODAS las hojas de cálculo de la cuenta, sin necesitarlo. Menos permisos, menos advertencias raras de Google.
