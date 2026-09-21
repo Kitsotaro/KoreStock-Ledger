@@ -15,7 +15,7 @@ de forma directa a tu propia cuenta de Google.
 Usamos **Google OAuth 2.0** para autenticarte y acceder a los servicios
 de Google API. Solicitamos un único permiso (scope):
 
-- [`https://www.googleapis.com/auth/drive.file`](https://developers.google.com/identity/protocols/oauth2/scopes#drive):
+- [`auth/drive.file`](https://developers.google.com/identity/protocols/oauth2/scopes#drive):
   permiso diseñado específicamente para que una aplicación **solo
   pueda crear y administrar los archivos que ella misma genera**, sin
   ninguna capacidad técnica de listar, leer o acceder al resto de tu
