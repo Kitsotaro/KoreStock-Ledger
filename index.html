@@ -25,14 +25,113 @@
 
 <div class="app-container">
 
-  <!-- SECCIÓN DE AUTENTICACIÓN -->
-  <div id="auth-section" class="card">
-    <h2>KoreStock Ledger</h2>
-    <p class="subtext">Sistema PWA para el control de inventario, registro de ventas y gestión de costos. Conéctate con Google Drive para almacenar y gestionar tu base de datos de forma ptivada y personal.</p>
-    <button id="btn-login" class="btn-primary" onclick="handleAuthClick()">Iniciar Sesión con Google</button>
-    <footer class="auth-footer">
-      <a href="PRIVACY.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'PRIVACY.md', 'Política de Privacidad')">Política de Privacidad</a>
-      <a href="TERMS.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'TERMS.md', 'Términos de Servicio')">Términos de Servicio</a>
+  <!-- SECCIÓN DE AUTENTICACIÓN / LANDING -->
+  <div id="auth-section">
+
+    <!-- Header: logo + nombre, botón de login siempre a la vista (1 clic para veteranos) -->
+    <header class="auth-header">
+      <div class="auth-header-brand">
+        <img src="assets/logo.png" alt="KoreStock Ledger" class="auth-logo">
+        <span class="auth-brand-name">KoreStock Ledger</span>
+      </div>
+      <button id="btn-login" class="btn-login-auth" onclick="handleAuthClick()">Iniciar Sesión</button>
+    </header>
+
+    <!-- Hero -->
+    <section class="auth-hero">
+      <h1>Control de inventario, ventas y costos operativos.</h1>
+      <p class="subtext">Tus datos, protegidos en tu propio Google Drive.</p>
+    </section>
+
+    <!-- Por qué KoreStock Ledger: fusiona "qué hace" + "por qué elegirla". Carrusel semi-automático (3s, swipe, puntos). -->
+    <section class="card">
+      <h2 class="auth-block-title">¿Por qué KoreStock Ledger?</h2>
+      <div class="auth-carousel">
+        <div class="auth-carousel-track" id="features-track">
+          <div class="auth-carousel-slide">
+            <span class="auth-feature-icon">📦</span>
+            <h3>Gestión Inteligente de Stock</h3>
+            <p class="subtext"><strong class="frase-destacada">¡Registra tus entradas y ventas en segundos!</strong> Ingresa cada movimiento de forma simple, sin perder el control ni el detalle de un sistema profesional.</p>
+          </div>
+          <div class="auth-carousel-slide">
+            <span class="auth-feature-icon">🚗</span>
+            <h3>Costos y Combustible</h3>
+            <p class="subtext"><strong class="frase-destacada">¡Administra tus vehículos!</strong> Registra el odómetro cuando lo necesites — a diario o cada carga — y recibe un análisis claro y completo de tu inversión en transporte.</p>
+          </div>
+          <div class="auth-carousel-slide">
+            <span class="auth-feature-icon">📊</span>
+            <h3>Métricas en Vivo</h3>
+            <p class="subtext"><strong class="frase-destacada">¡Tú solo registras el día a día, nosotros hacemos el resto!</strong> Consulta tus totales vendidos, filtra por el rango de fechas que necesites, y mira el panorama completo de tus productos y ventas — como si tuvieras un asesor financiero personal.</p>
+          </div>
+          <div class="auth-carousel-slide">
+            <span class="auth-feature-icon">📱</span>
+            <h3>App Instalable</h3>
+            <p class="subtext"><strong class="frase-destacada">¡Elimina el ruido externo!</strong> Concéntrate en una conexión limpia a tus datos, sin notificaciones molestas — la misma interfaz que ya conoces, pero directo desde tu teléfono, sin pasar por el navegador y casi sin ocupar espacio.</p>
+          </div>
+        </div>
+        <div class="auth-carousel-dots">
+          <button type="button" class="auth-dot active" onclick="irADiapositivaManual(0)" aria-label="Función 1"></button>
+          <button type="button" class="auth-dot" onclick="irADiapositivaManual(1)" aria-label="Función 2"></button>
+          <button type="button" class="auth-dot" onclick="irADiapositivaManual(2)" aria-label="Función 3"></button>
+          <button type="button" class="auth-dot" onclick="irADiapositivaManual(3)" aria-label="Función 4"></button>
+        </div>
+      </div>
+      <!-- Nota: la línea de abajo cubre que esta lista no es exhaustiva. -->
+      <p class="subtext auth-features-note">Y seguimos sumando funciones nuevas con cada versión.</p>
+    </section>
+
+    <!-- Garantía de privacidad -->
+    <section class="card">
+      <h2 class="auth-block-title">¿Cómo usamos tu Google Drive?</h2>
+      <p class="subtext">Al conectar tu cuenta, la app crea un archivo propio llamado <strong>StockCentral_DB</strong> en tu Drive, donde guarda tu inventario, ventas y costos. Solo puede crear y administrar ese archivo — no tiene forma técnica de ver, leer ni tocar ningún otro archivo tuyo — incluyendo copias que hagas manualmente, salvo que tú mismo decidas abrir esa copia con la app más adelante. Tus datos nunca salen de tu cuenta: no hay servidor propio ni copia en ningún otro lugar.</p>
+    </section>
+
+    <!-- FAQ -->
+    <section class="card">
+      <h2 class="auth-block-title">FAQ</h2>
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Qué pasa si borro por error StockCentral_DB? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>Se pierde para siempre, ya que no guardamos ninguna copia. Por eso conviene sacar una copia de tu archivo cada cierto tiempo — por ejemplo, una vez al día — directo desde tu Drive.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Puedo usarla en varios dispositivos? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>Sí, con la misma cuenta de Google todos ven la misma información. Eso sí, evita usarla en dos dispositivos al mismo tiempo — puede pisar datos.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Tiene costo mensual o comisión por venta? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>Actualmente el sistema está en fase beta de prueba, sin costo. La versión oficial tendrá un modelo de suscripción para su uso — escríbeme a <a href="mailto:kitsotaro@gmail.com">kitsotaro@gmail.com</a> para más detalles.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Por qué pide acceso a Google Drive? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>Porque ahí vive tu base de datos: el único archivo que la app puede crear y administrar.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Funciona sin internet? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>No — necesita conexión para leer y escribir tu Google Sheet. Que sea instalable solo hace que abra más rápido, no que trabaje sin conexión.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" onclick="toggleFAQ(this)">¿Sirve para cualquier tipo de negocio? <span class="faq-icon">+</span></button>
+          <div class="faq-answer hidden"><p>Sí, no hay límite de rubro — aunque hoy funciona mejor para negocios que venden por paquete o caja. Seguimos sumando funciones próximas, como venta por unidad individual.</p></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Footer: legal + botón de tema -->
+    <footer class="auth-footer-wrap">
+      <p class="subtext auth-copyright">© 2026 KoreStock Ledger — un proyecto de Kitsotaro</p>
+      <div class="auth-footer">
+        <a href="PRIVACY.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'PRIVACY.md', 'Política de Privacidad')">Política de Privacidad</a>
+        <a href="TERMS.md" target="_blank" rel="noopener" onclick="return mostrarDocumento(event, 'TERMS.md', 'Términos de Servicio')">Términos de Servicio</a>
+        <button type="button" class="btn-icon-tema" onclick="alternarTema()" aria-label="Cambiar tema">☀️</button>
+      </div>
     </footer>
   </div>
 

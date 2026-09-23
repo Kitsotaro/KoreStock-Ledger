@@ -18,16 +18,22 @@ la API pública de Google Sheets y Drive. Como consecuencia:
 
 ## La información es tuya, y la responsabilidad también
 
-Vos decidís qué datos cargar y qué hacer con los resultados que la app
+Tú decides qué datos cargar y qué hacer con los resultados que la app
 calcula (ROI, punto de equilibrio, proyecciones, etc.). Esta app es una
 herramienta de apoyo, no un servicio de contabilidad ni de asesoría
 financiera profesional — para decisiones importantes de negocio, no
 sustituye tu propio criterio ni el de un profesional.
 
+Si compartes el acceso a tu cuenta de Google con otra persona (por
+ejemplo, un empleado o socio), la seguridad de esa cuenta y las
+consecuencias de compartirla son responsabilidad tuya — la app no
+ofrece gestión de múltiples usuarios ni roles distintos dentro de una
+misma cuenta.
+
 ## Sin soporte garantizado
 
 Este es un proyecto personal, no un producto comercial con soporte
-contratado. Podés escribirle al autor con dudas o errores, pero no hay
+contratado. Puedes escribirle al autor con dudas o errores, pero no hay
 garantía de tiempo de respuesta ni de que un problema se resuelva.
 
 ## Responsabilidad

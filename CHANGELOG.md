@@ -1,4 +1,19 @@
 # Changelog — KoreStock Ledger
+
+## v2.2 — 2026-09-23
+
+### 🔐 Login y verificación de acceso
+- Corregido: una falla temporal de red al consultar la lista de correos autorizados se mostraba como "Sin autorización" en vez de distinguirse de un problema de conexión — ahora reintenta una vez antes de avisar, y el mensaje indica si es un problema de conexión o si de verdad no está autorizado.
+- El ícono de tema (☀️/🌙) ahora se sincroniza también en el botón del nuevo login (antes solo se actualizaba el del nav de la app).
+
+### 🎨 Landing / pantalla de inicio de sesión
+- Rediseño completo de la pantalla de login: encabezado fijo, carrusel semi-automático de funciones (autoavance, swipe y puntos), sección de cómo se usa Google Drive, y FAQ tipo acordeón.
+- Ícono del manifest actualizado a `./assets/logo.png`.
+
+### 📄 Legal
+- `TERMS.md`: tono unificado a "tú"; agregada cláusula sobre cuentas de Google compartidas.
+- `PRIVACY.md`: nombre del archivo de datos (`StockCentral_DB`) explicitado en las secciones de almacenamiento y borrado.
+
 ## v2.1 — 2026-09-21
 
 ### 🔐 Login y permisos de Google

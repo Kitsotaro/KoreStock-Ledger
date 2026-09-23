@@ -69,8 +69,9 @@ En la práctica, esto significa que la app:
 ## 4. Almacenamiento y protección de tus datos
 
 - Los datos de tu negocio (inventario, ventas, costos) se guardan
-  **únicamente en tu propio Google Drive**, en un archivo que tú
-  controlas por completo desde tu propia cuenta.
+  **únicamente en tu propio Google Drive**, en un archivo llamado
+  `StockCentral_DB` que tú controlas por completo desde tu propia
+  cuenta.
 - La app no tiene servidor ni base de datos propia del autor — es
   100% client-side, corre en tu navegador, y no existe ninguna copia de
   tus datos en ningún otro lugar.
@@ -87,8 +88,9 @@ porque nunca tenemos una copia que borrar.
 **Cómo eliminar tus datos y revocar el acceso**, en dos pasos simples:
 
 1. **Eliminar los datos almacenados:** entra a tu Google Drive, busca
-   la hoja de cálculo generada por la app y muévela a la papelera o
-   elimínala — igual que con cualquier otro archivo tuyo.
+   el archivo `StockCentral_DB` (la hoja de cálculo generada por la
+   app) y muévela a la papelera o elimínala — igual que con cualquier
+   otro archivo tuyo.
 2. **Revocar el acceso de la app:** retira el permiso de KoreStock
    Ledger a tu cuenta de Google desde tus
    [permisos de cuenta de Google](https://myaccount.google.com/permissions),

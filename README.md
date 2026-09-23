@@ -1,9 +1,17 @@
 # KoreStock Ledger
 
-PWA de inventario, ventas y costos operativos para pequeños negocios de
-distribución. Corre 100% en el navegador (sin servidor propio) y guarda
-todos los datos en una hoja de Google Sheets en el propio Google Drive
-de quien la usa.
+Sistema pensado para gestionar un pequeño negocio: controla el
+abastecimiento de productos y da sugerencias de qué comprar y en qué
+dejar de invertir. Para tiendas, talleres, abarrotes, bodegas,
+servicios de paquetería y negocios similares.
+
+🔗 [App en vivo](https://korestock.kitsotaro.com) — código fuente
+público para que cualquiera pueda auditarlo (ver [`LICENSE`](./LICENSE)
+para los términos de uso del código).
+
+Corre 100% en el navegador (sin servidor propio) y guarda todos los
+datos en una hoja de Google Sheets en el propio Google Drive de quien
+la usa.
 
 ## ✨ Qué hace
 
