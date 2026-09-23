@@ -1,6 +1,6 @@
 # KoreStock Ledger
 
-Sistema pensado para gestionar un pequeño negocio: controla el
+Sistema pensado para gestionar tu negocio: controla el
 abastecimiento de productos y da sugerencias de qué comprar y en qué
 dejar de invertir. Para tiendas, talleres, abarrotes, bodegas,
 servicios de paquetería y negocios similares.
