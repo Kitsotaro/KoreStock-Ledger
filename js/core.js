@@ -106,9 +106,41 @@ function gisLoaded() {
 
 window.onload = () => { gapiLoaded(); gisLoaded(); };
 
+// CACHÉ DEL TOKEN DE SESIÓN — mientras el token siga vigente (Google los
+// da por ~1 hora; no hay forma de que duren más desde el navegador solo,
+// sin un servidor propio de por medio), se reutiliza directamente al
+// recargar la página, sin volver a pedirle nada a Google.
+const CLAVE_TOKEN_CACHE = 'korestock-token-google';
+
+function guardarTokenCache(resp) {
+  const expira = Date.now() + (resp.expires_in * 1000);
+  try {
+    localStorage.setItem(CLAVE_TOKEN_CACHE, JSON.stringify({ access_token: resp.access_token, expira }));
+  } catch (err) {
+    console.warn('No se pudo guardar el token en caché:', err);
+  }
+}
+
+function leerTokenCache() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_TOKEN_CACHE));
+    if (guardado && guardado.expira > Date.now()) return guardado;
+  } catch (err) { /* nada guardado o corrupto — se ignora */ }
+  return null;
+}
+
+function borrarTokenCache() {
+  try { localStorage.removeItem(CLAVE_TOKEN_CACHE); } catch (err) { /* nada que borrar */ }
+}
+
 function checkAuthReady() {
   if (gapiInited && gsisInited) {
     document.getElementById('status').innerText = 'Listo para conectar.';
+    const cache = leerTokenCache();
+    if (cache) {
+      gapi.client.setToken({ access_token: cache.access_token });
+      procesarSesion();
+    }
   }
 }
 
@@ -155,57 +187,75 @@ async function verificarAccesoUsuario(email) {
   }
 }
 
-function handleAuthClick() {
+function actualizarBotonLogin(texto, deshabilitado) {
   const btnLogin = document.getElementById('btn-login');
+  if (!btnLogin) return;
+  btnLogin.disabled = deshabilitado;
+  btnLogin.textContent = texto;
+}
 
+// Todo lo que pasa DESPUÉS de tener un token válido (nuevo o de la caché):
+// verificar la lista blanca y, si corresponde, mostrar la app. Separado de
+// handleAuthClick para poder reusarlo también al cargar la página con un
+// token todavía vigente en caché (ver checkAuthReady), sin pasar por
+// Google de nuevo.
+async function procesarSesion() {
+  actualizarBotonLogin('Verificando acceso...', true);
+
+  const email = await obtenerCorreoUsuario();
+  const autorizado = await verificarAccesoUsuario(email);
+
+  if (autorizado === null) {
+    mostrarDialogo({
+      titulo: 'No se pudo verificar',
+      mensaje: 'No pudimos confirmar tu acceso por un problema de conexión. Intenta iniciar sesión de nuevo en unos segundos.'
+    });
+    gapi.client.setToken(null);
+    borrarTokenCache();
+    actualizarBotonLogin('Iniciar Sesión con Google', false);
+    return;
+  }
+
+  if (!autorizado) {
+    mostrarDialogo({
+      titulo: 'Sin autorización',
+      mensaje: 'Sin autorización, por favor contactar a Kitsotaro para acceso.'
+    });
+    gapi.client.setToken(null); // limpia el token de esta sesión — no queda "medio conectado"
+    borrarTokenCache();
+    actualizarBotonLogin('Iniciar Sesión con Google', false);
+    return;
+  }
+
+  document.getElementById('auth-section').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  // El cálculo inicial de las flechas (en inicializarNavPestanas, al cargar
+  // la página) ocurre con el nav todavía oculto detrás de auth-section —
+  // en ese momento su ancho es 0, así que el cálculo sale mal y se queda
+  // "pegado" así el resto de la sesión. Se repite aquí, apenas el nav
+  // pasa a visible, para que arranque con el estado correcto.
+  actualizarFlechasNav();
+  document.getElementById('status').innerText = 'Verificando base de datos en Google Drive...';
+  await cargarDatosIniciales();
+}
+
+function handleAuthClick() {
   tokenClient.callback = async (resp) => {
-    if (resp.error) throw (resp);
-
-    btnLogin.disabled = true;
-    btnLogin.textContent = 'Verificando acceso...';
-
-    const email = await obtenerCorreoUsuario();
-    const autorizado = await verificarAccesoUsuario(email);
-
-    if (autorizado === null) {
-      mostrarDialogo({
-        titulo: 'No se pudo verificar',
-        mensaje: 'No pudimos confirmar tu acceso por un problema de conexión. Intenta iniciar sesión de nuevo en unos segundos.'
-      });
-      gapi.client.setToken(null);
-      btnLogin.disabled = false;
-      btnLogin.textContent = 'Iniciar Sesión con Google';
-      return;
+    if (resp.error) {
+      actualizarBotonLogin('Iniciar Sesión con Google', false);
+      throw (resp);
     }
-
-    if (!autorizado) {
-      mostrarDialogo({
-        titulo: 'Sin autorización',
-        mensaje: 'Sin autorización, por favor contactar a Kitsotaro para acceso.'
-      });
-      gapi.client.setToken(null); // limpia el token de esta sesión — no queda "medio conectado"
-      btnLogin.disabled = false;
-      btnLogin.textContent = 'Iniciar Sesión con Google';
-      return;
-    }
-
-    document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    // El cálculo inicial de las flechas (en inicializarNavPestanas, al cargar
-    // la página) ocurre con el nav todavía oculto detrás de auth-section —
-    // en ese momento su ancho es 0, así que el cálculo sale mal y se queda
-    // "pegado" así el resto de la sesión. Se repite aquí, apenas el nav
-    // pasa a visible, para que arranque con el estado correcto.
-    actualizarFlechasNav();
-    document.getElementById('status').innerText = 'Verificando base de datos en Google Drive...';
-    await cargarDatosIniciales();
+    guardarTokenCache(resp);
+    await procesarSesion();
   };
 
-  if (gapi.client.getToken() === null) {
-    tokenClient.requestAccessToken({prompt: 'consent'});
-  } else {
-    tokenClient.requestAccessToken({prompt: ''});
-  }
+  // Prompt vacío: Google solo muestra la pantalla de consentimiento la
+  // PRIMERA vez que esta cuenta autoriza la app; en visitas posteriores
+  // devuelve el token en silencio, sin popup y sin que cuente como un
+  // "nuevo acceso" para Google (antes esto forzaba 'consent' en cada
+  // clic, porque gapi.client.getToken() vuelve a null en cada recarga —
+  // por eso llegaba un correo de seguridad de Google cada vez).
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 // NAVEGACIÓN ENTRE PESTAÑAS
