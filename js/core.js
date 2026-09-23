@@ -134,13 +134,24 @@ async function obtenerCorreoUsuario() {
 // cambiá el "return false" del catch por "return true".
 async function verificarAccesoUsuario(email) {
   if (!email) return false;
-  try {
+
+  const consultar = async () => {
     const resp = await fetch(`${URL_VERIFICACION_ACCESO}?email=${encodeURIComponent(email)}`);
     const data = await resp.json();
     return data.autorizado === true;
+  };
+
+  try {
+    return await consultar();
   } catch (err) {
-    console.warn('No se pudo verificar el acceso:', err);
-    return false;
+    console.warn('No se pudo verificar el acceso, reintentando...', err);
+    await new Promise((r) => setTimeout(r, 500)); // pausa corta antes de reintentar
+    try {
+      return await consultar();
+    } catch (err2) {
+      console.warn('No se pudo verificar el acceso tras reintentar:', err2);
+      return null; // recién acá se da por vencido — handleAuthClick lo distingue de "no autorizado"
+    }
   }
 }
 
@@ -155,6 +166,17 @@ function handleAuthClick() {
 
     const email = await obtenerCorreoUsuario();
     const autorizado = await verificarAccesoUsuario(email);
+
+    if (autorizado === null) {
+      mostrarDialogo({
+        titulo: 'No se pudo verificar',
+        mensaje: 'No pudimos confirmar tu acceso por un problema de conexión. Intenta iniciar sesión de nuevo en unos segundos.'
+      });
+      gapi.client.setToken(null);
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Iniciar Sesión con Google';
+      return;
+    }
 
     if (!autorizado) {
       mostrarDialogo({
@@ -285,6 +307,79 @@ async function mostrarDocumento(event, archivo, titulo) {
 function cerrarModalDocumento() {
   document.getElementById('modal-documento').classList.add('hidden');
 }
+
+// ACORDEÓN DE FAQ (pantalla de login) — mismo patrón que toggleInfoTip: una
+// clase 'hidden' que se agrega/quita, sin librerías externas.
+function toggleFAQ(boton) {
+  const item = boton.closest('.faq-item');
+  const respuesta = item.querySelector('.faq-answer');
+  const icono = boton.querySelector('.faq-icon');
+  const abierta = !respuesta.classList.contains('hidden');
+
+  respuesta.classList.toggle('hidden');
+  icono.textContent = abierta ? '+' : '−';
+}
+
+// ===== CARRUSEL SEMI-AUTOMÁTICO DE FUNCIONES (pantalla de login) =====
+// Avanza solo cada 3s; el usuario puede deslizar (swipe) o tocar los puntos
+// para moverse a mano — cualquier interacción manual reinicia el timer.
+// Es un carrusel de "salto" simple (sin arrastre en vivo siguiendo el dedo,
+// sin animación continua en el punto donde da la vuelta) — a propósito,
+// para que sea fácil de mantener con conocimientos básicos.
+let carruselIndiceActual = 0;
+let carruselTimer = null;
+let carruselPausaTimer = null;
+let carruselTotalSlides = 0;
+const AUTOAVANCE_INTERVALO = 3000;          // cada cuánto avanza sola, sin interacción
+const AUTOAVANCE_PAUSA_TRAS_MANUAL = 20000; // pausa antes de retomar, tras swipe o clic en un punto
+
+function inicializarCarruselFunciones() {
+  const track = document.getElementById('features-track');
+  if (!track) return; // por si esta pantalla no está presente
+  carruselTotalSlides = track.children.length;
+  iniciarAutoAvanceCarrusel();
+
+  let touchStartX = 0;
+  track.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  track.addEventListener('touchend', (e) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    const UMBRAL = 40; // píxeles mínimos para contar como swipe intencional
+    if (Math.abs(deltaX) < UMBRAL) return;
+    irADiapositiva(carruselIndiceActual + (deltaX < 0 ? 1 : -1));
+    reiniciarAutoAvanceCarrusel();
+  }, { passive: true });
+}
+
+function irADiapositiva(indice) {
+  // Módulo "seguro" para números negativos (JS no lo resuelve solo con %)
+  carruselIndiceActual = ((indice % carruselTotalSlides) + carruselTotalSlides) % carruselTotalSlides;
+  document.getElementById('features-track').style.transform =
+    `translateX(-${carruselIndiceActual * 100}%)`;
+
+  document.querySelectorAll('.auth-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === carruselIndiceActual);
+  });
+}
+
+function irADiapositivaManual(indice) {
+  irADiapositiva(indice);
+  reiniciarAutoAvanceCarrusel();
+}
+
+function iniciarAutoAvanceCarrusel() {
+  carruselTimer = setInterval(() => irADiapositiva(carruselIndiceActual + 1), AUTOAVANCE_INTERVALO);
+}
+
+function reiniciarAutoAvanceCarrusel() {
+  clearInterval(carruselTimer);
+  clearTimeout(carruselPausaTimer);
+  carruselPausaTimer = setTimeout(iniciarAutoAvanceCarrusel, AUTOAVANCE_PAUSA_TRAS_MANUAL);
+}
+
+window.addEventListener('DOMContentLoaded', inicializarCarruselFunciones);
 
 // TOOLTIPS INFORMATIVOS (ⓘ) — funcionan con tap (móvil) y hover (desktop)
 function toggleInfoTip(el, texto) {

@@ -28,13 +28,16 @@ function alternarTema() {
 }
 
 function actualizarBotonTema(tema) {
-  const btn = document.getElementById('btn-toggle-tema');
-  if (!btn) return;
-  // El ícono muestra el modo AL QUE CAMBIARÍAS si tocas el botón — sin texto
-  // porque ahora vive junto a la franja de estado, no en su propia fila.
+  const botones = document.querySelectorAll('.btn-icon-tema');
+  if (!botones.length) return;
+  // Hay dos copias del botón (nav de la app y footer del login) — ambas
+  // deben quedar sincronizadas.
   const vaA = tema === 'oscuro' ? 'claro' : 'oscuro';
-  btn.textContent = tema === 'oscuro' ? '☀️' : '🌙';
-  btn.setAttribute('aria-label', `Cambiar a modo ${vaA}`);
+  const icono = tema === 'oscuro' ? '☀️' : '🌙';
+  botones.forEach((btn) => {
+    btn.textContent = icono;
+    btn.setAttribute('aria-label', `Cambiar a modo ${vaA}`);
+  });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
