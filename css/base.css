@@ -751,16 +751,45 @@ input::placeholder {
   background: var(--hover-overlay);
 }
 
-/* Footer con links a Privacy/Terms en la pantalla de login — pedido por
-   Google para la verificación de la app en producción (necesita ver el
-   propósito de la app y los links legales antes del botón de Google). */
-.auth-footer {
-  margin-top: 14px;
+.auth-footer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.auth-copyright {
   text-align: center;
   font-size: 0.72rem;
+  margin: 0;
+}
+
+/* Footer con links a Privacy/Terms — pedido por Google para la verificación
+   (necesita ver el propósito y los links legales antes del botón de login).
+   position:relative + el ícono en position:absolute lo saca del centrado:
+   así los links quedan centrados de verdad, y el ícono va a la esquina,
+   alineado con el borde derecho de las cards de arriba. */
+.auth-footer {
+  position: relative;
+  margin-top: 14px;
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 14px;
+  font-size: 0.72rem;
+}
+
+.auth-footer .btn-icon-tema {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  height: auto;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  padding: 0;
 }
 
 .auth-footer a {
@@ -770,6 +799,187 @@ input::placeholder {
 
 .auth-footer a:hover {
   color: var(--text);
+}
+
+/* ===== LANDING / LOGIN (auth-section) — varias secciones de ancho
+   completo, mismo gap que .app-container entre ellas ===== */
+#auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Header sin card, sticky para que el login quede siempre a la vista. */
+.auth-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 2px;
+  background: var(--bg);
+}
+
+.auth-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-logo {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.auth-brand-name {
+  font-weight: bold;
+  color: var(--text);
+}
+
+/* Ya no es el elemento dominante (antes .btn-primary, ancho completo);
+   ahora vive en el header, tamaño de botón secundario. */
+.btn-login-auth {
+  width: auto;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent-green-activo);
+  color: white;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Hero: tampoco lleva estilo de card. */
+.auth-hero {
+  text-align: center;
+  padding: 4px 4px 0;
+}
+
+.auth-hero h1 {
+  margin: 0 0 6px 0;
+  font-size: 1.25rem;
+  color: var(--text);
+}
+
+.auth-block-title {
+  margin: 0 0 12px 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+/* ===== CARRUSEL de funciones — sub-tarjeta a la vez, transform+transition,
+   índice movido por swipe/puntos/timer (core.js) ===== */
+.auth-carousel {
+  overflow: hidden;
+}
+
+.auth-carousel-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+
+.auth-carousel-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 130px; /* evita que la card "salte" de alto entre funciones */
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.auth-feature-icon {
+  font-size: 1.4rem;
+}
+
+.auth-carousel-slide h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.auth-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.auth-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card-border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-dot.active {
+  background: var(--accent-green-activo);
+}
+
+.auth-features-note {
+  margin: 14px 0 0 0;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ===== FAQ — acordeón simple (clase 'hidden' vía JS), mismo patrón que
+   los tooltips (ⓘ) ===== */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 8px;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.faq-icon {
+  flex-shrink: 0;
+  color: var(--subtext);
+}
+
+.faq-answer {
+  margin-top: 6px;
+}
+
+.faq-answer p {
+  margin: 0;
+  color: var(--subtext);
+  font-size: 0.85rem;
 }
 
 /* ===== MODAL (faltaba por completo: sin esto, el editor no se comporta como modal) ===== */
@@ -866,3 +1076,28 @@ input::placeholder {
 .product-item.proy-critico { border-left-color: var(--accent-red); }
 .product-item.proy-medio { border-left-color: var(--accent-yellow); }
 .product-item.proy-bueno { border-left-color: var(--accent-green); }
+
+.frase-destacada {
+  font-weight: 650; /* menos pesada que el h3 (700), pero más que el texto normal */
+}
+.auth-carousel-slide p {
+  margin: 0;
+}
+.faq-answer a {
+  color: var(--accent-blue);
+  font-weight: 600;
+  text-decoration: underline;
+}
+/* Mismo color aunque ya se hayan visitado (FAQ y modal de documento). */
+.faq-answer a:visited {
+  color: var(--accent-blue);
+}
+#modal-documento-contenido a {
+  color: var(--accent-blue);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+#modal-documento-contenido a:visited {
+  color: var(--accent-blue);
+}
