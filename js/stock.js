@@ -195,8 +195,8 @@ function renderizarListaStock() {
     div.className = `product-item ${semaforoClase}`;
       div.innerHTML = `
       <div class="prod-info">
-        <span class="prod-title">${escaparHTML(p.marca)} ${escaparHTML(p.linea)} ${escaparHTML(p.volumen)} ${escaparHTML(p.variante)}</span>
-        <span class="prod-sub">SKU: ${escaparHTML(p.sku)} | Stock: <strong>${p.stock} ${escaparHTML(p.magnitud)}</strong></span>
+        <span class="prod-title">${escaparHTML(p.marca)} ${escaparHTML(p.linea)} ${escaparHTML(p.volumen)} ${escaparHTML(p.magnitud)} ${escaparHTML(p.variante)}</span>
+        <span class="prod-sub">SKU: ${escaparHTML(p.sku)} | Stock: <strong>${p.stock}</strong></span>
         <span class="prod-sub">Dist: $${p.pDist.toFixed(5)} | Cons: $${p.pCons.toFixed(2)} | Bod: $${valorBodega.toFixed(2)}</span>
         <span class="prod-badge">${semaforoTexto} (${p.estado})</span>
       </div>

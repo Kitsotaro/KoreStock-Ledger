@@ -168,6 +168,46 @@ h2, h3 {
   justify-content: center;
 }
 
+/* CINTA DE ACCIONES DEL NAV — mismo lenguaje visual que .segmented-control
+   (píldora con fondo e borde), pero para 2 botones de ACCIÓN (tema, salir)
+   en vez de un estado seleccionable como Entrada/Venta. */
+.cinta-nav-acciones {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 2px;
+  background: var(--input-bg);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+
+.cinta-nav-acciones .cinta-icon-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.cinta-nav-acciones .cinta-icon-btn:hover {
+  background: var(--hover-overlay);
+}
+
+.cinta-divisor {
+  width: 1px;
+  align-self: stretch;
+  background: var(--card-border);
+}
+
 .segmented-control {
   display: flex;
   background: var(--input-bg);
@@ -249,6 +289,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* v2.3: el control nativo de fecha ya trae su propio ícono y separadores
+   — no necesita el mismo padding/tamaño que un input de texto normal.
+   Una sola regla, aplica a TODOS los campos de fecha de la app (Desde,
+   Hasta, Fecha Movimiento, etc.) sin tocar cada uno por separado. */
+input[type="date"] {
+  padding: 8px 6px;
+  font-size: 0.85rem;
+}
+
 input::placeholder {
   color: #64748b;
   opacity: 1;
@@ -287,6 +336,19 @@ input::placeholder {
    se pierden por completo. */
 .price-section-container input {
   background: var(--card);
+}
+
+/* Se activa cuando estás CAMBIANDO el precio de un producto que YA
+   existía (reabasteciendo con un costo distinto) — mismo naranja que usa
+   el resto de la app para "esto va a crear/tocar algo delicado". No
+   aplica a "+ Agregar producto nuevo": ahí el precio siempre es nuevo. */
+.price-section-container.precio-modificado {
+  border-color: var(--accent-orange);
+  border-style: solid;
+}
+
+.price-section-container.precio-modificado .price-title {
+  color: var(--accent-orange);
 }
 
 .btn-primary {
@@ -465,6 +527,23 @@ input::placeholder {
   padding: 2px 6px;
   border-radius: 6px;
   white-space: nowrap;
+}
+
+
+.badge-bonificacion {
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: var(--accent-green-activo);
+  border: 1px solid var(--accent-green-activo);
+  padding: 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.mov-monto-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .prod-info { display: flex; flex-direction: column; }

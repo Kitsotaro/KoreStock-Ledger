@@ -118,6 +118,7 @@ async function renderizarVentasHoy() {
       // 17 UTILIDAD_NETA, 19 ESTADO_MOV.
       const estaAnulada = (r[19] || '') === 'ANULADA';
       const cantidad = Math.abs(parsearNumero(r[10]));
+      const bonif = Math.abs(parsearNumero(r[11])); // siempre 0 en una fila de VENTA
       let valorMostrado;
 
       // Los movimientos ANULADOS siguen visibles (esto es un Ledger de
@@ -129,13 +130,11 @@ async function renderizarVentasHoy() {
         valorMostrado = `$${vta.toFixed(2)}`;
       } else {
         const inv = parsearNumero(r[14]);
-        const bonif = Math.abs(parsearNumero(r[11]));
         // v2.2: "Unidades Ingresadas" refleja lo que físicamente entró a
         // bodega (cantidad + bonificación), no solo lo que se pagó.
         if (!estaAnulada) { total1 += inv; total2 += cantidad + bonif; }
         valorMostrado = `$${inv.toFixed(2)}`;
       }
-
       const presentacion = r[7] || '';
       const sku = r[4] || '';
       const variante = r[9] || '';
@@ -162,6 +161,11 @@ async function renderizarVentasHoy() {
         ? `<span class="badge-anulada">ANULADA</span>`
         : `<button type="button" class="btn-secondary-sm" data-accion="anular">🗑️ Anular</button>`;
 
+      // v2.3: etiqueta chica que avisa que esta Entrada trae bonificación
+      // (unidades gratis) además de lo comprado. Solo aplica a Entradas —
+      // bonif siempre es 0 en una Venta, así que ahí nunca aparece.
+      const badgeBonifHtml = bonif > 0 ? `<span class="badge-bonificacion">+Bonif.</span>` : '';
+
       // SEGURIDAD: MARCA/LINEA/VOLUMEN/PRESENTACION son texto libre del
       // catálogo (van con innerHTML) — pasan por escaparHTML(). El folio
       // (r[0]) lo genera el propio código, no hace falta escaparlo.
@@ -171,7 +175,10 @@ async function renderizarVentasHoy() {
           <span class="prod-sub"><strong>Folio: ${r[0]} | ${escaparHTML(presentacion)} | Cant: ${cantidad}</strong> <span class="info-icon">ⓘ</span></span>
         </div>
         <div class="mov-acciones">
-          <strong>${valorMostrado}</strong>
+          <div class="mov-monto-row">
+            ${badgeBonifHtml}
+            <strong>${valorMostrado}</strong>
+          </div>
           ${accionHtml}
         </div>
       `;

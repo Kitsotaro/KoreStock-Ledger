@@ -153,7 +153,11 @@
         </nav>
         <span id="nav-flecha-der" class="nav-flecha nav-flecha-der hidden" onclick="desplazarNav('der')">›</span>
       </div>
-      <button type="button" id="btn-toggle-tema" class="btn-icon-tema" onclick="alternarTema()" aria-label="Cambiar tema">☀️</button>
+      <div class="cinta-nav-acciones">
+        <button type="button" id="btn-toggle-tema" class="btn-icon-tema cinta-icon-btn" onclick="alternarTema()" aria-label="Cambiar tema">☀️</button>
+        <span class="cinta-divisor"></span>
+        <button type="button" id="btn-cerrar-sesion" class="cinta-icon-btn" onclick="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">🚪</button>
+      </div>
     </div>
 
     <!-- FRANJA DE ESTADO -->
@@ -207,7 +211,7 @@
             </div>
             <div class="form-group" style="flex: 1;">
               <label>Cantidad</label>
-              <input type="number" step="any" id="mov-cantidad-in" placeholder="Ej: 10" required />
+                  <input type="number" step="any" id="mov-cantidad-in" placeholder="Ej: 10" />
             </div>
           </div>
 
@@ -242,7 +246,7 @@
               <span id="hint-presentacion" class="hint-nuevo-valor hidden">Nuevo valor</span>
             </div>
             <div class="form-group autocomplete-wrapper">
-              <label>Contenido / Vol. <span class="info-icon" onclick="toggleInfoTip(this, 'Medida, peso o volumen neto de cada unidad (ej. 1.5 Lts, 355 ml, 500g).')">ⓘ</span></label>
+              <label>Cant. / Vol. <span class="info-icon" onclick="toggleInfoTip(this, 'Medida, peso o volumen neto de cada unidad (ej. 1.5 Lts, 355 ml, 500g).')">ⓘ</span></label>
               <input type="text" id="prod-volumen" placeholder="Ej: 1.5 Lts, 600g" autocomplete="off" required />
               <div id="ac-volumen" class="autocomplete-dropdown hidden"></div>
               <span id="hint-volumen" class="hint-nuevo-valor hidden">Nuevo valor</span>
@@ -264,7 +268,7 @@
           </div>
 
           <!-- Fila Precios -->
-          <div class="price-section-container">
+          <div class="price-section-container" id="caja-tarifas">
             <h3 class="price-title">💰 Tarifas y Precios de Operación</h3>
             <div class="form-row">
               <div class="form-group" id="group-precio-distribuidor">
@@ -320,7 +324,7 @@
               <input type="text" id="venta-prod-variante" class="input-disabled" readonly tabindex="-1" placeholder="--" />
             </div>
             <div class="form-group">
-              <label>Cont. / Vol.</label>
+              <label>Cant. / Vol.</label>
               <input type="text" id="venta-prod-volumen" class="input-disabled" readonly tabindex="-1" placeholder="--" />
             </div>
           </div>
@@ -348,8 +352,8 @@
       <div class="metrics-grid">
         <div class="card metric-card accent-blue" style="flex: 2;">
           <div class="metric-tabs">
-            <button type="button" class="metric-tab-btn active" id="btn-vb-total" onclick="cambiarVistaValorBodega('TOTAL')">Valor Total</button>
-            <button type="button" class="metric-tab-btn" id="btn-vb-invertido" onclick="cambiarVistaValorBodega('INVERTIDO')">Invertido</button>
+            <button type="button" class="metric-tab-btn active" id="btn-vb-total" onclick="cambiarVistaValorBodega('TOTAL')">Bruto</button>
+            <button type="button" class="metric-tab-btn" id="btn-vb-invertido" onclick="cambiarVistaValorBodega('INVERTIDO')">Neto</button>
             <span class="info-icon" id="valor-bodega-info-icon" onclick="mostrarInfoValorBodega(this)">ⓘ</span>
           </div>
           <span class="metric-value metric-value-lg" id="metric-valor-bodega">$0.00</span>
@@ -790,7 +794,7 @@
         <input type="text" id="modal-presentacion">
       </div>
       <div class="form-group">
-        <label>Contenido / Vol.</label>
+        <label>Cant. / Vol.</label>
         <input type="text" id="modal-volumen">
       </div>
     </div>

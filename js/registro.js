@@ -38,6 +38,33 @@ function actualizarPreviaGanancia() {
   document.getElementById('profit-unit-label').textContent = tipoEmp || 'Unidad';
   document.getElementById('profit-ganancia').textContent = `$${ganancia.toFixed(2)}`;
   document.getElementById('profit-margen').textContent = `${margenPct.toFixed(1)}%`;
+
+  actualizarAvisoCambioPrecio();
+}
+
+// AVISO VISUAL (v2.3): si se está reabasteciendo un producto YA EXISTENTE
+// y se toca su precio, la caja de Tarifas se pone naranja — se llama desde
+// actualizarPreviaGanancia() porque esa ya corre en TODOS los momentos que
+// nos importan (al escribir un precio, y al elegir/limpiar un producto).
+function actualizarAvisoCambioPrecio() {
+  const caja = document.getElementById('caja-tarifas');
+  if (!caja) return;
+
+  const esProductoExistente = productoEntradaSeleccionado && productoEntradaSeleccionado !== 'NUEVO';
+  if (!esProductoExistente) {
+    caja.classList.remove('precio-modificado');
+    return;
+  }
+
+  const pDist = parseFloat(document.getElementById('precio-distribuidor').value) || 0;
+  const pCons = parseFloat(document.getElementById('precio-consumidor').value) || 0;
+  // Mismo criterio que al guardar: un campo en 0/vacío significa
+  // "no tocar ese precio", no "bajarlo a 0".
+  const pDistResuelto = pDist || productoEntradaSeleccionado.pDist;
+  const pConsResuelto = pCons || productoEntradaSeleccionado.pCons;
+
+  const hayCambio = pDistResuelto !== productoEntradaSeleccionado.pDist || pConsResuelto !== productoEntradaSeleccionado.pCons;
+  caja.classList.toggle('precio-modificado', hayCambio);
 }
 
 // VALIDACIÓN DE STOCK DISPONIBLE EN VENTA
@@ -574,36 +601,53 @@ async function guardarMovimiento(event) {
 
   // SEGURIDAD (v2.1): si ya hay un guardado en curso, ignora este envío.
   // Cierra la puerta a doble clic o Enter repetido mientras la petición a
-  // Sheets todavía está en camino.
+  // Sheets todavía está en camino (o mientras se espera la confirmación
+  // del diálogo de "Cambio de precio").
   if (guardandoMovimiento) return;
   guardandoMovimiento = true;
 
   const btn = (tipoMovimiento === 'ENTRADA') ? document.getElementById('btn-save-in') : document.getElementById('btn-save-out');
   btn.disabled = true;
 
-  try {
-    document.getElementById('status').innerText = 'Guardando registro...';
+  // Suelta el candado sin guardar nada — se usa en cada salida temprana
+  // (validación fallida o el usuario cancela el diálogo de precio).
+  const cancelar = (mensaje) => {
+    if (mensaje) document.getElementById('status').innerText = mensaje;
+    btn.disabled = false;
+    guardandoMovimiento = false;
+  };
 
+  try {
     const transId = document.getElementById('trans-id').value;
     const timestampLog = obtenerTimestampLocal();
     const fechaMov = document.getElementById('fecha-mov').value;
 
     let marca, linea, magnitud, volumen, variante, pDist, pCons, sku, rawCantidad, bonif, tipoEmpaque;
+    // v2.3: datos para el aviso de "Cambio de precio" (solo aplica a
+    // ENTRADA sobre un producto YA EXISTENTE).
+    let cambioPrecio = false, pDistAnterior, pConsAnterior, pDistMostrado, pConsMostrado;
 
     if (tipoMovimiento === 'ENTRADA') {
       if (!productoEntradaSeleccionado) {
         mostrarDialogo({ titulo: 'Falta el producto', mensaje: 'Busca un producto existente o elige "+ Agregar producto nuevo" antes de guardar.' });
-        return;
+        return cancelar();
       }
 
-      rawCantidad = parseFloat(document.getElementById('mov-cantidad-in').value);
-      // SEGURIDAD (v2.1): cantidad debe ser un número real y mayor a 0 —
-      // cierra el hueco por el que se colaban movimientos en $0.
-      if (!Number.isFinite(rawCantidad) || rawCantidad <= 0) {
-        mostrarDialogo({ titulo: 'Cantidad inválida', mensaje: 'La cantidad debe ser un número mayor a 0.' });
-        return;
-      }
+      rawCantidad = parseFloat(document.getElementById('mov-cantidad-in').value) || 0;
       bonif = parseFloat(document.getElementById('mov-bonificacion').value) || 0;
+
+      // SEGURIDAD (v2.3): ninguna de las dos puede ser negativa, y entre
+      // las dos debe haber ALGO mayor a 0 — así una bonificación sola
+      // (sin cajas compradas) sigue siendo un movimiento válido, pero
+      // dejar todo en 0 sigue bloqueado.
+      if (rawCantidad < 0 || bonif < 0) {
+        mostrarDialogo({ titulo: 'Cantidad inválida', mensaje: 'La cantidad y la bonificación no pueden ser negativas.' });
+        return cancelar();
+      }
+      if (rawCantidad === 0 && bonif === 0) {
+        mostrarDialogo({ titulo: 'Cantidad inválida', mensaje: 'Ingresa una cantidad o una bonificación mayor a 0.' });
+        return cancelar();
+      }
       pDist = parseFloat(document.getElementById('precio-distribuidor').value) || 0;
       pCons = parseFloat(document.getElementById('precio-consumidor').value) || 0;
 
@@ -623,24 +667,34 @@ async function guardarMovimiento(event) {
         variante = productoEntradaSeleccionado.variante;
         tipoEmpaque = productoEntradaSeleccionado.tipoEmpaque || '';
         sku = productoEntradaSeleccionado.sku;
+
+        // v2.3: mismo cálculo que ya hacía este archivo más abajo al
+        // guardar — se adelanta aquí SOLO para decidir si hace falta
+        // pedir confirmación. La resolución real (qué precio queda) la
+        // sigue haciendo ejecutarGuardadoMovimiento(), sin cambios.
+        pDistAnterior = productoEntradaSeleccionado.pDist;
+        pConsAnterior = productoEntradaSeleccionado.pCons;
+        pDistMostrado = pDist || pDistAnterior;
+        pConsMostrado = pCons || pConsAnterior;
+        cambioPrecio = (pDistMostrado !== pDistAnterior) || (pConsMostrado !== pConsAnterior);
       }
     } else {
       if (!productoVentaSeleccionado) {
         mostrarDialogo({ titulo: 'Falta el producto', mensaje: 'Debes seleccionar un producto válido antes de guardar la venta.' });
-        return;
+        return cancelar();
       }
       rawCantidad = parseFloat(document.getElementById('mov-cantidad-out').value);
       // SEGURIDAD (v2.1): mismo candado que en Entrada.
       if (!Number.isFinite(rawCantidad) || rawCantidad <= 0) {
         mostrarDialogo({ titulo: 'Cantidad inválida', mensaje: 'La cantidad debe ser un número mayor a 0.' });
-        return;
+        return cancelar();
       }
       if (rawCantidad > productoVentaSeleccionado.stock) {
         mostrarDialogo({
           titulo: 'Stock insuficiente',
           mensaje: `Disponible: ${productoVentaSeleccionado.stock} ${productoVentaSeleccionado.tipoEmpaque || ''}.`.trim()
         });
-        return;
+        return cancelar();
       }
       marca = productoVentaSeleccionado.marca;
       linea = productoVentaSeleccionado.linea;
@@ -653,6 +707,40 @@ async function guardarMovimiento(event) {
       pCons = productoVentaSeleccionado.pCons;
       sku = productoVentaSeleccionado.sku;
     }
+
+    const datos = { transId, timestampLog, fechaMov, marca, linea, magnitud, volumen, variante, pDist, pCons, sku, rawCantidad, bonif, tipoEmpaque, btn };
+
+    // AVISO (v2.3): reabastecer un producto YA EXISTENTE con un precio
+    // distinto actualiza su precio base para TODAS las próximas
+    // operaciones — se confirma antes de escribir nada, igual que al
+    // editar un producto desde Stock.
+    if (cambioPrecio) {
+      mostrarDialogo({
+        titulo: '⚠️ Cambio de precio',
+        mensaje: `Vas a actualizar el precio de ${marca} ${linea}: Distribuidor $${pDistAnterior.toFixed(5)} → $${pDistMostrado.toFixed(5)}, Consumidor $${pConsAnterior.toFixed(2)} → $${pConsMostrado.toFixed(2)}. Esto actualiza el precio base del producto en la Base de Datos para todas las operaciones futuras. ¿Deseas continuar?`,
+        textoConfirmar: 'Sí, actualizar precio',
+        textoCancelar: 'Cancelar',
+        onConfirmar: () => ejecutarGuardadoMovimiento(datos),
+        onCancelar: () => cancelar('Guardado cancelado.')
+      });
+      return;
+    }
+
+    await ejecutarGuardadoMovimiento(datos);
+  } catch (err) {
+    cancelar('Error: ' + err.message);
+  }
+}
+
+// Hace el guardado real (Sheets + catálogo en memoria). Separado de
+// guardarMovimiento() para poder frenar a mitad de camino y esperar la
+// confirmación del diálogo de "Cambio de precio" sin duplicar el candado
+// guardandoMovimiento/btn.disabled en dos lugares distintos.
+async function ejecutarGuardadoMovimiento(datos) {
+  const { transId, timestampLog, fechaMov, marca, linea, magnitud, volumen, variante, pDist, pCons, sku, rawCantidad, bonif, tipoEmpaque, btn } = datos;
+
+  try {
+    document.getElementById('status').innerText = 'Guardando registro...';
 
     const cantidadSigno = (tipoMovimiento === 'VENTA') ? -Math.abs(rawCantidad) : Math.abs(rawCantidad);
     const totalInversion = Math.abs(cantidadSigno) * pDist;

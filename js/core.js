@@ -112,12 +112,31 @@ window.onload = () => { gapiLoaded(); gisLoaded(); };
 // recargar la página, sin volver a pedirle nada a Google.
 const CLAVE_TOKEN_CACHE = 'korestock-token-google';
 
+// v2.3: cuánto tiempo se confía en un "sí, autorizado" ya verificado antes
+// de volver a preguntarle al Apps Script (que puede tardar 15+ segundos en
+// despertar) — bastante menos que la hora de vida del token, para no dejar
+// pasar a alguien a quien se le acaba de quitar el acceso.
+const AUTORIZACION_CACHE_MS = 5 * 60 * 1000; // 5 minutos
+
 function guardarTokenCache(resp) {
   const expira = Date.now() + (resp.expires_in * 1000);
   try {
     localStorage.setItem(CLAVE_TOKEN_CACHE, JSON.stringify({ access_token: resp.access_token, expira }));
   } catch (err) {
     console.warn('No se pudo guardar el token en caché:', err);
+  }
+}
+
+// v2.3: marca que este correo YA pasó la verificación de la lista blanca,
+// con su propio vencimiento corto — ver checkAuthReady().
+function marcarAutorizacionEnCache() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_TOKEN_CACHE));
+    if (!guardado) return;
+    guardado.autorizadoHasta = Date.now() + AUTORIZACION_CACHE_MS;
+    localStorage.setItem(CLAVE_TOKEN_CACHE, JSON.stringify(guardado));
+  } catch (err) {
+    console.warn('No se pudo guardar la verificación en caché:', err);
   }
 }
 
@@ -139,11 +158,17 @@ function checkAuthReady() {
     const cache = leerTokenCache();
     if (cache) {
       gapi.client.setToken({ access_token: cache.access_token });
-      procesarSesion();
+      // v2.3: si ya verificamos este acceso hace poco, nos saltamos la
+      // consulta lenta al Apps Script y entramos directo — esto es lo que
+      // soluciona la demora al recargar varias veces seguidas.
+      if (cache.autorizadoHasta && cache.autorizadoHasta > Date.now()) {
+        entrarAlApp();
+      } else {
+        procesarSesion();
+      }
     }
   }
 }
-
 // Correo de la cuenta ya conectada — about.get funciona con el scope
 // drive.file que ya usa la app (no hace falta pedir un scope nuevo solo
 // para saber quién sos).
@@ -201,6 +226,7 @@ function actualizarBotonLogin(texto, deshabilitado) {
 // Google de nuevo.
 async function procesarSesion() {
   actualizarBotonLogin('Verificando acceso...', true);
+  document.getElementById('status').innerText = 'Verificando acceso... (puede tardar unos segundos)';
 
   const email = await obtenerCorreoUsuario();
   const autorizado = await verificarAccesoUsuario(email);
@@ -227,6 +253,17 @@ async function procesarSesion() {
     return;
   }
 
+  // v2.3: queda registrado que este correo ya pasó la verificación — ver
+  // marcarAutorizacionEnCache() y checkAuthReady().
+  marcarAutorizacionEnCache();
+  await entrarAlApp();
+}
+
+// Muestra la app y carga sus datos — es la última mitad de lo que antes
+// hacía procesarSesion(), separada aparte para poder llamarla directo
+// cuando checkAuthReady() decide saltarse la verificación (ya se hizo
+// hace poco — ver AUTORIZACION_CACHE_MS).
+async function entrarAlApp() {
   document.getElementById('auth-section').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   // El cálculo inicial de las flechas (en inicializarNavPestanas, al cargar
@@ -249,13 +286,27 @@ function handleAuthClick() {
     await procesarSesion();
   };
 
-  // Prompt vacío: Google solo muestra la pantalla de consentimiento la
-  // PRIMERA vez que esta cuenta autoriza la app; en visitas posteriores
-  // devuelve el token en silencio, sin popup y sin que cuente como un
-  // "nuevo acceso" para Google (antes esto forzaba 'consent' en cada
-  // clic, porque gapi.client.getToken() vuelve a null en cada recarga —
-  // por eso llegaba un correo de seguridad de Google cada vez).
-  tokenClient.requestAccessToken({ prompt: '' });
+  // 'select_account': Google muestra la lista de cuentas para elegir.
+  // NO vuelve a pedir permisos si esa cuenta ya autorizó la app antes.
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
+}
+
+// CERRAR SESIÓN — solo "olvida" el token en ESTE navegador. NO revoca el
+// permiso en Google: si se revocara, la próxima vez volvería a salir la
+// pantalla de permisos + el correo de seguridad. Recargar deja la app
+// limpia (sin datos de la cuenta anterior en memoria) y, como ya no hay
+// token en caché, muestra el login.
+function cerrarSesion() {
+  mostrarDialogo({
+    titulo: '¿Cerrar sesión?',
+    mensaje: 'Volverás a la pantalla de inicio. Al entrar de nuevo podrás elegir cualquier cuenta de Google.',
+    textoConfirmar: 'Sí, cerrar sesión',
+    textoCancelar: 'Cancelar',
+    onConfirmar: () => {
+      borrarTokenCache();
+      location.reload();
+    }
+  });
 }
 
 // NAVEGACIÓN ENTRE PESTAÑAS
