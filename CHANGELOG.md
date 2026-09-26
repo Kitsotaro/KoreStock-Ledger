@@ -1,5 +1,27 @@
 # Changelog — KoreStock Ledger
 
+## v2.3 — 2026-09-26
+
+### 🔐 Login y sesión
+- Nuevo botón "🚪 Cerrar sesión" (agrupado junto al de tema en una sola cinta) — permite salir y elegir otra cuenta de Google sin perder el autologin normal al recargar.
+- El botón "Iniciar Sesión" ahora abre el selector de cuentas de Google (antes reutilizaba en silencio la última cuenta usada).
+- Verificación de acceso más rápida en recargas seguidas: un acceso ya verificado se recuerda por 5 minutos antes de volver a consultar la lista blanca — evita la espera de 15+ segundos del Apps Script en cada recarga de la página.
+- Mensaje de estado más claro mientras se verifica el acceso.
+
+### 🎨 Diseño
+- Tema y Cerrar Sesión ahora comparten una sola "cinta" de acciones en el nav, en vez de dos botones sueltos.
+- Campos de fecha más compactos en toda la app.
+
+### ➕ Registrar
+- La Cantidad Bonificada ya no depende de ingresar Cantidad — se puede registrar una bonificación sola, sin cajas/unidades compradas.
+- Cambiar el precio de un producto ya existente al reabastecerlo resalta ahora la caja de Tarifas en naranja y pide confirmación explícita antes de guardar (actualiza el precio base del producto para todas las operaciones futuras).
+
+### 📊 Dashboard
+- Las Entradas con bonificación muestran una etiqueta "+Bonif." junto al monto.
+
+### 📦 Stock
+- La Presentación (Botella, Lata, Caja, etc.) se movió al título del producto, justo después de Contenido/Volumen.
+
 ## v2.2 — 2026-09-23
 
 ### 🔐 Login y verificación de acceso
