@@ -1,0 +1,6 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * ICONO — sprite SVG único (assets/iconos.svg), trazo en currentColor: sigue al tema (D42, §24.2). */
+.icono { width: var(--icono); height: var(--icono); flex-shrink: 0; color: currentColor; }
+.icono-sm { width: var(--icono-sm); height: var(--icono-sm); }
+.icono-lg { width: 2rem; height: 2rem; }
+.icono-xl { width: 3rem; height: 3rem; }

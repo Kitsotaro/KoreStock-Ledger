@@ -1,0 +1,40 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * BOTON — acción principal, secundaria, de texto y de ícono. Alto táctil ≥ 44 px. */
+.boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--e-2);
+  min-height: var(--alto-control); padding: 0 var(--e-5);
+  border: 1.5px solid transparent; border-radius: var(--r-sm);
+  background: var(--superficie-3); color: var(--texto);
+  font-size: var(--t-md); font-weight: var(--peso-fuerte); line-height: 1.2; text-decoration: none;
+  transition: transform var(--dur-rapida) var(--curva), opacity var(--dur-rapida);
+  user-select: none; -webkit-user-select: none;
+}
+.boton:active:not(:disabled) { transform: scale(0.98); }
+.boton:disabled, .boton[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.boton-primario { background: var(--primario); color: var(--sobre-primario); }
+.boton-entrada { background: var(--entrada); color: var(--sobre-entrada); }
+.boton-venta { background: var(--venta); color: var(--sobre-venta); }
+.boton-peligro { background: var(--peligro); color: #fff; }
+:root[data-tema="oscuro"] .boton-peligro { color: #3D0A06; }
+.boton-secundario { background: transparent; border-color: var(--borde-fuerte); color: var(--texto); }
+.boton-texto { background: transparent; color: var(--primario); padding: 0 var(--e-3); }
+.boton-texto.peligro { color: var(--peligro); }
+.boton-bloque { width: 100%; }
+.boton-grande { min-height: 3.5rem; font-size: var(--t-lg); border-radius: var(--r-md); }
+.boton-sm { min-height: var(--alto-control-sm); padding: 0 var(--e-3); font-size: var(--t-sm); border-radius: var(--r-xs); }
+.boton-icono {
+  width: var(--alto-control); min-width: var(--alto-control); padding: 0;
+  background: transparent; color: var(--texto); border-radius: var(--r-sm);
+}
+.boton-icono:hover { background: var(--superficie-2); }
+.boton.cargando { position: relative; color: transparent !important; pointer-events: none; }
+.boton.cargando::after {
+  content: ''; position: absolute; width: 1.2rem; height: 1.2rem; border-radius: 50%;
+  border: 2.5px solid currentColor; border-color: var(--sobre-primario) transparent var(--sobre-primario) transparent;
+  animation: girar 0.8s linear infinite;
+}
+.boton-venta.cargando::after { border-color: var(--sobre-venta) transparent var(--sobre-venta) transparent; }
+.boton-entrada.cargando::after { border-color: var(--sobre-entrada) transparent var(--sobre-entrada) transparent; }
+@keyframes girar { to { transform: rotate(360deg); } }
+.grupo-botones { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+.grupo-botones > .boton { flex: 1 1 auto; }

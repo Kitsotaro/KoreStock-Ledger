@@ -1,0 +1,76 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * SUPERPOSICIONES — panel lateral (sándwich), hoja inferior, diálogo y avisos. */
+.velo { position: fixed; inset: 0; background: var(--velo); opacity: 0; transition: opacity var(--dur-media); pointer-events: none; z-index: var(--z-panel); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+
+/* Panel lateral (§23.1) */
+.panel-lateral {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: calc(var(--z-panel) + 1);
+  width: min(20rem, 86vw); display: flex; flex-direction: column;
+  background: var(--superficie-elevada); box-shadow: var(--sombra-3);
+  padding: calc(env(safe-area-inset-top) + var(--e-3)) var(--e-3) calc(env(safe-area-inset-bottom) + var(--e-3));
+  transform: translateX(-105%); transition: transform var(--dur-lenta) var(--curva); overflow-y: auto;
+}
+.panel-lateral.abierto { transform: translateX(0); }
+.panel-lateral .marca { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-2) var(--e-4); }
+.panel-lateral .marca img { width: 2.25rem; height: 2.25rem; border-radius: var(--r-xs); }
+.panel-lateral .marca strong { display: block; font-size: var(--t-lg); }
+.panel-lateral nav { display: flex; flex-direction: column; gap: 2px; }
+.opcion-panel {
+  display: flex; align-items: center; gap: var(--e-3); width: 100%; min-height: 3rem; padding: 0 var(--e-3);
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--texto); text-align: left; font-weight: var(--peso-medio);
+}
+.opcion-panel:hover, .opcion-panel[aria-current="page"] { background: var(--superficie-2); }
+.opcion-panel .detalle { margin-left: auto; font-size: var(--t-xs); color: var(--texto-3); }
+.panel-lateral .grupo-titulo { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-3); padding: var(--e-4) var(--e-3) var(--e-1); font-weight: var(--peso-fuerte); }
+.panel-lateral .pie { margin-top: auto; padding: var(--e-4) var(--e-3) 0; font-size: var(--t-xs); color: var(--texto-3); }
+
+/* Hoja inferior (filtros, opciones) */
+.hoja-inferior {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-hoja);
+  max-height: 88dvh; display: flex; flex-direction: column;
+  background: var(--superficie-elevada); border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--sombra-3);
+  padding: var(--e-2) var(--e-4) calc(env(safe-area-inset-bottom) + var(--e-4));
+  transform: translateY(105%); transition: transform var(--dur-lenta) var(--curva);
+}
+.hoja-inferior.abierta { transform: translateY(0); }
+.hoja-inferior .asa { width: 2.5rem; height: 4px; border-radius: 4px; background: var(--borde-fuerte); margin: var(--e-1) auto var(--e-3); opacity: 0.6; }
+.hoja-inferior .cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-3); }
+.hoja-inferior .cuerpo { overflow-y: auto; display: grid; gap: var(--e-3); padding-bottom: var(--e-2); }
+.hoja-inferior .acciones { display: flex; gap: var(--e-2); padding-top: var(--e-3); }
+.hoja-inferior .acciones .boton { flex: 1; }
+@media (min-width: 720px) {
+  .hoja-inferior { left: 50%; right: auto; width: 34rem; transform: translate(-50%, 105%); }
+  .hoja-inferior.abierta { transform: translate(-50%, 0); }
+}
+
+/* Diálogo (reemplaza alert/confirm; foco en Cancelar si existe: INVARIANTE 21) */
+.dialogo-fondo { position: fixed; inset: 0; z-index: var(--z-dialogo); display: grid; place-items: center; padding: var(--e-4); background: var(--velo); }
+.dialogo {
+  width: min(26rem, 100%); max-height: 90dvh; overflow-y: auto;
+  background: var(--superficie-elevada); border-radius: var(--r-lg); box-shadow: var(--sombra-3); padding: var(--e-5);
+  display: grid; gap: var(--e-3); animation: aparecer var(--dur-media) var(--curva);
+}
+.dialogo h2 { font-size: var(--t-xl); }
+.dialogo .mensaje { color: var(--texto-2); white-space: pre-line; }
+.dialogo .acciones { display: flex; flex-wrap: wrap-reverse; gap: var(--e-2); justify-content: flex-end; margin-top: var(--e-2); }
+.dialogo .acciones .boton { flex: 1 1 8rem; }
+.dialogo.resumen .total { font-family: var(--fuente-mono); font-size: var(--t-3xl); font-weight: var(--peso-fuerte); }
+@keyframes aparecer { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Avisos breves (toasts) y franjas fijas */
+.avisos { position: fixed; left: 0; right: 0; z-index: var(--z-aviso); display: grid; justify-items: center; gap: var(--e-2); pointer-events: none;
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-3)); padding: 0 var(--e-4); }
+.aviso {
+  pointer-events: auto; display: flex; align-items: center; gap: var(--e-3); max-width: 32rem; width: 100%;
+  padding: var(--e-3) var(--e-4); border-radius: var(--r-sm); background: var(--texto); color: var(--fondo);
+  box-shadow: var(--sombra-2); font-weight: var(--peso-medio); animation: aparecer var(--dur-media) var(--curva);
+}
+.aviso .boton-texto { color: var(--primario-suave); margin-left: auto; }
+.franja {
+  display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-4); font-size: var(--t-sm); font-weight: var(--peso-medio);
+}
+.franja.aviso-color { background: var(--aviso-suave); color: var(--aviso); }
+.franja.info-color { background: var(--info-suave); color: var(--info); }
+.franja.peligro-color { background: var(--peligro-suave); color: var(--peligro); }
+.franja .boton { margin-left: auto; }

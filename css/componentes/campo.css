@@ -1,0 +1,45 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * CAMPO — etiqueta + entrada, con prefijo ($) o sufijo (unidad), ayuda y error.
+ * Los <label> siempre enlazan su campo (for=) para lectores de pantalla. */
+.campo { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }
+.campo > label, .etiqueta-campo { font-size: var(--t-sm); font-weight: var(--peso-medio); color: var(--texto-2); }
+.control {
+  display: flex; align-items: center; gap: var(--e-2);
+  min-height: var(--alto-control); padding: 0 var(--e-3);
+  background: var(--superficie); border: 1.5px solid var(--borde-fuerte); border-radius: var(--r-xs);
+  transition: border-color var(--dur-rapida);
+}
+.control:focus-within { border-color: var(--foco); box-shadow: 0 0 0 3px color-mix(in srgb, var(--foco) 22%, transparent); }
+.control input, .control select, .control textarea {
+  flex: 1 1 auto; min-width: 0; height: 100%; min-height: calc(var(--alto-control) - 3px);
+  border: 0; background: transparent; outline: none; padding: 0;
+}
+.control textarea { padding: var(--e-2) 0; resize: vertical; min-height: 4.5rem; }
+.control select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+.control .prefijo, .control .sufijo { color: var(--texto-3); font-weight: var(--peso-medio); white-space: nowrap; }
+.control input::placeholder, .control textarea::placeholder { color: var(--texto-3); opacity: 1; }
+.control.grande { min-height: 3.75rem; border-radius: var(--r-sm); }
+.control.grande input { font-size: var(--t-3xl); font-weight: var(--peso-fuerte); font-family: var(--fuente-mono); }
+.control.error, .campo.error .control { border-color: var(--peligro); }
+.control.deshabilitado { background: var(--superficie-2); opacity: 0.7; }
+.ayuda-campo { font-size: var(--t-xs); color: var(--texto-3); }
+.error-campo { font-size: var(--t-xs); color: var(--peligro); font-weight: var(--peso-medio); }
+.nuevo-valor { font-size: var(--t-xs); color: var(--aviso); font-style: italic; }
+.rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--e-3); }
+
+/* Casilla e interruptor */
+.casilla { display: flex; align-items: center; gap: var(--e-3); min-height: var(--alto-control-sm); cursor: pointer; }
+.casilla input { width: 1.25rem; height: 1.25rem; accent-color: var(--primario); }
+.interruptor { position: relative; display: inline-flex; align-items: center; gap: var(--e-3); cursor: pointer; min-height: var(--alto-control-sm); }
+.interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.interruptor .riel { width: 2.75rem; height: 1.6rem; border-radius: var(--r-pildora); background: var(--superficie-3); border: 1.5px solid var(--borde-fuerte); position: relative; transition: background var(--dur-rapida); flex-shrink: 0; }
+.interruptor .riel::after { content: ''; position: absolute; top: 2px; left: 2px; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--texto-2); transition: transform var(--dur-media) var(--curva); }
+.interruptor input:checked + .riel { background: var(--primario); border-color: var(--primario); }
+.interruptor input:checked + .riel::after { transform: translateX(1.1rem); background: var(--sobre-primario); }
+.interruptor input:focus-visible + .riel { outline: 2.5px solid var(--foco); outline-offset: 2px; }
+
+/* Frase de cantidad: «Compré [12] [cartón ▾] de [30] [huevos]» (V3 §12.4) */
+.frase { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); font-size: var(--t-lg); line-height: 2; }
+.frase .control { min-height: var(--alto-control-sm); padding: 0 var(--e-2); }
+.frase .control input { width: 4.5rem; text-align: center; font-weight: var(--peso-fuerte); }
+.frase .control.ancho input { width: 7.5rem; text-align: left; }

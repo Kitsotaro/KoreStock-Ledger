@@ -1,0 +1,32 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * LISTA — filas compactas con desplegable que no oculta información (§15.1), «Cargar más»
+ * (D37), estados vacíos. */
+.lista { display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); overflow: hidden; }
+.lista > * + * { border-top: 1px solid var(--borde); }
+.fila-lista { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-4); min-height: 3.5rem; background: transparent; border: 0; width: 100%; text-align: left; }
+button.fila-lista:hover, a.fila-lista:hover { background: var(--superficie-2); }
+.fila-lista .titulo { font-weight: var(--peso-fuerte); line-height: 1.3; }
+.fila-lista .sub { font-size: var(--t-sm); color: var(--texto-2); line-height: 1.35; }
+.fila-lista .lado { margin-left: auto; text-align: right; flex-shrink: 0; }
+.fila-lista .monto { font-family: var(--fuente-mono); font-weight: var(--peso-fuerte); }
+.fila-lista.anulada .titulo, .fila-lista.anulada .monto { text-decoration: line-through; color: var(--texto-3); }
+
+details.desplegable > summary { list-style: none; cursor: pointer; }
+details.desplegable > summary::-webkit-details-marker { display: none; }
+details.desplegable > summary .chevron { transition: transform var(--dur-media) var(--curva); color: var(--texto-3); }
+details.desplegable[open] > summary .chevron { transform: rotate(180deg); }
+.desplegable-cuerpo { padding: 0 var(--e-4) var(--e-4); display: grid; gap: var(--e-2); }
+.par-dato { display: flex; justify-content: space-between; gap: var(--e-3); font-size: var(--t-sm); color: var(--texto-2); }
+.par-dato strong { color: var(--texto); font-weight: var(--peso-fuerte); text-align: right; }
+
+.cargar-mas { display: flex; justify-content: center; padding: var(--e-3); }
+.vacio { display: grid; justify-items: center; gap: var(--e-2); text-align: center; padding: var(--e-8) var(--e-4); color: var(--texto-2); }
+.vacio .icono { width: 2.5rem; height: 2.5rem; color: var(--texto-3); }
+.vacio strong { color: var(--texto); font-size: var(--t-lg); }
+
+.mini-barra { height: 6px; border-radius: var(--r-pildora); background: var(--superficie-3); overflow: hidden; width: 4.5rem; }
+.mini-barra > span { display: block; height: 100%; border-radius: inherit; }
+
+/* Lista dibujada por ventana (Stock con miles de productos, §23.4) */
+.lista-ventana { position: relative; }
+.lista-ventana .espaciador { width: 100%; }

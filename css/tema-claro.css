@@ -1,22 +1,45 @@
-/* TEMA CLARO — misma familia de grises (slate) que el oscuro, invertida,
-   y los mismos colores de acento (verde/azul/rojo/amarillo) para que el
-   semáforo de stock y los botones se reconozcan igual en ambos temas. */
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * TEMA-CLARO.CSS — colores del tema claro. Contraste medido (WCAG AA, UI.md §3.1):
+ * texto ≥ 14:1, secundario ≥ 7:1, tenue ≥ 5:1, acentos como texto ≥ 5:1 sobre cualquier
+ * superficie y blanco sobre acento ≥ 6:1. Paleta base de Zeghi (índigo + marino).
+ */
+:root, :root[data-tema="claro"] {
+  color-scheme: light;
+  --fondo: #F6F7FB;
+  --superficie: #FFFFFF;
+  --superficie-2: #F1F2F8;
+  --superficie-3: #E4E7F1;
+  --superficie-elevada: #FFFFFF;
+  --velo: rgb(18 22 31 / 0.45);
+  --borde: #CBD0DE;
+  --borde-fuerte: #6B7284;
 
-:root[data-theme="claro"] {
-  --bg: #e6eaee;
-  --card: #ffffff;
-  --card-border: #e2e8f0;
-  --text: #0f172a;
-  --subtext: #64748b;
-  --accent-green: #22c55e;
-  --accent-green-activo: #16a34a;
-  --accent-blue: #2461c2;
-  --accent-red: #ef4444;
-  --accent-yellow: #eab308;
-  --accent-orange: #f97316;
-  --accent-blue-activo: #2563eb;
-  --accent-red-activo: #dc2626;
-  --accent-yellow-texto: #a16207;
-  --input-bg: #f1f5f9;
-  --hover-overlay: rgba(15, 23, 42, 0.06);
+  --texto: #12161F;
+  --texto-2: #444B5C;
+  --texto-3: #5A6172;
+
+  --primario: #3341C4;
+  --sobre-primario: #FFFFFF;
+  --primario-suave: #E2E6FF;
+  --sobre-primario-suave: #0F2A6B;
+
+  --entrada: #1D5BC6;
+  --sobre-entrada: #FFFFFF;
+  --entrada-suave: #E1ECFF;
+  --venta: #126C34;
+  --sobre-venta: #FFFFFF;
+  --venta-suave: #DDF3E4;
+
+  --exito: #126C34;
+  --exito-suave: #DDF3E4;
+  --aviso: #8F4D00;
+  --aviso-suave: #FFE9CF;
+  --peligro: #B42318;
+  --peligro-suave: #FDE6E3;
+  --info: #3341C4;
+  --info-suave: #E2E6FF;
+
+  --foco: #3341C4;
+  --grafico-1: #1E6FD9; --grafico-2: #00897B; --grafico-3: #E08600; --grafico-4: #D84343;
+  --grafico-5: #8E5BD8; --grafico-6: #689F38; --grafico-7: #C2185B; --grafico-8: #00838F;
 }

@@ -1,0 +1,25 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * CHIP e INSIGNIA — filtros deslizables y etiquetas pequeñas de estado. */
+.fila-chips { display: flex; gap: var(--e-2); overflow-x: auto; scrollbar-width: none; padding: var(--e-1) 0; -webkit-overflow-scrolling: touch; }
+.fila-chips::-webkit-scrollbar { display: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: var(--e-1); flex-shrink: 0;
+  min-height: var(--alto-control-sm); padding: 0 var(--e-3);
+  border: 1.5px solid var(--borde-fuerte); border-radius: var(--r-pildora);
+  background: var(--superficie); color: var(--texto); font-size: var(--t-sm); font-weight: var(--peso-medio); white-space: nowrap;
+}
+.chip[aria-pressed="true"], .chip.activo { background: var(--primario-suave); border-color: var(--primario); color: var(--sobre-primario-suave); }
+.chip .cuenta { font-family: var(--fuente-mono); font-size: var(--t-xs); opacity: 0.85; }
+.chip .quitar { margin-left: var(--e-1); }
+
+.insignia {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px var(--e-2);
+  border-radius: var(--r-pildora); font-size: var(--t-xs); font-weight: var(--peso-fuerte); white-space: nowrap; line-height: 1.5;
+  background: var(--superficie-3); color: var(--texto-2);
+}
+.insignia.nuevo { background: var(--info-suave); color: var(--info); }
+.insignia.anulada { background: var(--peligro-suave); color: var(--peligro); text-decoration: line-through; }
+.insignia.bonif { background: var(--exito-suave); color: var(--exito); }
+.insignia.entrada { background: var(--entrada-suave); color: var(--entrada); }
+.insignia.venta { background: var(--venta-suave); color: var(--venta); }
+.insignia.aviso { background: var(--aviso-suave); color: var(--aviso); }

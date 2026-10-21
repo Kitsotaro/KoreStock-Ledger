@@ -1,26 +1,49 @@
-/* TEMA OSCURO — mismos valores que tenía el proyecto originalmente. */
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * TEMA-OSCURO.CSS — colores del tema oscuro. Contraste medido (WCAG AA, UI.md §3.1):
+ * texto ≥ 12:1, secundario ≥ 8:1, tenue ≥ 5.9:1, acentos ≥ 6.7:1 sobre cualquier superficie
+ * y texto oscuro sobre acento ≥ 7:1. Se aplica si la persona lo elige o si su sistema
+ * está en oscuro y no eligió nada.
+ */
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --fondo: #0D1017;
+  --superficie: #131722;
+  --superficie-2: #181C28;
+  --superficie-3: #1F2433;
+  --superficie-elevada: #1A1F2C;
+  --velo: rgb(0 0 0 / 0.6);
+  --borde: #3A4054;
+  --borde-fuerte: #8088A0;
 
-:root[data-theme="oscuro"] {
-  --bg: #0f172a;
-  --card: #1e293b;
-  --card-border: #334155;
-  --text: #f8fafc;
-  --subtext: #94a3b8;
-  --accent-green: #22c55e;
-  --accent-green-activo: #16a34a;
-  --accent-blue: #3b82f6;
-  --accent-red: #ef4444;
-   --accent-yellow: #eab308;
-  --accent-orange: #f97316;
-  --accent-blue-activo: #2563eb;
-  --accent-red-activo: #dc2626;
-  --accent-yellow-texto: #eab308;
-  --input-bg: #0f172a;
-  --hover-overlay: rgba(255, 255, 255, 0.08);
-}
+  --texto: #E6E8F0;
+  --texto-2: #B6BBCB;
+  --texto-3: #9AA0B2;
 
-/* El ícono nativo del selector de fecha es oscuro por defecto;
-   en tema oscuro hay que invertirlo para que se alcance a ver. */
-:root[data-theme="oscuro"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  --primario: #B4BEFF;
+  --sobre-primario: #0F1B66;
+  --primario-suave: #2A3799;
+  --sobre-primario-suave: #E0E4FF;
+
+  --entrada: #8DB4FF;
+  --sobre-entrada: #0B1F45;
+  --entrada-suave: #1C2E57;
+  --venta: #4ADE80;
+  --sobre-venta: #052E16;
+  --venta-suave: #133A23;
+
+  --exito: #4ADE80;
+  --exito-suave: #133A23;
+  --aviso: #FFB870;
+  --aviso-suave: #3D2A12;
+  --peligro: #FF8A80;
+  --peligro-suave: #3F1714;
+  --info: #B4BEFF;
+  --info-suave: #23295A;
+
+  --foco: #B4BEFF;
+  --grafico-1: #4F8FE6; --grafico-2: #26A69A; --grafico-3: #FFB960; --grafico-4: #E06666;
+  --grafico-5: #A07BE0; --grafico-6: #7CB342; --grafico-7: #F06292; --grafico-8: #26C6DA;
+  --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sombra-2: 0 4px 16px rgb(0 0 0 / 0.5);
+  --sombra-3: 0 12px 40px rgb(0 0 0 / 0.6);
 }

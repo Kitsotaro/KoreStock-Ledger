@@ -1,0 +1,61 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * TOKENS.CSS — escalas del sistema visual (no colores: esos están en tema-claro/tema-oscuro).
+ * Inspirado en Zeghi (GLO-02): radios 8/12/16/20/28, tipografía de 12 a 32, peso 600 en
+ * títulos y acciones. Todo en rem: el tamaño de texto de la app (3 niveles) cambia --escala.
+ */
+:root {
+  --escala: 1;
+  font-size: calc(100% * var(--escala));
+
+  /* Tipografía */
+  --fuente: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fuente-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --t-xs: 0.75rem;    /* 12: lo mínimo legible en una lista larga */
+  --t-sm: 0.8125rem;  /* 13 */
+  --t-md: 0.9375rem;  /* 15: cuerpo */
+  --t-lg: 1.0625rem;  /* 17 */
+  --t-xl: 1.25rem;    /* 20 */
+  --t-2xl: 1.5rem;    /* 24 */
+  --t-3xl: 2rem;      /* 32: cifras grandes */
+  --t-4xl: 2.5rem;    /* 40: total cobrado */
+  --interlineado: 1.45;
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-fuerte: 600;
+  --peso-titulo: 700;
+
+  /* Espacios */
+  --e-1: 0.25rem; --e-2: 0.5rem; --e-3: 0.75rem; --e-4: 1rem; --e-5: 1.25rem; --e-6: 1.5rem; --e-8: 2rem; --e-10: 2.5rem;
+
+  /* Radios */
+  --r-xs: 8px; --r-sm: 12px; --r-md: 16px; --r-lg: 20px; --r-xl: 28px; --r-pildora: 999px;
+
+  /* Tamaños de control (táctil ≥ 44 px) */
+  --alto-control: 2.875rem;
+  --alto-control-sm: 2.25rem;
+  --ancho-max: 46rem;
+  --alto-barra-superior: 3.5rem;
+  --alto-barra-inferior: 4.25rem;
+  --icono: 1.375rem;
+  --icono-sm: 1.125rem;
+
+  /* Movimiento: solo transform y opacity (V3 §25.2) */
+  --dur-rapida: 140ms;
+  --dur-media: 220ms;
+  --dur-lenta: 320ms;
+  --curva: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Capas */
+  --z-barra: 20; --z-panel: 40; --z-hoja: 50; --z-dialogo: 60; --z-aviso: 70;
+
+  --sombra-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
+  --sombra-2: 0 4px 16px rgb(0 0 0 / 0.12);
+  --sombra-3: 0 12px 40px rgb(0 0 0 / 0.22);
+}
+
+:root[data-tamano-texto="grande"] { --escala: 1.125; }
+:root[data-tamano-texto="muy-grande"] { --escala: 1.25; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-rapida: 0ms; --dur-media: 0ms; --dur-lenta: 0ms; }
+}

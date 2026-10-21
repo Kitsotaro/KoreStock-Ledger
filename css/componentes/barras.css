@@ -1,0 +1,68 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * BARRAS — barra superior (sándwich, título, estado) y barra inferior con íconos (D11):
+ * Stock · [Entrada ⇄ Venta] · Dashboard (+ Panorama en Pro). La pestaña activa siempre
+ * visible y resaltada; respeta la zona segura del teléfono. */
+.barra-superior {
+  position: sticky; top: 0; z-index: var(--z-barra);
+  display: flex; align-items: center; gap: var(--e-2);
+  height: calc(var(--alto-barra-superior) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) var(--e-2) 0;
+  background: color-mix(in srgb, var(--fondo) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--borde);
+}
+.barra-superior .titulo-pantalla { font-size: var(--t-lg); font-weight: var(--peso-titulo); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-superior .titulo-pantalla.entrada { color: var(--entrada); }
+.barra-superior .titulo-pantalla.venta { color: var(--venta); }
+.estado-sync { display: inline-flex; align-items: center; gap: var(--e-1); font-size: var(--t-xs); color: var(--texto-3); padding: 0 var(--e-2); }
+.estado-sync.sin-conexion { color: var(--aviso); }
+
+.barra-inferior {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-barra);
+  display: flex; align-items: stretch; justify-content: space-around; gap: var(--e-1);
+  height: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  padding: var(--e-1) var(--e-2) env(safe-area-inset-bottom);
+  background: var(--superficie-elevada); border-top: 1px solid var(--borde);
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 0.06);
+}
+.pestana {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 0; background: transparent; color: var(--texto-2); font-size: var(--t-xs); font-weight: var(--peso-medio);
+  border-radius: var(--r-sm); min-width: 0; max-width: 7rem; padding: var(--e-1) 0;
+}
+.pestana .pildora { display: grid; place-items: center; width: 3.5rem; height: 2rem; border-radius: var(--r-pildora); transition: background var(--dur-media) var(--curva); }
+.pestana[aria-current="page"] { color: var(--texto); font-weight: var(--peso-fuerte); }
+.pestana[aria-current="page"] .pildora { background: var(--primario-suave); color: var(--sobre-primario-suave); }
+
+/* Interruptor central Entrada ⇄ Venta (§12.1): Entrada azul, Venta verde. */
+.interruptor-registro {
+  flex: 1.6 1 0; max-width: 12rem; align-self: center;
+  display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px;
+  border-radius: var(--r-pildora); background: var(--superficie-3); border: 1px solid var(--borde);
+}
+.interruptor-registro button {
+  border: 0; border-radius: var(--r-pildora); background: transparent; color: var(--texto-2);
+  min-height: 2.625rem; display: flex; align-items: center; justify-content: center; gap: var(--e-1);
+  font-size: var(--t-sm); font-weight: var(--peso-fuerte);
+}
+.interruptor-registro button[aria-pressed="true"][data-tipo="ENTRADA"] { background: var(--entrada); color: var(--sobre-entrada); }
+.interruptor-registro button[aria-pressed="true"][data-tipo="VENTA"] { background: var(--venta); color: var(--sobre-venta); }
+.interruptor-registro:not(.activo) button[aria-pressed="true"] { background: var(--superficie); color: var(--texto); box-shadow: var(--sombra-1); }
+
+/* Espacio para que el contenido no quede debajo de la barra inferior */
+.contenido { padding: var(--e-4) var(--e-4) calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-6)); max-width: var(--ancho-max); margin: 0 auto; }
+.contenido.con-filtros { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 4.5rem); }
+
+/* Filtros abajo, justo encima de la barra (D25, D40) */
+.filtros-abajo {
+  position: fixed; left: 0; right: 0; z-index: calc(var(--z-barra) - 1);
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  padding: var(--e-2) var(--e-3); background: color-mix(in srgb, var(--fondo) 92%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--borde);
+}
+.filtros-abajo .fila-chips { max-width: var(--ancho-max); margin: 0 auto; }
+
+@media (min-width: 900px) {
+  .barra-inferior { left: 50%; right: auto; transform: translateX(-50%); width: min(40rem, 100%); bottom: var(--e-3); border-radius: var(--r-xl); border: 1px solid var(--borde); height: var(--alto-barra-inferior); padding-bottom: var(--e-1); }
+  .filtros-abajo { bottom: calc(var(--alto-barra-inferior) + var(--e-4)); background: transparent; border: 0; backdrop-filter: none; }
+}
