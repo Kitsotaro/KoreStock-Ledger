@@ -1,45 +1,46 @@
-Copyright (c) 2026 Wilber Adonay Escobar Solorzano ("Kitsótaro")
+KoreStock Ledger
+Copyright (c) 2026 Kitsótaro (Wilber Adonay Escobar Solorzano)
 Todos los derechos reservados.
 
+CÓDIGO DISPONIBLE (SOURCE AVAILABLE), NO CÓDIGO ABIERTO
+
+KoreStock es código disponible: puedes leer cómo funciona para confiar en
+lo que hace con tus datos, pero el código y la marca pertenecen a su autor,
+con todos los derechos reservados. Que el código se pueda ver NO te da
+permiso para copiarlo ni para usarlo fuera de lo que dice este documento.
+
 Esta licencia cubre el código fuente. Para el manejo de tus datos, ver
-`PRIVACY.md`; para los términos de uso de la aplicación en sí, ver
-`TERMS.md`.
+PRIVACY.md; para los términos de uso de la aplicación, ver TERMS.md.
 
-Este código fuente se publica en un repositorio público únicamente con
-fines de transparencia, respaldo (backup) personal y portafolio. El hecho
-de que el código sea visible NO otorga ningún permiso de uso comercial ni
-de redistribución.
+LO QUE SÍ PUEDES HACER
 
-Sin autorización previa y por escrito del autor, queda expresamente
-prohibido:
+  - Leer y revisar el código para entender qué hace la aplicación con tus
+    datos.
+  - Usar la aplicación publicada por el autor, según sus términos de uso.
 
-  - Vender este programa, en todo o en parte.
-  - Distribuir copias de este programa, modificado o sin modificar, por
-    cualquier medio o formato.
-  - Usar este código como base para crear un programa o servicio propio
-    (copiar su estructura, lógica o una parte sustancial de él en otro
-    proyecto).
-  - Presentar este trabajo, en todo o en parte, como propio.
-  - Eliminar o alterar este aviso de derechos de autor en cualquier
-    copia del código.
+LO QUE NO PUEDES HACER sin un permiso previo y por escrito del autor
 
-Se permite:
+  - Copiar el código, en todo o en parte, ni ejecutar tu propia copia.
+  - Redistribuirlo, publicarlo o compartirlo, modificado o sin modificar,
+    por cualquier medio o formato.
+  - Usarlo para ofrecer otro servicio o como base de un programa propio
+    (copiar su estructura, su lógica o una parte sustancial de él).
+  - Venderlo, alquilarlo o cobrar por su uso.
+  - Presentarlo como propio, o quitar o alterar este aviso de derechos.
 
-  - Usar este programa de forma personal — incluido para tu propio
-    negocio — corriendo tu propia copia, sin venderla ni redistribuirla.
-  - Ver, leer y clonar este repositorio con fines de consulta o
-    aprendizaje personal.
+¿Quieres una licencia comercial o usarlo de otra forma? Escríbenos: la
+conversación es bienvenida. Esta licencia protege contra la copia y el uso
+comercial sin acuerdo, no contra pedir permiso.
 
-¿Querés distribuir este proyecto a otras personas, venderlo, o usarlo
-como base para algo propio? Escribime — la mayoría de las veces la
-respuesta va a ser que sí. Esta licencia protege contra el uso comercial
-o la redistribución sin acuerdo previo, no contra pedir permiso.
+SIN GARANTÍA
 
-ESTE SOFTWARE SE PROPORCIONA "TAL CUAL" ("AS IS"), SIN GARANTÍA DE
-NINGÚN TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A
-GARANTÍAS DE COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR O
-EXACTITUD DE LOS CÁLCULOS QUE REALIZA. EN NINGÚN CASO EL AUTOR SERÁ
-RESPONSABLE POR RECLAMOS, DAÑOS U OTRAS RESPONSABILIDADES QUE SURJAN
-DEL USO DE ESTE SOFTWARE, INCLUYENDO — SIN LIMITARSE A ELLO — PÉRDIDA
-DE DATOS, ERRORES DE CÁLCULO O DECISIONES DE NEGOCIO TOMADAS A PARTIR
-DE LA INFORMACIÓN QUE MUESTRA.
+ESTE SOFTWARE SE PROPORCIONA "TAL CUAL" ("AS IS"), SIN GARANTÍA DE NINGÚN
+TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE
+COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR O EXACTITUD DE LOS
+CÁLCULOS QUE REALIZA. EN NINGÚN CASO EL AUTOR SERÁ RESPONSABLE POR
+RECLAMOS, DAÑOS U OTRAS RESPONSABILIDADES QUE SURJAN DEL USO DE ESTE
+SOFTWARE, INCLUYENDO, SIN LIMITARSE A ELLO, PÉRDIDA DE DATOS, ERRORES DE
+CÁLCULO O DECISIONES DE NEGOCIO TOMADAS A PARTIR DE LA INFORMACIÓN QUE
+MUESTRA.
+
+Este texto no es asesoría legal y está pendiente de revisión profesional.
