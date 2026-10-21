@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pruebas · KoreStock</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 1.2rem; }
+  .resumen { padding: 10px 14px; border-radius: 10px; margin: 12px 0; font-weight: 600; }
+  .ok { background: #14532d; } .mal { background: #7f1d1d; }
+  .grupo { margin-top: 18px; font-weight: 700; color: #93c5fd; }
+  .caso { padding: 4px 0 4px 12px; font-size: .9rem; }
+  .caso.fallo { color: #fca5a5; }
+  .detalle { display: block; color: #fecaca; font-size: .8rem; padding-left: 14px; }
+</style>
+</head>
+<body>
+<h1>Pruebas de KoreStock</h1>
+<p>Corre los mismos casos que <code>node pruebas/ejecutar.js</code>. Sin conexión a Google.</p>
+<div id="resumen" class="resumen">Cargando…</div>
+<div id="lista"></div>
+<script>
+  // Sin base de prueba en el navegador: los casos que la necesitan se saltan solos.
+  window.RUTA_BASE_PRUEBA = null;
+  window.leerArchivoBinario = () => null;
+  (async () => {
+    const archivos = await (await fetch('archivos.json')).json();
+    for (const archivo of archivos) {
+      await new Promise((ok, mal) => {
+        const s = document.createElement('script');
+        s.src = '../' + archivo; s.onload = ok; s.onerror = () => mal(new Error('No cargó ' + archivo));
+        document.body.appendChild(s);
+      });
+    }
+    const lista = document.getElementById('lista');
+    let grupoAnterior = '';
+    const resultados = await ejecutarPruebas(r => {
+      if (r.grupo !== grupoAnterior) {
+        const g = document.createElement('div'); g.className = 'grupo'; g.textContent = r.grupo; lista.appendChild(g);
+        grupoAnterior = r.grupo;
+      }
+      const d = document.createElement('div');
+      d.className = 'caso' + (r.ok ? '' : ' fallo');
+      d.textContent = (r.ok ? '✓ ' : '✗ ') + r.nombre;
+      if (!r.ok) { const e = document.createElement('span'); e.className = 'detalle'; e.textContent = r.error; d.appendChild(e); }
+      lista.appendChild(d);
+    });
+    const fallidas = resultados.filter(r => !r.ok).length;
+    const resumen = document.getElementById('resumen');
+    resumen.textContent = `${resultados.length - fallidas} de ${resultados.length} pruebas correctas`;
+    resumen.className = 'resumen ' + (fallidas ? 'mal' : 'ok');
+  })().catch(e => { document.getElementById('resumen').textContent = 'Error: ' + e.message; });
+</script>
+</body>
+</html>
