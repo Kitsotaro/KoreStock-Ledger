@@ -94,7 +94,7 @@ function proponerFusiones(datos) {
       propuestas.push({
         clave: 'U' + destino, tipo: 'UNIDADES', productos: prods.map(p => p.idProducto), destino,
         unidadBase: sugerirUnidadBase(prods[0]), factores, preciosDistintos: false, aceptada: false,
-        descripcion: prods.map(nombreProducto)
+        descripcion: prods.map(p => nombreProductoV2(p))
       });
     });
 
@@ -113,7 +113,7 @@ function proponerFusiones(datos) {
       propuestas.push({
         clave: 'V' + destino, tipo: 'VARIANTES', productos: prods.map(p => p.idProducto), destino,
         unidadBase: null, factores, preciosDistintos: !preciosIguales, aceptada: false,
-        descripcion: prods.map(nombreProducto)
+        descripcion: prods.map(p => nombreProductoV2(p))
       });
     });
   return propuestas;
