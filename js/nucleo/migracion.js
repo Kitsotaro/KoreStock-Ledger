@@ -70,7 +70,7 @@ function sugerirUnidadBase(producto) {
   return palabra.toLowerCase();
 }
 
-function nombreProducto(p) {
+function nombreProductoV2(p) {
   return [p.marca, p.linea, p.presentacion, p.volumen, p.variante].filter(Boolean).join(' ');
 }
 
@@ -310,7 +310,7 @@ function verificarMigracion(datos, resultado) {
     guardado[destino] = (guardado[destino] || 0) + p.stockCache * f;
   });
   Object.keys(guardado).forEach(id => { esperado[id] = guardado[id]; });
-  const nombre = (id) => { const p = v3.CATALOGO.find(x => String(x.idProducto) === String(id)); return p ? nombreProducto(p) : `producto ${id}`; };
+  const nombre = (id) => { const p = v3.CATALOGO.find(x => String(x.idProducto) === String(id)); return p ? nombreProductoV2(p) : `producto ${id}`; };
   Object.keys(esperado).forEach(id => {
     const calc = Math.round(((stockV3[id] && stockV3[id].stock) || 0) * 1000) / 1000;
     const esp = Math.round(esperado[id] * 1000) / 1000;
