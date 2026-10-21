@@ -9,8 +9,12 @@
   "js/demo/hoja-demo.js",
   "js/nucleo/base-datos.js",
   "js/nucleo/migracion.js",
+  "js/nucleo/cache-local.js",
+  "js/nucleo/almacen.js",
+  "js/nucleo/sincronizacion.js",
   "pruebas/ayudas-prueba.js",
   "pruebas/casos-dinero.js",
   "pruebas/casos-migracion.js",
-  "pruebas/casos-calculos.js"
+  "pruebas/casos-calculos.js",
+  "pruebas/casos-sincronizacion.js"
 ]
