@@ -200,3 +200,40 @@ function sugerirPrecioTotal(idProducto, unidades) {
   }
   return { total: redondearCentavo(total), desglose };
 }
+
+// Unir productos que son el mismo (§15.3): los de origen quedan FUSIONADOS
+// apuntando al destino; sus movimientos NO se reescriben, se suman al
+// destino al calcular. Solo productos que se cuentan en la misma unidad.
+function operacionFusionarProductos(idDestino, idsOrigen) {
+  const destino = Almacen.producto(idDestino);
+  const origenes = idsOrigen.map(id => Almacen.producto(id)).filter(p => p && p.idProducto !== destino.idProducto);
+  if (!destino || !origenes.length) throw new Error('Elige al menos dos productos.');
+  const distinta = origenes.find(p => normalizarTexto(p.unidadBase) !== normalizarTexto(destino.unidadBase));
+  if (distinta) throw new Error(`«${nombreProducto(distinta)}» se cuenta en ${distinta.unidadBase} y «${nombreProducto(destino)}» en ${destino.unidadBase}: solo se pueden unir productos que se cuentan igual.`);
+  const cambiados = origenes.map(p => { const n = Object.assign({}, p, { estado: ESTADOS.FUSIONADO, fusionadoEn: destino.idProducto }); marcarModificado(n); return n; });
+  const registro = {
+    idAccion: Almacen.tomarFolio('AC-'), timestamp: obtenerTimestampLocal(), tipo: 'FUSION',
+    alcance: `${origenes.map(p => p.sku).join(', ')} → ${destino.sku}`, foliosAnulados: '', foliosNuevos: '',
+    estado: ESTADOS.ACCION_VIGENTE, timestampReversion: '', actor: actorActual() || 'sin-sesion'
+  };
+  return crearOperacion('Unir productos', [
+    pasosCatalogoYPrecios(cambiados, [])[0],
+    { nombre: 'registro', fn: async () => {
+      const r = await Hoja.agregar(Almacen.baseId, 'LOG_ACCIONES', [objetoAFila('LOG_ACCIONES', registro, true)]);
+      registro._fila = r.primeraFila; Almacen.agregarFilas('LOG_ACCIONES', [registro]);
+    } },
+    { nombre: 'copia local', fn: async (ctx) => { Almacen.recalcular(); ctx.resultado = { unidos: cambiados.length }; Almacen.notificar('producto'); guardarCacheBase(); } }
+  ]);
+}
+
+// Asignar categoría a varios productos en UNA escritura (§24.1).
+function operacionAsignarCategoria(ids, categoria) {
+  const limpia = String(categoria || '').trim();
+  const existente = Almacen.categorias().find(c => normalizarIdentidad(c) === normalizarIdentidad(limpia));
+  const final = existente || limpia;
+  const cambiados = ids.map(id => Almacen.producto(id)).filter(Boolean).map(p => { const n = Object.assign({}, p, { categoria: final }); marcarModificado(n); return n; });
+  return crearOperacion('Asignar categoría', [
+    pasosCatalogoYPrecios(cambiados, [])[0],
+    { nombre: 'copia local', fn: async (ctx) => { ctx.resultado = { cambiados: cambiados.length, categoria: final }; Almacen.notificar('producto'); guardarCacheBase(); } }
+  ]);
+}

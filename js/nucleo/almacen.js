@@ -64,8 +64,29 @@ const Almacen = {
     this.clientesPorId = new Map(this.hojas.CLIENTES.filter(c => c.idCliente).map(c => [c.idCliente, c]));
   },
 
+  // Un producto unido a otro (FUSIONADO) suma sus movimientos al que queda
+  // (§15.3). Los movimientos no se reescriben: solo se redirigen al calcular.
+  idEfectivo(id) {
+    let actual = Number(id), saltos = 0;
+    while (saltos++ < 10) {
+      const p = this.porId.get(actual);
+      if (!p || p.estado !== ESTADOS.FUSIONADO || !p.fusionadoEn) return actual;
+      actual = p.fusionadoEn;
+    }
+    return actual;
+  },
+
+  movimientosEfectivos() {
+    const hayFusiones = this.productos.some(p => p.estado === ESTADOS.FUSIONADO && p.fusionadoEn);
+    if (!hayFusiones) return this.hojas.LOG_TRANS;
+    return this.hojas.LOG_TRANS.map(m => {
+      const id = this.idEfectivo(m.idProducto);
+      return id === m.idProducto ? m : Object.assign({}, m, { idProducto: id });
+    });
+  },
+
   recalcular() {
-    this.estados = calcularEstadoProductos(this.hojas.LOG_TRANS);
+    this.estados = calcularEstadoProductos(this.movimientosEfectivos());
   },
 
   suscribir(fn) { this._oyentes.add(fn); return () => this._oyentes.delete(fn); },
@@ -191,7 +212,7 @@ const Almacen = {
   agregarFilas(hoja, objetos) {
     this.hojas[hoja].push(...objetos);
     if (hoja === 'CATALOGO' || hoja === 'CLIENTES') this.reindexar();
-    if (hoja === 'LOG_TRANS') this.recalcular();
+    if (hoja === 'LOG_TRANS' || hoja === 'CATALOGO') this.recalcular();
   },
 
   reemplazarFila(hoja, objeto) {
@@ -199,7 +220,7 @@ const Almacen = {
     const i = lista.findIndex(x => x._fila === objeto._fila);
     if (i >= 0) lista[i] = objeto; else lista.push(objeto);
     if (hoja === 'CATALOGO' || hoja === 'CLIENTES') this.reindexar();
-    if (hoja === 'LOG_TRANS') this.recalcular();
+    if (hoja === 'LOG_TRANS' || (hoja === 'CATALOGO' && objeto.estado === ESTADOS.FUSIONADO)) this.recalcular();
   },
 
   movimientoPorFolio(folio) { return this.movimientos.find(m => m.folio === folio) || null; },

@@ -1,0 +1,10 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * STOCK — lista compacta con desplegable (§15.1); con miles de productos el navegador
+ * solo dibuja las filas visibles gracias a content-visibility (§23.4). */
+.fila-stock { content-visibility: auto; contain-intrinsic-size: auto 5.5rem; }
+.fila-stock > summary { align-items: flex-start; }
+.fila-stock > summary .lado { padding-top: 2px; }
+.fila-stock > summary .chevron { margin-top: 4px; flex-shrink: 0; }
+.fila-stock[open] > summary { background: var(--superficie-2); }
+.casilla-fila { width: 1.25rem; height: 1.25rem; margin-top: 3px; accent-color: var(--primario); flex-shrink: 0; }
+.lista-stock .desplegable-cuerpo { padding-top: var(--e-3); }
