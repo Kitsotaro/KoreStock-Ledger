@@ -11,5 +11,6 @@
   "js/nucleo/migracion.js",
   "pruebas/ayudas-prueba.js",
   "pruebas/casos-dinero.js",
-  "pruebas/casos-migracion.js"
+  "pruebas/casos-migracion.js",
+  "pruebas/casos-calculos.js"
 ]
