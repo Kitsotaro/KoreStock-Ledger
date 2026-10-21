@@ -12,9 +12,16 @@
   "js/nucleo/cache-local.js",
   "js/nucleo/almacen.js",
   "js/nucleo/sincronizacion.js",
+  "js/nucleo/config.js",
+  "js/nucleo/sesion.js",
+  "js/nucleo/cola-escritura.js",
+  "js/nucleo/sku.js",
+  "js/nucleo/operaciones-catalogo.js",
+  "js/nucleo/operaciones-movimientos.js",
   "pruebas/ayudas-prueba.js",
   "pruebas/casos-dinero.js",
   "pruebas/casos-migracion.js",
   "pruebas/casos-calculos.js",
-  "pruebas/casos-sincronizacion.js"
+  "pruebas/casos-sincronizacion.js",
+  "pruebas/casos-operaciones.js"
 ]
