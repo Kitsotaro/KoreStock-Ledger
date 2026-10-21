@@ -9,11 +9,13 @@
 // del repo, en la hoja privada que consulta el Apps Script.
 //
 // Expone: CLIENT_ID, SCOPES, API_KEY, PICKER_APP_ID, URL_VERIFICACION_ACCESO,
-//   CLAVES_LOCALES, NOMBRE_APP, CORREO_CONTACTO.
+//   CLAVES_LOCALES, NOMBRE_APP, VERSION_APP, CORREO_CONTACTO.
 // Depende de: nada.
 // ============================================================
 
 const NOMBRE_APP = 'KoreStock Ledger';
+// Versión visible en el panel (se actualiza al cerrar cada fase; v3.0.0 solo con aprobación, D62).
+const VERSION_APP = '2.2';
 const CLIENT_ID = '1070607567316-mdbd97lbkprgpc4spj71e5f8anovr6it.apps.googleusercontent.com';
 // Solo drive.file: la app ve únicamente los archivos que crea o que el
 // usuario elige con el selector de Google. Ampliarlo reabre la verificación.

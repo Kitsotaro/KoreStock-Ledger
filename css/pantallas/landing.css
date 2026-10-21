@@ -1,0 +1,52 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * LANDING — página pública seria (D44, §25.2): jerarquía tipográfica clara, rejilla ordenada,
+ * sin carrusel automático, enlaces legales visibles antes del login. La maqueta animada de la
+ * portada se completa en F5. */
+.landing { min-height: 100dvh; display: flex; flex-direction: column; }
+.landing-cabecera {
+  position: sticky; top: 0; z-index: var(--z-barra); display: flex; align-items: center; gap: var(--e-4);
+  padding: calc(env(safe-area-inset-top) + var(--e-3)) var(--e-4) var(--e-3);
+  background: color-mix(in srgb, var(--fondo) 90%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--borde);
+}
+.landing-marca { display: flex; align-items: center; gap: var(--e-2); color: var(--texto); text-decoration: none; font-size: var(--t-lg); margin-right: auto; }
+.landing-marca img { border-radius: var(--r-xs); }
+.landing-enlaces { display: none; gap: var(--e-5); }
+.landing-enlaces a { color: var(--texto-2); text-decoration: none; font-weight: var(--peso-medio); font-size: var(--t-sm); }
+.landing-enlaces a:hover { color: var(--texto); }
+@media (min-width: 760px) { .landing-enlaces { display: flex; } }
+
+.landing main { flex: 1; width: 100%; max-width: 68rem; margin: 0 auto; padding: 0 var(--e-4); }
+.portada { display: grid; gap: var(--e-8); align-items: center; padding: var(--e-10) 0 var(--e-8); }
+@media (min-width: 900px) { .portada { grid-template-columns: 1.1fr 0.9fr; padding: 5rem 0 4rem; } }
+.antetitulo { color: var(--primario); font-weight: var(--peso-fuerte); font-size: var(--t-sm); letter-spacing: 0.06em; text-transform: uppercase; }
+.portada h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.12; letter-spacing: -0.02em; margin: var(--e-3) 0 var(--e-4); }
+.portada-sub { color: var(--texto-2); font-size: var(--t-lg); max-width: 36rem; }
+.portada-acciones { margin-top: var(--e-6); display: grid; gap: var(--e-2); justify-items: start; }
+.estado-entrada { font-size: var(--t-sm); color: var(--texto-2); min-height: 1.4em; }
+.portada-legal { margin-top: var(--e-3); font-size: var(--t-sm); color: var(--texto-2); }
+.portada-maqueta { min-height: 22rem; border-radius: var(--r-xl); background: linear-gradient(160deg, var(--primario-suave), var(--superficie-2)); border: 1px solid var(--borde); }
+
+.seccion { padding: var(--e-10) 0; border-top: 1px solid var(--borde); }
+.seccion h2 { font-size: clamp(1.5rem, 4vw, 2rem); letter-spacing: -0.01em; }
+.seccion-sub { color: var(--texto-2); margin-top: var(--e-2); }
+.pasos { display: grid; gap: var(--e-4); margin-top: var(--e-6); counter-reset: paso; }
+@media (min-width: 760px) { .pasos { grid-template-columns: repeat(3, 1fr); } }
+.pasos li { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); padding: var(--e-5); display: grid; gap: var(--e-2); }
+.paso-icono { width: 2.75rem; height: 2.75rem; border-radius: var(--r-sm); background: var(--primario-suave); color: var(--sobre-primario-suave); display: inline-grid !important; place-items: center; }
+.pasos p, .confianza p, .modo-tarjeta p { color: var(--texto-2); font-size: var(--t-sm); }
+.tabla-modos { display: grid; gap: var(--e-3); margin-top: var(--e-6); }
+@media (min-width: 760px) { .tabla-modos { grid-template-columns: repeat(3, 1fr); } }
+.modo-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); padding: var(--e-5); display: grid; gap: var(--e-2); }
+.modo-tarjeta.destacada { border: 2px solid var(--primario); }
+.modo-tarjeta > span { color: var(--primario); }
+.confianza { display: grid; gap: var(--e-4); margin-top: var(--e-6); }
+@media (min-width: 760px) { .confianza { grid-template-columns: repeat(3, 1fr); } }
+.confianza > div { display: grid; gap: var(--e-2); align-content: start; }
+.confianza > div > span { color: var(--primario); }
+.preguntas { display: grid; gap: var(--e-2); margin-top: var(--e-6); max-width: 46rem; }
+.preguntas details { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-sm); padding: var(--e-3) var(--e-4); }
+.preguntas summary { cursor: pointer; font-weight: var(--peso-fuerte); }
+.preguntas p { color: var(--texto-2); margin-top: var(--e-2); }
+.landing-pie { border-top: 1px solid var(--borde); padding: var(--e-6) var(--e-4) calc(env(safe-area-inset-bottom) + var(--e-6)); display: grid; gap: var(--e-2); justify-items: center; text-align: center; color: var(--texto-2); font-size: var(--t-sm); }
+.landing-pie nav { display: flex; gap: var(--e-4); }

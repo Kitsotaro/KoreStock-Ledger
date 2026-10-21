@@ -1,0 +1,19 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * APP — piezas comunes a todas las pantallas: encabezados de sección, opciones de modo,
+ * documentos legales y cajas de resumen. */
+.pantalla { display: grid; gap: var(--e-4); }
+.encabezado-seccion { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-top: var(--e-2); }
+.encabezado-seccion h2 { font-size: var(--t-lg); }
+.opciones-modo { display: grid; gap: var(--e-2); }
+.opcion-modo { display: flex; align-items: flex-start; gap: var(--e-3); text-align: left; width: 100%; border-width: 1.5px; }
+.opcion-modo > span { display: grid; gap: 2px; }
+.opcion-modo .icono-lg { color: var(--primario); }
+.opcion-modo[aria-pressed="true"] { border-color: var(--primario); background: var(--primario-suave); color: var(--sobre-primario-suave); }
+.opcion-modo[aria-pressed="true"] .t-secundario { color: var(--sobre-primario-suave); }
+.dialogo-documento { width: min(44rem, 100%); }
+.documento-legal { max-height: 60dvh; overflow-y: auto; color: var(--texto-2); font-size: var(--t-sm); }
+.documento-legal h1, .documento-legal h2, .documento-legal h3 { color: var(--texto); margin: var(--e-4) 0 var(--e-2); font-size: var(--t-lg); }
+.documento-legal p, .documento-legal li { margin-bottom: var(--e-2); }
+.documento-legal ul { list-style: disc; padding-left: var(--e-5); }
+.fila-folio { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-4); font-size: var(--t-sm); color: var(--texto-2); }
+.fila-folio .control { min-height: var(--alto-control-sm); }

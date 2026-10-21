@@ -66,3 +66,10 @@
   .barra-inferior { left: 50%; right: auto; transform: translateX(-50%); width: min(40rem, 100%); bottom: var(--e-3); border-radius: var(--r-xl); border: 1px solid var(--borde); height: var(--alto-barra-inferior); padding-bottom: var(--e-1); }
   .filtros-abajo { bottom: calc(var(--alto-barra-inferior) + var(--e-4)); background: transparent; border: 0; backdrop-filter: none; }
 }
+
+/* Con 4 pestañas (modo Pro) se compacta para que las etiquetas no choquen. */
+body[data-modo="pro"] .pestana .pildora { width: 2.75rem; }
+body[data-modo="pro"] .interruptor-registro { flex: 1.35 1 0; }
+.pestana { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Durante la migración no hay a dónde navegar. */
+body[data-pantalla="migracion"] .barra-inferior { display: none; }

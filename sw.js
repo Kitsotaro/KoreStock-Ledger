@@ -1,52 +1,60 @@
-// Es el "Service Worker" que guarda copia de los archivos para que la app
-// funcione offline. Mientras haya servidor (tu Termux), SIEMPRE usa la
-// versión más fresca de la red; la caché es solo un respaldo por si en
-// algún momento no hay conexión al servidor. Con esto, ya no depende de
-// que te acuerdes de subir un número de versión para ver tus cambios.
-const CACHE_NAME = 'finanzas-pwa-v1';
-const assets = [
-  './index.html',
-  './manifest.json',
-  './css/base.css',
-  './css/tema-oscuro.css',
-  './css/tema-claro.css',
-  './js/core.js',
-  './js/sku.js',
-  './js/tema.js',
-  './js/registro.js',
-  './js/stock.js',
-  './js/dashboard.js',
-  './js/graficos.js',
-  './js/ventas.js',
-  './js/analitica.js',
-  './js/costos.js',
-  './js/combustible.js'
+// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// ============================================================
+// SW.JS — Service Worker: guarda los ARCHIVOS DE LA APP para abrir sin
+// conexión (D27: offline solo lectura; los datos viven en IndexedDB).
+//
+// - Red primero, copia como respaldo (INVARIANTE 28: no hace falta subir un
+//   número de versión para ver los cambios).
+// - Solo guarda archivos PROPIOS (mismo origen) pedidos con GET. Nunca
+//   guarda respuestas de Google (datos, verificación de acceso): eso
+//   corrige el hallazgo de la auditoría T01.
+// - Al activarse borra cachés viejas (incluida la de la v2, que guardaba
+//   respuestas de Google).
+// ============================================================
+
+const CACHE_APP = 'korestock-app-v3';
+const ARCHIVOS_APP = [
+  './', './index.html', './manifest.json', './assets/logo.png', './assets/iconos.svg',
+  './css/tokens.css', './css/tema-claro.css', './css/tema-oscuro.css', './css/base.css',
+  './css/componentes/icono.css', './css/componentes/boton.css', './css/componentes/campo.css', './css/componentes/tarjeta.css',
+  './css/componentes/chip.css', './css/componentes/lista.css', './css/componentes/controles.css', './css/componentes/barras.css',
+  './css/componentes/superposiciones.css', './css/pantallas/landing.css', './css/pantallas/app.css',
+  './lib/fuentes/PlusJakartaSans.ttf', './lib/fuentes/GeistMono.ttf',
+  './js/ui/arranque.js', './js/nucleo/config.js', './js/nucleo/dinero.js', './js/nucleo/utilidades.js', './js/nucleo/esquema.js',
+  './js/nucleo/calculos.js', './js/nucleo/hoja.js', './js/nucleo/hoja-google.js', './js/demo/hoja-demo.js', './js/nucleo/base-datos.js',
+  './js/nucleo/migracion.js', './js/nucleo/cache-local.js', './js/nucleo/almacen.js', './js/nucleo/sincronizacion.js',
+  './js/nucleo/sesion.js', './js/nucleo/cola-escritura.js', './js/nucleo/sku.js', './js/nucleo/operaciones-catalogo.js',
+  './js/nucleo/operaciones-movimientos.js', './js/ui/componentes.js', './js/ui/cargador.js', './js/ui/shell.js',
+  './js/ui/selector-archivo.js', './js/demo/modo-demo.js', './js/pantallas/migracion.js', './js/pantallas/primer-uso.js', './js/app.js'
 ];
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); // activa la versión nueva de inmediato
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(assets))
-  );
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_APP).then((cache) => Promise.allSettled(ARCHIVOS_APP.map((a) => cache.add(a)))));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((nombres) =>
-      Promise.all(nombres.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    ).then(() => self.clients.claim()) // toma control de las pestañas ya abiertas
+    caches.keys()
+      .then((nombres) => Promise.all(nombres.filter((n) => n !== CACHE_APP).map((n) => caches.delete(n))))
+      .then(() => self.clients.claim())
   );
 });
 
-// RED PRIMERO, CACHÉ COMO RESPALDO (network-first)
 self.addEventListener('fetch', (e) => {
+  const peticion = e.request;
+  if (peticion.method !== 'GET') return;
+  const url = new URL(peticion.url);
+  if (url.origin !== self.location.origin || url.pathname.includes('/_privado/')) return;
   e.respondWith(
-    fetch(e.request)
-      .then((respuestaFresca) => {
-        const copia = respuestaFresca.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copia));
-        return respuestaFresca;
+    fetch(peticion)
+      .then((respuesta) => {
+        if (respuesta.ok && respuesta.type === 'basic') {
+          const copia = respuesta.clone();
+          caches.open(CACHE_APP).then((cache) => cache.put(peticion, copia));
+        }
+        return respuesta;
       })
-      .catch(() => caches.match(e.request)) // sin conexión al servidor: usa la última copia guardada
+      .catch(() => caches.match(peticion).then((guardada) => guardada || (peticion.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });
