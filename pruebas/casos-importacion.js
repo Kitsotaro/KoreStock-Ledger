@@ -52,3 +52,20 @@ prueba('vender a un cliente, renombrarlo y el historial conserva la relación', 
   const r = calcularResumenPeriodo(Almacen.movimientos, '2000-01-01', '2099-12-31', m => m.idCliente === c.idCliente);
   igual(formatearDinero(r.ventas), '$0.80');
 });
+
+grupo('Gastos y combustible (§23.2)');
+prueba('gasto, carga con odómetro válido, rendimiento y anulación', async () => {
+  if (!hayBasePrueba()) return;
+  await abrirBasePruebaV3(false);
+  const g = await ColaEscritura.ejecutar(operacionGuardarGasto({ categoria: 'alquiler del local', monto: dinero('250'), fecha: '2026-10-21' }));
+  igual(g.categoria, 'Alquiler del local', 'usa la categoría ya existente');
+  igual(g.folio, 'GO-000044');
+  const placa = Almacen.hojas.VEHICULOS[0].placa;
+  const ult = ultimoOdometro(placa);
+  await lanza(() => operacionGuardarCarga({ placa, odometro: ult - 1, galones: 5, monto: dinero(20) }), 'odómetro menor no se acepta');
+  const c = await ColaEscritura.ejecutar(operacionGuardarCarga({ placa, odometro: ult + 150, galones: 5, monto: dinero(19.5) }));
+  igual(calcularRendimientos(Almacen.hojas.COSTOS_COMBUSTIBLE).get(c.folio).rendimiento, 30);
+  await ColaEscritura.ejecutar(operacionAnularCarga(c.folio));
+  igual(ultimoOdometro(placa), ult, 'anular devuelve la última lectura');
+  await lanza(() => operacionCrearVehiculo({ placa: placa.toLowerCase() }), 'placa única');
+});
