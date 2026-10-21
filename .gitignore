@@ -1,0 +1,23 @@
+# ── PRIVADO: nunca al repo ni al hosting ─────────────────────────
+_privado/
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+
+# ── Secretos / entorno local ─────────────────────────────────────
+.env
+.env.*
+.dev.vars
+
+# ── Herramientas de despliegue ───────────────────────────────────
+.wrangler/
+node_modules/
+
+# ── Sistema operativo / editores ─────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Respaldos de documentos y datos de prueba (privados) ──────────
+/V3*.md
+*.xlsx
