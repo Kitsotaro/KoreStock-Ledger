@@ -17,3 +17,6 @@
 .documento-legal ul { list-style: disc; padding-left: var(--e-5); }
 .fila-folio { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-4); font-size: var(--t-sm); color: var(--texto-2); }
 .fila-folio .control { min-height: var(--alto-control-sm); }
+/* Los hijos de una rejilla no deben ensancharla (cintas y filas deslizables). */
+.pantalla > *, .registro > *, .columna > *, .tarjeta > * { min-width: 0; }
+.contenido { overflow-x: clip; }

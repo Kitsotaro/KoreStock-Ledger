@@ -183,7 +183,7 @@ function avisar(texto, opciones) {
   let zona = $('#avisos');
   if (!zona) { zona = document.createElement('div'); zona.id = 'avisos'; zona.className = 'avisos'; zona.setAttribute('aria-live', 'polite'); document.body.appendChild(zona); }
   const el = document.createElement('div');
-  el.className = 'aviso';
+  el.className = 'aviso-flotante';
   el.innerHTML = html`<span>${texto}</span>${accion ? html`<button type="button" class="boton boton-texto">${accion}</button>` : ''}`.texto;
   zona.appendChild(el);
   const quitar = () => el.remove();

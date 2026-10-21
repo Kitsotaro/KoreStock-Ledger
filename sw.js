@@ -47,7 +47,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin || url.pathname.includes('/_privado/')) return;
   e.respondWith(
-    fetch(peticion)
+    fetch(peticion, { cache: 'no-cache' }) // revalida siempre: nunca una versión vieja pegada
       .then((respuesta) => {
         if (respuesta.ok && respuesta.type === 'basic') {
           const copia = respuesta.clone();

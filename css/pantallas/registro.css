@@ -1,0 +1,16 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * REGISTRO — pantallas Venta (verde) y Entrada (azul), §12.2 y §13. */
+.registro { display: grid; gap: var(--e-3); }
+.registro .buscador .control { min-height: var(--alto-control); border-radius: var(--r-sm); }
+.registro-venta .tarjeta-producto { border-left: 4px solid var(--venta); }
+.registro-entrada .tarjeta-producto { border-left: 4px solid var(--entrada); }
+.total-cobrado input { color: var(--venta); }
+.registro-entrada .total-pagado input { color: var(--entrada); }
+details.desplegable-simple > summary { display: flex; align-items: center; gap: var(--e-2); }
+details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom: var(--e-3); }
+.fila-presentacion { grid-template-columns: 2fr 1fr 1.3fr; }
+.calculo { font-size: var(--t-sm); color: var(--texto-2); display: grid; gap: 2px; }
+.calculo strong { color: var(--texto); font-family: var(--fuente-mono); }
+.nivel-extra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+.encabezado-registro { display: flex; align-items: center; gap: var(--e-2); font-weight: var(--peso-fuerte); }
+.encabezado-registro.venta { color: var(--venta); } .encabezado-registro.entrada { color: var(--entrada); }

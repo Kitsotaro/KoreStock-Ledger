@@ -15,7 +15,9 @@
 function nombreProducto(p, opciones) {
   if (!p) return '';
   const { conVariante = true } = opciones || {};
-  return [p.marca, p.linea, p.presentacion, p.volumen, conVariante ? p.variante : '']
+  // «Pilsener Pilsener Lata» → «Pilsener Lata»: si el producto ya empieza con la marca, no se repite.
+  const marca = normalizarIdentidad(p.linea).startsWith(normalizarIdentidad(p.marca)) ? '' : p.marca;
+  return [marca, p.linea, p.presentacion, p.volumen, conVariante ? p.variante : '']
     .map(x => String(x || '').trim()).filter(Boolean).join(' ');
 }
 
@@ -127,6 +129,15 @@ const Almacen = {
     const vistos = new Set();
     return propias.concat(otras).sort((a, b) => (b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : -1)
       .filter(e => { const k = `${normalizarTexto(e.nombre)}|${e.unidades}|${normalizarTexto(e.nivelInferior)}`; if (vistos.has(k)) return false; vistos.add(k); return true; });
+  },
+
+  // Sabores ya usados con este producto (D24: el sabor es dato del movimiento).
+  variantesDe(idProducto) {
+    const vistos = new Map();
+    this.movimientos.forEach(m => {
+      if (m.idProducto === Number(idProducto) && m.variante) vistos.set(normalizarIdentidad(m.variante), m.variante);
+    });
+    return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
   },
 
   clientesActivos() { return this.hojas.CLIENTES.filter(c => c.estado !== ESTADOS.INACTIVO).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')); },
