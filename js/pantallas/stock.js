@@ -28,7 +28,7 @@ const SEMAFOROS = {
 };
 function infoSemaforo(p, stock) { return SEMAFOROS[semaforoStock(stock, p)]; }
 
-const stockUI = { el: null, filtro: 'TODOS', categoria: '', texto: '', valor: 'BRUTO', seleccion: new Set(), seleccionando: false, expandirTodo: false };
+const stockUI = { el: null, turno: 0, filtro: 'TODOS', categoria: '', texto: '', valor: 'BRUTO', seleccion: new Set(), seleccionando: false, expandirTodo: false };
 
 registrarPantalla('stock', {
   titulo: 'Stock',
@@ -63,7 +63,7 @@ function pintarStock() {
   pintarCifrasStock();
   pintarChipsStock();
   pintarListaStock();
-  GraficoStock.pintar();
+  setTimeout(() => GraficoStock.pintar(), 0);
 }
 
 function pintarCifrasStock() {
@@ -155,9 +155,27 @@ function pintarListaStock() {
   const lista = productosFiltradosStock();
   $('#stock-conteo', stockUI.el).textContent = `${formatearNumero(lista.length)} ${pluralizar(lista.length, 'producto')}`;
   const cont = $('#stock-lista', stockUI.el);
-  cont.innerHTML = lista.length
-    ? `<div class="lista lista-stock">${lista.map(p => filaStockHTML(p).texto).join('')}</div>`
-    : html`<div class="vacio">${seguro(icono('buscar-sin-resultados', 'icono-xl'))}<strong>Sin productos</strong><p>${Almacen.productosVisibles().length ? 'Nada coincide con el filtro.' : 'Agrega tu primer producto desde Entrada.'}</p></div>`.texto;
+  const turno = ++stockUI.turno;
+  if (!lista.length) {
+    cont.innerHTML = html`<div class="vacio">${seguro(icono('buscar-sin-resultados', 'icono-xl'))}<strong>Sin productos</strong><p>${Almacen.productosVisibles().length ? 'Nada coincide con el filtro.' : 'Agrega tu primer producto desde Entrada.'}</p></div>`.texto;
+    pintarBarraSeleccion();
+    return;
+  }
+  // Se muestra TODO el catálogo (D39), pero se dibuja por partes: primero
+  // lo que cabe en pantalla y el resto en segundo plano, para que un
+  // teléfono modesto abra al instante aunque haya miles de productos.
+  cont.innerHTML = '<div class="lista lista-stock"></div>';
+  const destino = $('.lista-stock', cont);
+  const PRIMERO = 40, BLOQUE = 200;
+  destino.insertAdjacentHTML('beforeend', lista.slice(0, PRIMERO).map(p => filaStockHTML(p).texto).join(''));
+  let i = PRIMERO;
+  const siguiente = () => {
+    if (turno !== stockUI.turno || i >= lista.length) return;
+    destino.insertAdjacentHTML('beforeend', lista.slice(i, i + BLOQUE).map(p => filaStockHTML(p).texto).join(''));
+    i += BLOQUE;
+    (window.requestIdleCallback || ((f) => setTimeout(f, 16)))(siguiente);
+  };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 16)))(siguiente);
   pintarBarraSeleccion();
 }
 

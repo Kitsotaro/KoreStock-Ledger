@@ -77,3 +77,27 @@ prueba('revertir avisa si el stock no alcanza', async () => {
   await ColaEscritura.ejecutar(operacionGuardarTicket(prep2));
   igual(revisarReversion(accion.idAccion).faltantes.length, 1);
 });
+
+grupo('Sabores (§16.6)');
+prueba('Gatorade: 3 uva, 3 fresa, 4 piña; vender 5 sin sabor; vender 2 de uva; repartir', async () => {
+  if (!hayBasePrueba()) return;
+  await abrirBasePruebaV3(false);
+  const nuevo = { marca: 'Gatorade', linea: 'Gatorade', presentacion: 'Botella', volumen: '500 ml', unidadBase: 'botella' };
+  const prep = prepararEntrada({ lineas: [
+    { nuevo, cantEmpaques: 3, unidPorEmpaque: 1, totalPagado: dinero(3), variante: 'uva' },
+    { nuevo, cantEmpaques: 3, unidPorEmpaque: 1, totalPagado: dinero(3), variante: 'fresa' },
+    { nuevo, cantEmpaques: 4, unidPorEmpaque: 1, totalPagado: dinero(4), variante: 'piña' }] });
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prep));
+  const g = Almacen.productos.find(p => p.marca === 'Gatorade');
+  igual(Almacen.productos.filter(p => p.marca === 'Gatorade').length, 1, 'un solo producto aunque tenga 3 sabores');
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prepararVenta({ lineas: [{ idProducto: g.idProducto, cantidad: 5, totalCobrado: dinero(6) }] })));
+  let e = Almacen.estado(g.idProducto);
+  igual(e.stock, 5); igual(e.porVariante[''], -5); igual(e.porVariante.uva + e.porVariante.fresa + e.porVariante['piña'] + e.porVariante[''], 5);
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prepararVenta({ lineas: [{ idProducto: g.idProducto, cantidad: 2, totalCobrado: dinero(2.4), variante: 'uva' }] })));
+  e = Almacen.estado(g.idProducto);
+  igual(e.porVariante.uva, 1); igual(e.stock, 3);
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prepararReasignacion(g.idProducto, [{ variante: 'fresa', unidades: 3 }, { variante: 'piña', unidades: 2 }])));
+  e = Almacen.estado(g.idProducto);
+  igual(e.stock, 3, 'repartir no cambia el total'); igual(e.porVariante[''], 0); igual(e.porVariante.fresa, 0); igual(e.porVariante['piña'], 2);
+  igual(formatearDinero(e.fondo), formatearDinero(Almacen.estado(g.idProducto).fondo));
+});

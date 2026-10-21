@@ -16,7 +16,7 @@
 // recalcula solo (D36).
 //
 // Expone: prepararVenta, prepararEntrada, operacionGuardarTicket,
-//   operacionAnular, describirCantidad.
+//   operacionAnular, describirCantidad, prepararReasignacion.
 // Depende de: esquema.js, almacen.js, calculos.js, cola-escritura.js,
 //   operaciones-catalogo.js, hoja.js, dinero.js, utilidades.js, sesion.js.
 // ============================================================
@@ -215,4 +215,33 @@ function operacionAnular(folios, accion) {
   }
   pasos.push({ nombre: 'copia local', fn: async (ctx) => { ctx.resultado = { anulados: movs.length }; Almacen.notificar('anulacion'); guardarCacheBase(); } });
   return crearOperacion('Anular', pasos);
+}
+
+// Repartir sabores (T24, §16.2): mueve unidades entre «sin asignar» y un
+// sabor con un PAR de filas REASIGNACION (−n de un lado, +n del otro). El
+// total y el valor del producto no cambian; el historial no se reescribe.
+// asignaciones: [{ variante, unidades }] (unidades > 0).
+function prepararReasignacion(idProducto, asignaciones) {
+  const p = Almacen.producto(idProducto);
+  const e = Almacen.estado(p.idProducto);
+  const sinAsignar = e.porVariante[''] || 0;
+  const total = asignaciones.reduce((s, a) => s + Number(a.unidades || 0), 0);
+  if (!total) throw new Error('Indica cuánto va a cada sabor.');
+  if (total > Math.abs(sinAsignar)) throw new Error(`Solo hay ${formatearNumero(Math.abs(sinAsignar))} sin asignar.`);
+  // sinAsignar < 0: ventas sin sabor que en realidad fueron de un sabor → baja ese sabor, sube «sin asignar».
+  // sinAsignar > 0: unidades sin sabor que son de un sabor → sube ese sabor, baja «sin asignar».
+  const signo = sinAsignar < 0 ? -1 : 1;
+  const ahora = obtenerTimestampLocal(), dia = obtenerFechaLocal();
+  const idTicket = Almacen.tomarFolio('TK-');
+  const fila = (variante, cantidad) => Object.assign(denormalizado(p), {
+    folio: Almacen.tomarFolio('RA-'), timestamp: ahora, fecha: dia, tipo: TIPOS_MOV.REASIGNACION, variante, cantidad, bonif: 0,
+    costoUnit: 0, precioUnit: 0, inversion: 0, margenUnit: 0, totalVenta: null, utilidad: null, estado: '', idCliente: null,
+    empaqueMov: p.unidadBase, cantEmpaques: Math.abs(cantidad), unidPorEmpaque: 1, unidadesTotales: Math.abs(cantidad), idTicket, productoNuevo: '', referencia: 'Repartir sabores'
+  });
+  const filas = [];
+  asignaciones.filter(a => a.unidades > 0 && String(a.variante || '').trim()).forEach(a => {
+    filas.push(fila(String(a.variante).trim(), signo * a.unidades));
+    filas.push(fila('', -signo * a.unidades));
+  });
+  return { tipo: TIPOS_MOV.REASIGNACION, idTicket, filas, productosNuevos: [], cambiados: [], historicos: [], equivalenciasNuevas: [], equivalenciasUsadas: [], resumen: { unidades: total } };
 }
