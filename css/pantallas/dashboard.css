@@ -1,0 +1,6 @@
+/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+ * DASHBOARD y listas de movimientos (§17). */
+.linea-mov { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) 0; border-top: 1px dashed var(--borde); }
+.linea-mov:first-child { border-top: 0; }
+.linea-mov.anulada .t-fuerte, .linea-mov.anulada .cifra { text-decoration: line-through; color: var(--texto-3); }
+.desplegable > summary .insignia { flex-shrink: 0; }

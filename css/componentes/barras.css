@@ -51,7 +51,7 @@
 
 /* Espacio para que el contenido no quede debajo de la barra inferior */
 .contenido { padding: var(--e-4) var(--e-4) calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-6)); max-width: var(--ancho-max); margin: 0 auto; }
-.contenido.con-filtros { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 4.5rem); }
+body[data-pantalla="dashboard"] .contenido, body[data-pantalla="panorama"] .contenido, body[data-pantalla="gastos"] .contenido, body[data-pantalla="combustible"] .contenido { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 4.5rem); }
 
 /* Filtros abajo, justo encima de la barra (D25, D40) */
 .filtros-abajo {
