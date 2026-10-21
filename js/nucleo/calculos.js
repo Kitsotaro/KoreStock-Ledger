@@ -216,7 +216,8 @@ function calcularPuntoEquilibrio(movimientos, gastos, inicio, fin, filtro) {
   });
   const res = calcularResumenPeriodo(movimientos, inicio, fin, filtro);
   const margen = res.ventas > 0 ? porcentajeDe(res.utilidad, res.ventas) : 0;
-  const puntoEquilibrio = margen > 0 ? dividirDinero(multiplicarDinero(gastosFijos, 100), margen) : null;
+  // gastos ÷ (utilidad ÷ ventas) = gastos × ventas ÷ utilidad, en enteros exactos.
+  const puntoEquilibrio = (margen > 0 && res.utilidad > 0) ? Number(dividirRedondeadoBig(BigInt(gastosFijos) * BigInt(res.ventas), BigInt(res.utilidad))) : null;
   return { gastosFijos, margenContribucion: margen, ventaTotal: res.ventas, utilidadTotal: res.utilidad, puntoEquilibrio };
 }
 

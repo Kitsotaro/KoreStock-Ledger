@@ -113,3 +113,19 @@ prueba('el resumen cuenta tickets y unidades', () => {
   const r = calcularResumenPeriodo(movs, '2026-01-01', '2026-01-01');
   igual(r.nTickets, 1); igual(r.unidadesVendidas, 3); igual(formatearDinero(r.ventas), '$3.00');
 });
+
+prueba('equilibrio con la base de prueba completa coincide con el cálculo a mano (D51)', async () => {
+  if (!hayBasePrueba()) return;
+  DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo);
+  const id = cargarBasePruebaEnDemo(leerArchivoBinario(RUTA_BASE_PRUEBA));
+  const r = await migrarBaseV2(id, []);
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  const ini = '2026-09-01', fin = '2026-09-30';
+  let gastos = 0, ventas = 0, util = 0;
+  v3.COSTOS_OPERATIVOS.forEach(g => { if (g.estado !== 'ANULADO' && g.fecha >= ini && g.fecha <= fin) gastos += dineroANumero(g.monto); });
+  v3.LOG_TRANS.forEach(m => { if (m.tipo === 'VENTA' && m.estado !== 'ANULADA' && m.fecha >= ini && m.fecha <= fin) { ventas += dineroANumero(m.totalVenta); util += dineroANumero(m.utilidad); } });
+  const esperado = gastos / (util / ventas);
+  const e = calcularPuntoEquilibrio(v3.LOG_TRANS, v3.COSTOS_OPERATIVOS, ini, fin);
+  verdadero(Math.abs(dineroANumero(e.puntoEquilibrio) - esperado) < 0.01, `${dineroANumero(e.puntoEquilibrio)} vs ${esperado}`);
+  verdadero(gastos > 600 && ventas > 800, 'septiembre tiene gastos y ventas');
+});
