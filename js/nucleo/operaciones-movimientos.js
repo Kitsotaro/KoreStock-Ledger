@@ -38,14 +38,14 @@ function describirCantidad(idProducto, unidades) {
 }
 
 // lineas: [{ idProducto, cantidad, totalCobrado, variante }]
-function prepararVenta({ lineas, fecha, idCliente }) {
+function prepararVenta({ lineas, fecha, idCliente, permitirNegativo = false }) {
   if (!lineas || !lineas.length) throw new Error('Agrega al menos un producto.');
   const pedidoPorProducto = {};
   lineas.forEach(l => { pedidoPorProducto[l.idProducto] = redondearCantidad((pedidoPorProducto[l.idProducto] || 0) + Number(l.cantidad)); });
   Object.entries(pedidoPorProducto).forEach(([id, q]) => {
     const p = Almacen.producto(id);
     const stock = Almacen.stock(id);
-    if (q > stock) throw new Error(`No hay suficiente ${nombreProducto(p)}: pides ${formatearNumero(q)} y hay ${formatearNumero(stock)}.`);
+    if (q > stock && !permitirNegativo) throw new Error(`No hay suficiente ${nombreProducto(p)}: pides ${formatearNumero(q)} y hay ${formatearNumero(stock)}.`);
   });
   const ahora = obtenerTimestampLocal();
   const dia = fecha || obtenerFechaLocal();
@@ -64,7 +64,7 @@ function prepararVenta({ lineas, fecha, idCliente }) {
     if (utilidad < 0) bajoCosto.push(nombreProducto(p));
     total = sumarDinero(total, cobrado); ganancia = sumarDinero(ganancia, utilidad); unidades += q;
     return Object.assign(denormalizado(p), {
-      folio: Almacen.tomarFolio('FAC-'), timestamp: ahora, fecha: dia, tipo: TIPOS_MOV.VENTA, variante: String(l.variante || '').trim(),
+      folio: Almacen.tomarFolio('FAC-'), timestamp: ahora, fecha: l.fecha || dia, tipo: TIPOS_MOV.VENTA, variante: String(l.variante || '').trim(),
       cantidad: -q, bonif: 0, costoUnit, precioUnit, inversion, margenUnit: restarDinero(precioUnit, costoUnit),
       totalVenta: cobrado, utilidad, estado: '', idCliente: idCliente || null, empaqueMov: p.unidadBase, cantEmpaques: q,
       unidPorEmpaque: 1, unidadesTotales: q, idTicket, productoNuevo: '', referencia: l.etiqueta || ''
@@ -88,11 +88,11 @@ function prepararEntrada({ lineas, fecha }) {
     let p, esNuevo = false;
     if (l.producto) p = Almacen.producto(l.producto.idProducto || l.producto);
     else {
-      const repetido = buscarProductoMismaIdentidad(l.nuevo, Almacen.productos) || productosNuevos.find(x => claveIdentidadProducto(x) === claveIdentidadProducto(l.nuevo));
+      const enEsteTicket = productosNuevos.find(x => claveIdentidadProducto(x) === claveIdentidadProducto(l.nuevo));
+      const repetido = buscarProductoMismaIdentidad(l.nuevo, Almacen.productos);
       if (repetido) throw new Error(`«${nombreProducto(repetido)}» ya existe. Elígelo de la lista en vez de crearlo de nuevo.`);
-      p = prepararProductoNuevo(l.nuevo);
-      productosNuevos.push(p);
-      esNuevo = true;
+      if (enEsteTicket) p = enEsteTicket;
+      else { p = prepararProductoNuevo(l.nuevo); productosNuevos.push(p); esNuevo = true; }
     }
     const cantEmp = Number(l.cantEmpaques || 0);
     const porEmp = Number(l.unidPorEmpaque || 1);
@@ -105,11 +105,12 @@ function prepararEntrada({ lineas, fecha }) {
     total = sumarDinero(total, pagado); unidadesTot += unidades + bonif;
 
     // Último costo y precio vigente del producto (por unidad base).
-    const base = esNuevo ? p : (cambiados.get(p.idProducto) || Object.assign({}, p));
+    const delTicket = productosNuevos.includes(p); // creado en este mismo ticket: se ajusta directo
+    const base = delTicket ? p : (cambiados.get(p.idProducto) || Object.assign({}, p));
     const antes = { costo: base.costo, precio: base.precio };
     if (unidades > 0) base.costo = costoUnit;
     if (l.nuevoPrecio !== undefined && l.nuevoPrecio !== null && l.nuevoPrecio !== '') base.precio = l.nuevoPrecio;
-    if (!esNuevo) {
+    if (!delTicket) {
       if (base.costo !== p.costo || base.precio !== p.precio) {
         historicos.push(historicoPrecio(base, antes, { costo: base.costo, precio: base.precio }, 'Entrada'));
       }
@@ -129,7 +130,7 @@ function prepararEntrada({ lineas, fecha }) {
     });
 
     return Object.assign(denormalizado(p), {
-      folio: Almacen.tomarFolio('IN-'), timestamp: ahora, fecha: dia, tipo: TIPOS_MOV.ENTRADA, variante: String(l.variante || '').trim(),
+      folio: Almacen.tomarFolio('IN-'), timestamp: ahora, fecha: l.fecha || dia, tipo: TIPOS_MOV.ENTRADA, variante: String(l.variante || '').trim(),
       cantidad: unidades, bonif, costoUnit, precioUnit: base.precio, inversion: pagado, margenUnit: restarDinero(base.precio, costoUnit),
       totalVenta: null, utilidad: null, estado: '', idCliente: null, empaqueMov: String(l.nombreEmpaque || p.unidadBase).trim().toLowerCase(),
       cantEmpaques: cantEmp, unidPorEmpaque: porEmp, unidadesTotales: unidades, idTicket, productoNuevo: esNuevo ? 'SI' : '', referencia: ''
