@@ -102,6 +102,9 @@ const Sesion = {
     r.correo = correo || r.correo;
     try { localStorage.setItem(CLAVES_LOCALES.TOKEN, JSON.stringify(r)); } catch (e) { /* nada */ }
   },
+  // D27/D66: sin internet solo abre la copia del dispositivo (en solo
+  // lectura) quien ya fue autorizado antes en este dispositivo.
+  autorizadoAntes() { const r = this.leerRegistro(); return !!(r && r.ultimaAutorizacion); },
   borrarToken() { try { localStorage.removeItem(CLAVES_LOCALES.TOKEN); } catch (e) { /* nada */ } },
 
   minutosRestantes() {

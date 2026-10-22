@@ -31,6 +31,11 @@ licencia comercial, escríbenos. Detalles en [`LICENSE`](./LICENSE).
   agotamiento, resumen de combustible y punto de equilibrio.
 - **Costos Operativos** — costos fijos con categorías y control de
   combustible por vehículo.
+- **Tus datos a salvo** — respaldo diario automático en tu carpeta de
+  Drive, copia descargable en Excel y restauración verificada; cada 6
+  meses la base se archiva para seguir rápida, sin perder reportes.
+- **Sin conexión, solo lectura** — puedes abrir y consultar lo último
+  guardado en tu dispositivo; para registrar necesitas internet.
 - Tema claro/oscuro, instalable como app (PWA) y pensada primero para
   el teléfono.
 

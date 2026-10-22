@@ -216,6 +216,7 @@ const Shell = {
   quitarFranja(id) { const f = $(`#franja-${id}`); if (f) f.remove(); },
   marcarSinConexion(sin) {
     Almacen.sinConexion = sin;
+    document.body.classList.toggle('sin-conexion', !!sin);
     if (sin) {
       const cuando = Almacen.actualizadoEn ? Almacen.actualizadoEn.slice(0, 16) : '';
       this.mostrarFranja('conexion', html`${seguro(icono('sin-nube', 'icono-sm'))}<span>Sin conexión${cuando ? ` · datos al ${cuando}` : ''}. Puedes consultar; para guardar necesitas internet.</span>`, 'aviso-color');
@@ -225,6 +226,12 @@ const Shell = {
   },
   async alVolverConexion() {
     if (!Almacen.baseId) return;
+    if (App.abiertaSinRed) {
+      // Se abrió sin internet: hay que entrar (y verificar el acceso) para guardar.
+      this.mostrarFranja('conexion', html`${seguro(icono('nube', 'icono-sm'))}<span>Volvió internet. Entra de nuevo para actualizar tus datos y poder guardar.</span>`, 'info-color',
+        { texto: 'Entrar', fn: () => location.reload() });
+      return;
+    }
     try {
       await abrirBase(Almacen.baseId);
       this.marcarSinConexion(false);

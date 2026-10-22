@@ -41,13 +41,35 @@ const App = {
       return;
     }
     Hoja.usar(MotorGoogle);
+    if (navigator.onLine === false && await this.abrirSinRed()) return;
     try {
       await cargarGoogle();
       Sesion.estado('');
       await Sesion.reanudar();
     } catch (e) {
+      if (await this.abrirSinRed()) return;
       Sesion.estado('No se pudo conectar con Google. Revisa tu internet y vuelve a intentarlo.');
     }
+  },
+
+  // Sin internet (D27): abre la copia guardada en este dispositivo, solo
+  // para consultar. Al volver la red hay que entrar de nuevo para guardar.
+  abiertaSinRed: false,
+  async abrirSinRed() {
+    const id = leerLocal(CLAVES_LOCALES.BASE);
+    const copia = id ? await CacheLocal.leer(id) : null;
+    if (!Sesion.autorizadoAntes() || !copia || copia.version !== VERSION_ESQUEMA) return false;
+    Sesion.correo = (Sesion.leerRegistro() || {}).correo || '';
+    // Sin pasar por Drive: aunque la red vuelva a medias, no se escribe sin verificar el acceso.
+    this.abiertaSinRed = true;
+    PeriodosLargos.reiniciar();
+    Almacen.cargar(copia.hojas, id);
+    Almacen.actualizadoEn = copia.guardado || '';
+    this.mostrar('app');
+    Shell.marcarSinConexion(true);
+    Shell.ir('dashboard');
+    Shell.actualizarPanel();
+    return true;
   },
 
   async entrar() {
@@ -67,6 +89,7 @@ const App = {
       'error-servidor': ['El servidor de Google no responde', `El servidor de Google no está respondiendo como debería. Inténtalo en unos minutos; si sigue, contacta a Kitsotaro (${CORREO_CONTACTO}).`],
       'sin-red': ['Sin conexión', 'No pudimos confirmar tu acceso porque no hay internet. Revisa tu conexión e inténtalo de nuevo.']
     };
+    if (tipo === 'sin-red') { this.abrirSinRed().then(ok => { if (!ok) mostrarDialogo({ titulo: mensajes['sin-red'][0], mensaje: mensajes['sin-red'][1] }); }); Sesion.estado(''); return; }
     const [titulo, mensaje] = mensajes[tipo] || mensajes['error-servidor'];
     Sesion.estado('');
     mostrarDialogo({ titulo, mensaje });
@@ -178,6 +201,7 @@ const App = {
   async abrir(id) {
     this.mostrar('carga');
     this.textoCarga('Abriendo tus datos…');
+    PeriodosLargos.reiniciar();
     let mostrada = false;
     const mostrarUnaVez = async () => {
       if (mostrada) return;
@@ -194,6 +218,9 @@ const App = {
     if (r && r.sinConexion) Shell.marcarSinConexion(true);
     Shell.actualizarEstado();
     Shell.actualizarPanel();
+    avisoRotacionSiToca();
+    // Respaldo del día en segundo plano: si falla, se intenta al abrir la próxima vez.
+    if (!Almacen.sinConexion) respaldoDiarioSiHaceFalta(id).then(r => { if (r) Shell.actualizarPanel(); }).catch(() => { /* sin respaldo hoy */ });
     if (this.gracia) avisar('No pudimos confirmar tu licencia porque el verificador no responde; entraste con tu acceso anterior.', { duracion: 7000 });
   },
 

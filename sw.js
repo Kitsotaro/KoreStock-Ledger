@@ -13,19 +13,30 @@
 // ============================================================
 
 const CACHE_APP = 'korestock-app-v3';
+// Todo lo necesario para abrir y consultar sin conexión (D27).
 const ARCHIVOS_APP = [
-  './', './index.html', './manifest.json', './assets/logo.png', './assets/iconos.svg',
+  './', './index.html', './manifest.json', './assets/logo.png', './assets/iconos.svg', './js/ui/arranque.js',
   './css/tokens.css', './css/tema-claro.css', './css/tema-oscuro.css', './css/base.css',
-  './css/componentes/icono.css', './css/componentes/boton.css', './css/componentes/campo.css', './css/componentes/tarjeta.css',
-  './css/componentes/chip.css', './css/componentes/lista.css', './css/componentes/controles.css', './css/componentes/barras.css',
-  './css/componentes/superposiciones.css', './css/pantallas/landing.css', './css/pantallas/app.css',
-  './lib/fuentes/PlusJakartaSans.ttf', './lib/fuentes/GeistMono.ttf',
-  './js/ui/arranque.js', './js/nucleo/config.js', './js/nucleo/dinero.js', './js/nucleo/utilidades.js', './js/nucleo/esquema.js',
-  './js/nucleo/calculos.js', './js/nucleo/hoja.js', './js/nucleo/hoja-google.js', './js/demo/hoja-demo.js', './js/nucleo/base-datos.js',
-  './js/nucleo/migracion.js', './js/nucleo/cache-local.js', './js/nucleo/almacen.js', './js/nucleo/sincronizacion.js',
-  './js/nucleo/sesion.js', './js/nucleo/cola-escritura.js', './js/nucleo/sku.js', './js/nucleo/operaciones-catalogo.js',
-  './js/nucleo/operaciones-movimientos.js', './js/ui/componentes.js', './js/ui/cargador.js', './js/ui/shell.js',
-  './js/ui/selector-archivo.js', './js/demo/modo-demo.js', './js/pantallas/migracion.js', './js/pantallas/primer-uso.js', './js/app.js'
+  './css/componentes/icono.css', './css/componentes/boton.css', './css/componentes/campo.css',
+  './css/componentes/tarjeta.css', './css/componentes/chip.css', './css/componentes/lista.css',
+  './css/componentes/controles.css', './css/componentes/barras.css', './css/componentes/superposiciones.css',
+  './css/pantallas/landing.css', './css/pantallas/app.css', './css/pantallas/registro.css',
+  './css/pantallas/stock.css', './css/pantallas/dashboard.css', './css/pantallas/panorama.css',
+  './js/nucleo/config.js', './js/nucleo/dinero.js', './js/nucleo/utilidades.js', './js/nucleo/esquema.js',
+  './js/nucleo/calculos.js', './js/nucleo/hoja.js', './js/nucleo/hoja-google.js', './js/demo/hoja-demo.js',
+  './js/nucleo/base-datos.js', './js/nucleo/migracion.js', './js/nucleo/cache-local.js', './js/nucleo/almacen.js',
+  './js/nucleo/sincronizacion.js', './js/nucleo/sesion.js', './js/nucleo/cola-escritura.js', './js/nucleo/sku.js',
+  './js/nucleo/operaciones-catalogo.js', './js/nucleo/operaciones-movimientos.js',
+  './js/nucleo/operaciones-clientes.js', './js/nucleo/operaciones-gastos.js', './js/nucleo/operaciones-lotes.js',
+  './js/nucleo/respaldos.js', './js/nucleo/historicos.js', './js/ui/componentes.js', './js/ui/cargador.js',
+  './js/ui/shell.js', './js/ui/selector-archivo.js', './js/ui/campos.js', './js/ui/selector-producto.js',
+  './js/ui/filtros.js', './js/demo/modo-demo.js', './js/pantallas/migracion.js', './js/pantallas/primer-uso.js',
+  './js/pantallas/venta.js', './js/pantallas/importar-excel.js', './js/pantallas/entrada.js',
+  './js/pantallas/grafico-stock.js', './js/pantallas/stock.js', './js/pantallas/reasignar.js',
+  './js/pantallas/dashboard.js', './js/pantallas/lotes.js', './js/pantallas/panorama.js', './js/pantallas/gastos.js',
+  './js/pantallas/combustible.js', './js/pantallas/clientes.js', './js/pantallas/datos.js', './js/app.js',
+  './lib/chart.umd.min.js', './lib/xlsx.full.min.js', './lib/marked.umd.js', './lib/fuentes/PlusJakartaSans.ttf',
+  './lib/fuentes/GeistMono.ttf'
 ];
 
 self.addEventListener('install', (e) => {

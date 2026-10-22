@@ -20,3 +20,7 @@
 /* Los hijos de una rejilla no deben ensancharla (cintas y filas deslizables). */
 .pantalla > *, .registro > *, .columna > *, .tarjeta > * { min-width: 0; }
 .contenido { overflow-x: clip; }
+/* Sin conexión (D27, solo lectura): lo que guarda se ve apagado; al tocarlo, un mensaje explica por qué. */
+body.sin-conexion [data-accion="cobrar"], body.sin-conexion [data-accion="guardar-entrada"],
+body.sin-conexion [data-accion^="anular"], body.sin-conexion [data-accion^="editar"],
+body.sin-conexion .registro button[type="submit"], body.sin-conexion form button[type="submit"] { opacity: .45; }
