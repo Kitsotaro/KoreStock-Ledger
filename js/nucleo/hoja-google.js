@@ -177,6 +177,10 @@ const MotorGoogle = {
     await conReintentosGoogle(() => gapi.client.drive.files.update({ fileId: id, resource, fields: 'id' }));
   },
 
+  async papelera(id) {
+    await conReintentosGoogle(() => gapi.client.drive.files.update({ fileId: id, resource: { trashed: true }, fields: 'id' }));
+  },
+
   async correoUsuario() {
     const res = await conReintentosGoogle(() => gapi.client.drive.about.get({ fields: 'user' }));
     const u = res.result && res.result.user;

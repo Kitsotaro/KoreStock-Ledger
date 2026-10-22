@@ -197,5 +197,7 @@ const MotorDemo = {
     DriveDemo.guardar();
   },
 
+  async papelera(id) { DriveDemo.archivo(id).papelera = true; DriveDemo.guardar(); },
+
   async correoUsuario() { return 'demo@korestock.local'; }
 };

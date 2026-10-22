@@ -42,6 +42,8 @@ const Hoja = {
   copiarArchivo(id, opciones) { return this._m().copiarArchivo(id, opciones); },
   actualizarArchivo(id, cambios) { return this._m().actualizarArchivo(id, cambios); },
   buscarPorNombre(nombre) { return this._m().buscarPorNombre(nombre); },
+  // Manda a la papelera de Drive un archivo que la app creó (se puede recuperar desde Drive 30 días).
+  papelera(id) { return this._m().papelera(id); },
   correoUsuario() { return this._m().correoUsuario(); }
 };
 

@@ -18,14 +18,19 @@ for (const archivo of lista) {
   vm.runInContext(codigo, contexto, { filename: archivo });
 }
 
-vm.runInContext('ejecutarPruebas()', contexto).then(resultados => {
-  let fallidas = 0;
-  let grupoAnterior = '';
-  for (const r of resultados) {
-    if (r.grupo !== grupoAnterior) { console.log(`\n■ ${r.grupo}`); grupoAnterior = r.grupo; }
-    if (r.ok) console.log(`  ✓ ${r.nombre}`);
-    else { fallidas++; console.log(`  ✗ ${r.nombre}\n      ${r.error}`); }
-  }
-  console.log(`\n${resultados.length - fallidas} de ${resultados.length} pruebas correctas.`);
+// Imprime cada prueba al terminar (las largas se ven avanzar).
+let fallidas = 0;
+let grupoAnterior = '';
+contexto.reportarPrueba = (r) => {
+  if (r.grupo !== grupoAnterior) { console.log(`
+■ ${r.grupo}`); grupoAnterior = r.grupo; }
+  const tiempo = r.ms > 2000 ? ` (${(r.ms / 1000).toFixed(1)} s)` : '';
+  if (r.ok) console.log(`  ✓ ${r.nombre}${tiempo}`);
+  else { fallidas++; console.log(`  ✗ ${r.nombre}${tiempo}
+      ${r.error}`); }
+};
+vm.runInContext('ejecutarPruebas(reportarPrueba)', contexto).then(resultados => {
+  console.log(`
+${resultados.length - fallidas} de ${resultados.length} pruebas correctas.`);
   process.exit(fallidas ? 1 : 0);
 });
