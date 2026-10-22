@@ -21,6 +21,8 @@
   "js/nucleo/operaciones-clientes.js",
   "js/nucleo/operaciones-gastos.js",
   "js/nucleo/operaciones-lotes.js",
+  "js/nucleo/respaldos.js",
+  "js/nucleo/historicos.js",
   "js/pantallas/importar-excel.js",
   "pruebas/ayudas-prueba.js",
   "pruebas/casos-dinero.js",
@@ -29,5 +31,7 @@
   "pruebas/casos-sincronizacion.js",
   "pruebas/casos-operaciones.js",
   "pruebas/casos-importacion.js",
-  "pruebas/casos-lotes.js"
+  "pruebas/casos-lotes.js",
+  "pruebas/casos-respaldos.js",
+  "pruebas/casos-historicos.js"
 ]

@@ -102,7 +102,7 @@ function pintarCombustible() {
 function pintarListaCargas() {
   const est = estadoCombustible;
   const rend = calcularRendimientos(Almacen.hojas.COSTOS_COMBUSTIBLE);
-  const lista = Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => enPeriodo(c.fecha, est.inicio, est.fin))
+  const lista = Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => c.estado !== ESTADOS.GASTO_ARCHIVADO && enPeriodo(c.fecha, est.inicio, est.fin))
     .sort((a, b) => (b.timestamp || b.fecha) > (a.timestamp || a.fecha) ? 1 : -1);
   pintarPaginado({
     contenedor: $('#comb-lista', combUI.el), items: lista, tope: 30,
@@ -118,7 +118,7 @@ function pintarListaCargas() {
 async function pintarGraficoCombustible() {
   const tarjeta = $('#comb-grafico-tarjeta', combUI.el);
   const rend = calcularRendimientos(Almacen.hojas.COSTOS_COMBUSTIBLE);
-  const puntos = Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => c.placa === combUI.placa && c.estado !== ESTADOS.GASTO_ANULADO)
+  const puntos = Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => c.placa === combUI.placa && esGastoValido(c))
     .sort((a, b) => (a.fecha === b.fecha ? (a.timestamp < b.timestamp ? -1 : 1) : (a.fecha < b.fecha ? -1 : 1)))
     .map(c => ({ c, r: rend.get(c.folio) })).filter(x => x.r && x.r.rendimiento);
   tarjeta.hidden = puntos.length < 2;

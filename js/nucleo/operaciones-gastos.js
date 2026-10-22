@@ -92,7 +92,7 @@ function operacionActualizarVehiculo(placa, cambios) {
 
 // ---------- Combustible ----------
 function ultimoOdometro(placa) {
-  return Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => c.placa === placa && c.estado !== ESTADOS.GASTO_ANULADO)
+  return Almacen.hojas.COSTOS_COMBUSTIBLE.filter(c => c.placa === placa && esGastoValido(c))
     .reduce((max, c) => Math.max(max, c.odometro), 0);
 }
 

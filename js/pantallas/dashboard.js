@@ -63,9 +63,11 @@ function comparacionHTML(actual, anterior, esDinero, neutral) {
 function pintarResumenDashboard() {
   const est = estadoDashboard;
   const filtro = predicadoFiltros(est);
-  const movs = Almacen.movimientosEfectivos();
-  const r = calcularResumenPeriodo(movs, est.inicio, est.fin, filtro);
   const ant = periodoAnterior(est.inicio, est.fin);
+  const desde = ant.inicio && ant.inicio < est.inicio ? ant.inicio : est.inicio;
+  const movs = PeriodosLargos.hojasPara(desde).LOG_TRANS;
+  incluirHistoricosUI(desde, pintarDashboard);
+  const r = calcularResumenPeriodo(movs, est.inicio, est.fin, filtro);
   const ra = calcularResumenPeriodo(movs, ant.inicio, ant.fin, filtro);
   const bodega = Shell.modo === 'bodega';
   const ranking = (claveDe, nombreDe, conUltimo) => rankingProductos(movs, est.inicio, est.fin, claveDe, filtro).slice(0, 5)
@@ -76,6 +78,7 @@ function pintarResumenDashboard() {
   const rankMarca = ranking(m => { const p = Almacen.producto(m.idProducto); return p ? p.marca : ''; }, x => x);
   const rankCli = ranking(m => m.idCliente || null, id => (Almacen.cliente(id) || {}).nombre || 'Cliente', true);
   $('#dash-cuerpo', dashUI.el).innerHTML = html`
+    ${notaHistoricosHTML(est.inicio)}
     <div class="cifras">
       <div class="cifra-tarjeta"><div class="etiqueta">Ventas</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}</div>
       <div class="cifra-tarjeta"><div class="etiqueta">Utilidad</div><div class="valor ${r.utilidad < 0 ? 't-peligro' : ''}">${formatearDinero(r.utilidad)}</div>${comparacionHTML(r.utilidad, ra.utilidad, true)}</div>
@@ -131,12 +134,19 @@ async function pintarTendencia(movs, est, filtro) {
 }
 
 // ---------- Movimientos agrupados por ticket ----------
+// Movimientos que ve el dashboard: la base principal y, si el período
+// empieza antes, los históricos (sus filas no se pueden anular, §18.3 regla 5).
+function movimientosDashboard() {
+  incluirHistoricosUI(estadoDashboard.inicio, pintarDashboard);
+  return PeriodosLargos.hojasPara(estadoDashboard.inicio).LOG_TRANS;
+}
+
 function gruposMovimientos() {
   const est = estadoDashboard;
   const filtro = predicadoFiltros(est);
   const grupos = new Map();
-  Almacen.movimientos.forEach(m => {
-    if (!enPeriodo(m.fecha, est.inicio, est.fin)) return;
+  movimientosDashboard().forEach(m => {
+    if (!esMovVisible(m) || !enPeriodo(m.fecha, est.inicio, est.fin)) return;
     if (filtro && !filtro(m)) return;
     if (est.tipo === 'VENTA' && m.tipo !== TIPOS_MOV.VENTA) return;
     if (est.tipo === 'ENTRADA' && m.tipo !== TIPOS_MOV.ENTRADA) return;
@@ -182,9 +192,9 @@ function filaGrupoHTML(g) {
           <div class="crece"><div class="t-pequeno t-fuerte">${nombre1(m)}${m.variante ? html` · ${m.variante}` : ''}${m.productoNuevo === 'SI' ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${esMovValido(m) ? '' : html` <span class="insignia anulada">Anulada</span>`}</div>
             <div class="t-mini t-secundario">${m.folio} · ${formatearNumero(Math.abs(m.cantidad))} ${u}${m.bonif ? html` + ${formatearNumero(m.bonif)} gratis` : ''}${m.unidPorEmpaque > 1 ? html` (${formatearNumero(m.cantEmpaques)} ${m.empaqueMov} de ${formatearNumero(m.unidPorEmpaque)})` : ''}${esVenta ? html` · gana ${formatearDinero(m.utilidad || 0)}` : ''}</div></div>
           <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
-          ${esMovValido(m) && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
+          ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
         </div>`; })}
-      ${g.lineas.length > 1 && g.lineas.filter(esMovValido).length > 1 ? html`<button type="button" class="boton boton-secundario boton-sm" data-accion="anular-ticket" data-ticket="${g.clave}" style="justify-self:start">${seguro(icono('papelera', 'icono-sm'))}Anular ticket completo</button>` : ''}
+      ${g.lineas.length > 1 && !g.lineas.some(m => m._historico) && g.lineas.filter(esMovValido).length > 1 ? html`<button type="button" class="boton boton-secundario boton-sm" data-accion="anular-ticket" data-ticket="${g.clave}" style="justify-self:start">${seguro(icono('papelera', 'icono-sm'))}Anular ticket completo</button>` : ''}
     </div></details>`;
 }
 

@@ -4,7 +4,7 @@
 .tarjeta-plana { background: var(--superficie-2); border-radius: var(--r-md); padding: var(--e-4); }
 .tarjeta + .tarjeta { margin-top: var(--e-3); }
 .tarjeta-titulo { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-3); }
-.tarjeta-titulo h2, .tarjeta-titulo h3 { font-size: var(--t-md); font-weight: var(--peso-fuerte); }
+.tarjeta-titulo h2, .tarjeta-titulo h3 { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-md); font-weight: var(--peso-fuerte); }
 
 .tarjeta-producto { display: grid; gap: var(--e-2); }
 .tarjeta-producto .nombre { font-size: var(--t-lg); font-weight: var(--peso-fuerte); line-height: 1.3; }

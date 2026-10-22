@@ -31,6 +31,7 @@ function crearOperacion(nombre, pasos) {
 const ColaEscritura = {
   _cola: Promise.resolve(),
   _ultima: 0,
+  esperaMinimaMs: ESPERA_MINIMA_ENTRE_ESCRITURAS_MS, // las pruebas de carga la ponen en 0
   ocupada: false,
   _oyentes: new Set(),
 
@@ -56,7 +57,7 @@ const ColaEscritura = {
       if (typeof Sesion !== 'undefined') await Sesion.asegurarVigente();
       for (const paso of op.pasos) {
         if (paso.hecho) continue;
-        const espera = ESPERA_MINIMA_ENTRE_ESCRITURAS_MS - (Date.now() - this._ultima);
+        const espera = this.esperaMinimaMs - (Date.now() - this._ultima);
         if (espera > 0) await new Promise(r => setTimeout(r, espera));
         await paso.fn(op.contexto);
         this._ultima = Date.now();

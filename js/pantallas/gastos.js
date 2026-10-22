@@ -56,9 +56,9 @@ function pintarGastos() {
 
 function pintarListaGastos() {
   const est = estadoGastos;
-  const lista = Almacen.hojas.COSTOS_OPERATIVOS.filter(g => enPeriodo(g.fecha, est.inicio, est.fin))
+  const lista = Almacen.hojas.COSTOS_OPERATIVOS.filter(g => g.estado !== ESTADOS.GASTO_ARCHIVADO && enPeriodo(g.fecha, est.inicio, est.fin))
     .sort((a, b) => (b.timestamp || b.fecha) > (a.timestamp || a.fecha) ? 1 : -1);
-  const validos = lista.filter(g => g.estado !== ESTADOS.GASTO_ANULADO);
+  const validos = lista.filter(esGastoValido);
   const total = sumarDinero(validos.map(g => g.monto));
   const porCategoria = {};
   validos.forEach(g => { porCategoria[g.categoria] = sumarDinero(porCategoria[g.categoria] || 0, g.monto); });

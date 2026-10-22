@@ -23,7 +23,7 @@
 // como compra (ROI, total comprado, Dashboard). Al unir históricos se
 // ignora (ignorarApertura) y el resultado debe ser el mismo.
 //
-// Expone: esMovValido, stockDerivadoPorProducto, calcularEstadoProductos,
+// Expone: esMovValido, esGastoValido, esMovVisible, stockDerivadoPorProducto, calcularEstadoProductos,
 //   redondearCantidad, enPeriodo, calcularResumenPeriodo, serieDiaria,
 //   calcularROI, calcularProyeccion, calcularPuntoEquilibrio,
 //   calcularRendimientos, calcularResumenCombustible, diasSinCarga,
@@ -31,7 +31,11 @@
 // Depende de: esquema.js (TIPOS_MOV, ESTADOS), dinero.js, utilidades.js.
 // ============================================================
 
-function esMovValido(m) { return (m.estado || '') !== ESTADOS.MOV_ANULADA; }
+function esMovValido(m) { const e = m.estado || ''; return e !== ESTADOS.MOV_ANULADA && e !== ESTADOS.MOV_ARCHIVADA; }
+// Gastos y cargas: válidos si no están anulados ni son copias de archivo.
+function esGastoValido(g) { const e = g.estado || ''; return e !== ESTADOS.GASTO_ANULADO && e !== ESTADOS.GASTO_ARCHIVADO; }
+// Un movimiento que se muestra en listas (las copias de archivo no se muestran).
+function esMovVisible(m) { return (m.estado || '') !== ESTADOS.MOV_ARCHIVADA; }
 
 function redondearCantidad(n) { return Math.round(Number(n || 0) * 1000) / 1000; }
 
@@ -211,7 +215,7 @@ function calcularProyeccion(movimientos, estados, ventanaDias, hoy, filtro) {
 function calcularPuntoEquilibrio(movimientos, gastos, inicio, fin, filtro) {
   let gastosFijos = 0;
   gastos.forEach(g => {
-    if ((g.estado || '') === ESTADOS.GASTO_ANULADO || !enPeriodo(g.fecha, inicio, fin)) return;
+    if (!esGastoValido(g) || !enPeriodo(g.fecha, inicio, fin)) return;
     gastosFijos = sumarDinero(gastosFijos, g.monto);
   });
   const res = calcularResumenPeriodo(movimientos, inicio, fin, filtro);
@@ -228,7 +232,7 @@ function calcularRendimientos(cargas) {
   const orden = cargas.slice().sort((a, b) => (a.fecha === b.fecha ? (a.timestamp < b.timestamp ? -1 : 1) : (a.fecha < b.fecha ? -1 : 1)));
   const r = new Map();
   orden.forEach(c => {
-    if ((c.estado || '') === ESTADOS.GASTO_ANULADO) return;
+    if (!esGastoValido(c)) return;
     const prev = anterior[c.placa];
     if (prev && c.galones > 0 && c.odometro >= prev.odometro) {
       const km = c.odometro - prev.odometro;
@@ -246,7 +250,7 @@ function calcularResumenCombustible(cargas, inicio, fin) {
   const orden = cargas.slice().sort((a, b) => (a.fecha === b.fecha ? (a.timestamp < b.timestamp ? -1 : 1) : (a.fecha < b.fecha ? -1 : 1)));
   const r = {};
   orden.forEach(c => {
-    if ((c.estado || '') === ESTADOS.GASTO_ANULADO || c.fecha > fin) return;
+    if (!esGastoValido(c) || c.fecha > fin) return;
     const e = r[c.placa] || (r[c.placa] = { galones: 0, gastado: 0, kmInicio: null, kmFin: null, cargas: 0 });
     if (c.fecha < inicio) { e.kmInicio = c.odometro; return; }
     if (e.kmInicio === null) e.kmInicio = c.odometro;
@@ -263,7 +267,7 @@ function calcularResumenCombustible(cargas, inicio, fin) {
 }
 
 function diasSinCarga(cargas, placa, hoy) {
-  const validas = cargas.filter(c => c.placa === placa && (c.estado || '') !== ESTADOS.GASTO_ANULADO);
+  const validas = cargas.filter(c => c.placa === placa && esGastoValido(c));
   if (!validas.length) return null;
   const ultima = validas.reduce((max, c) => (c.fecha > max ? c.fecha : max), '');
   return diasEntre(ultima, hoy || obtenerFechaLocal());
@@ -286,23 +290,29 @@ function rankingProductos(movimientos, inicio, fin, claveDe, filtro) {
   return Object.values(r).sort((a, b) => b.ventas - a.ventas);
 }
 
-// Movimientos APERTURA para empezar una base rotada en `fecha` (T20). Uno
-// por producto con stock o con valor: guarda stock pagado, bonificado y el
-// valor exacto del fondo de costo, para que stock y CPP sigan idénticos.
+// Movimientos APERTURA para empezar una base rotada en `fecha` (T20). Una
+// fila por producto y sabor con unidades: guardan stock pagado, bonificado y
+// el valor exacto del fondo de costo (todo el fondo y el bonificado van en
+// la primera fila), para que stock, sabores y CPP sigan idénticos.
 function construirAperturas(estados, productos, fecha, timestamp, folioDesde) {
   const filas = [];
   let n = folioDesde || 1;
   productos.forEach(p => {
     const e = estados[p.idProducto];
     if (!e || (e.stock === 0 && e.fondo === 0)) return;
-    const bonif = Math.max(0, Math.min(e.bonif, e.stock));
-    filas.push({
-      folio: `AP-${String(n++).padStart(6, '0')}`, timestamp, fecha, tipo: TIPOS_MOV.APERTURA, sku: p.sku,
-      marca: p.marca, linea: p.linea, presentacion: p.presentacion, volumen: p.volumen, variante: '',
-      cantidad: redondearCantidad(e.stock - bonif), bonif, costoUnit: e.cpp, precioUnit: p.precio,
-      inversion: e.fondo, margenUnit: 0, totalVenta: null, utilidad: null, tipoEmpaque: p.tipoEmpaque, estado: '',
-      idCliente: null, empaqueMov: '', cantEmpaques: null, unidPorEmpaque: null, unidadesTotales: null,
-      idTicket: '', productoNuevo: '', idProducto: p.idProducto, referencia: 'APERTURA'
+    let variantes = Object.entries(e.porVariante).filter(([, q]) => q !== 0);
+    if (!variantes.length) variantes = [['', 0]];
+    let bonif = Math.max(0, Math.min(e.bonif, e.stock));
+    variantes.forEach(([variante, q], i) => {
+      const primera = i === 0;
+      filas.push({
+        folio: `AP-${String(n++).padStart(6, '0')}`, timestamp, fecha, tipo: TIPOS_MOV.APERTURA, sku: p.sku,
+        marca: p.marca, linea: p.linea, presentacion: p.presentacion, volumen: p.volumen, variante,
+        cantidad: redondearCantidad(q - (primera ? bonif : 0)), bonif: primera ? bonif : 0, costoUnit: e.cpp, precioUnit: p.precio,
+        inversion: primera ? e.fondo : 0, margenUnit: 0, totalVenta: null, utilidad: null, tipoEmpaque: p.tipoEmpaque, estado: '',
+        idCliente: null, empaqueMov: '', cantEmpaques: null, unidPorEmpaque: null, unidadesTotales: null,
+        idTicket: '', productoNuevo: '', idProducto: p.idProducto, referencia: 'APERTURA'
+      });
     });
   });
   return filas;

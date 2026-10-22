@@ -58,7 +58,9 @@ function tarjetaPanorama(clave, titulo, iconoNombre, valor, sub, cuerpo) {
 function pintarPanorama() {
   const est = estadoPanorama;
   const filtro = predicadoFiltros(est);
-  const movs = Almacen.movimientosEfectivos();
+  const hojas = PeriodosLargos.hojasPara(est.inicio);
+  incluirHistoricosUI(est.inicio, pintarPanorama);
+  const movs = hojas.LOG_TRANS;
   const productos = Almacen.productosActivos().filter(p => !filtro || filtro({ idProducto: p.idProducto }));
   const ur = umbralRoi(), ua = umbralAgotamiento();
 
@@ -74,7 +76,7 @@ function pintarPanorama() {
   const [cGlobal, iGlobal, tGlobal] = claseRoi(roi.roiGlobal);
 
   // Equilibrio
-  const eq = calcularPuntoEquilibrio(movs, Almacen.hojas.COSTOS_OPERATIVOS, est.inicio, est.fin, filtro);
+  const eq = calcularPuntoEquilibrio(movs, hojas.COSTOS_OPERATIVOS, est.inicio, est.fin, filtro);
   const progreso = eq.puntoEquilibrio ? Math.min(999, (eq.ventaTotal / eq.puntoEquilibrio) * 100) : 0;
   const falta = eq.puntoEquilibrio ? Math.max(0, restarDinero(eq.puntoEquilibrio, eq.ventaTotal)) : 0;
 
@@ -92,7 +94,7 @@ function pintarPanorama() {
   const valorCpp = sumarDinero(productos.map(p => Almacen.estado(p.idProducto).fondo));
 
   // Combustible
-  const cargas = Almacen.hojas.COSTOS_COMBUSTIBLE;
+  const cargas = hojas.COSTOS_COMBUSTIBLE;
   const comb = calcularResumenCombustible(cargas, est.inicio, est.fin);
   const vehiculos = Almacen.vehiculosActivos();
   const gastoComb = sumarDinero(Object.values(comb).map(x => x.gastado));
@@ -100,6 +102,7 @@ function pintarPanorama() {
 
   $('#pan-cuerpo', panUI.el).innerHTML = html`
     <p class="t-pequeno t-secundario">${formatearFechaCorta(est.inicio, true)} – ${formatearFechaCorta(est.fin, true)}${filtro ? ' · con filtros' : ''}</p>
+    ${notaHistoricosHTML(est.inicio)}
     ${tarjetaPanorama('roi', 'Retorno sobre la inversión (ROI)', 'tendencia', `${roi.roiGlobal.toFixed(1)}%`,
       html`<span class="semaforo ${cGlobal}">${seguro(icono(iGlobal))}${tGlobal}</span> · invertiste ${formatearDinero(roi.inversionGlobal)} y ganaste ${formatearDinero(roi.gananciaGlobal)}`,
       html`<div class="fila envolver t-pequeno">Meta: crítico ≤ <input class="umbral" data-umbral="ROI-min" value="${ur.min}" aria-label="ROI crítico">% · bajo ≤ <input class="umbral" data-umbral="ROI-max" value="${ur.max}" aria-label="ROI bajo">%</div>
