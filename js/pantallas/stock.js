@@ -2,7 +2,11 @@
 // ============================================================
 // PANTALLA STOCK (T14) — solo control (V3 §15.1, §15.2, §20.1, §24.1, D39):
 //   - Valor de bodega Bruto / Neto y unidades (heredado de la v2).
-//   - Buscador y chips: Todos · Bajo · Agotado · Obsoletos (+ categoría).
+//   - El gráfico va ARRIBA de la lista, justo después de las cifras.
+//   - Buscador y chips: Todos · Bajo · Agotado · Obsoletos (+ categoría y
+//     empaque, como el filtro «tipo de producto» de la v2). Con un empaque
+//     elegido se puede fijar el aviso de stock para todos esos productos.
+//   - Casilla para ocultar sabores (no restrictiva, también en Bodega).
 //   - Lista compacta con TODO el catálogo; la fila cerrada muestra nombre,
 //     SKU, stock con equivalente, mini barra del semáforo y valor; al tocar
 //     se despliega todo (precios, presentaciones, empaque habitual,
@@ -28,7 +32,15 @@ const SEMAFOROS = {
 };
 function infoSemaforo(p, stock) { return SEMAFOROS[semaforoStock(stock, p)]; }
 
-const stockUI = { el: null, turno: 0, filtro: 'TODOS', categoria: '', texto: '', valor: 'BRUTO', seleccion: new Set(), seleccionando: false, expandirTodo: false };
+const stockUI = { el: null, turno: 0, filtro: 'TODOS', categoria: '', empaque: '', texto: '', valor: 'BRUTO', seleccion: new Set(), seleccionando: false, expandirTodo: false, ocultarSabores: false };
+
+// Empaques de un producto: su tipo de empaque y los que tiene registrados (caja, fardo…).
+function empaquesDeProducto(p) {
+  const nombres = new Map();
+  if (p.tipoEmpaque) nombres.set(normalizarIdentidad(p.tipoEmpaque), p.tipoEmpaque);
+  Almacen.hojas.EQUIVALENCIAS.forEach(e => { if (e.idProducto === p.idProducto && e.unidades > 1) nombres.set(normalizarIdentidad(e.nombre), e.nombre); });
+  return nombres;
+}
 
 registrarPantalla('stock', {
   titulo: 'Stock',
@@ -37,8 +49,10 @@ registrarPantalla('stock', {
     el.innerHTML = html`
       <div class="columna">
         <div class="cifras" id="stock-cifras"></div>
+        <div id="stock-grafico"></div>
         <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="stock-buscar" type="search" placeholder="Buscar en el catálogo" autocomplete="off"></div></div>
         <div class="fila-chips" id="stock-chips" role="group" aria-label="Filtros"></div>
+        <label class="casilla t-pequeno"><input type="checkbox" data-accion="ocultar-sabores"> Ocultar sabores en la lista</label>
         <div class="fila-separada">
           <span class="t-pequeno t-secundario" id="stock-conteo"></span>
           <span class="fila">
@@ -49,7 +63,6 @@ registrarPantalla('stock', {
         <div id="stock-barra-seleccion"></div>
         <div id="stock-lista"></div>
         <button type="button" class="boton boton-entrada boton-bloque" data-accion="agregar">${seguro(icono('entrada'))}Agregar stock</button>
-        <div id="stock-grafico"></div>
       </div>`.texto;
     $('#stock-buscar', el).addEventListener('input', (e) => { stockUI.texto = e.target.value; pintarListaStock(); });
     delegar(el, 'click', accionesStock);
@@ -83,7 +96,8 @@ function pintarChipsStock() {
   const chips = [['TODOS', 'Todos'], ['BAJO', 'Bajo'], ['AGOTADO', 'Agotado'], ['OBSOLETOS', 'Obsoletos']];
   const categorias = Almacen.categorias();
   $('#stock-chips', stockUI.el).innerHTML = chips.map(([v, t]) => html`<button type="button" class="chip" data-accion="filtro" data-valor="${v}" aria-pressed="${String(stockUI.filtro === v)}">${t}</button>`.texto).join('')
-    + (categorias.length ? html`<button type="button" class="chip" data-accion="filtro-categoria" aria-pressed="${String(!!stockUI.categoria)}">${seguro(icono('etiqueta', 'icono-sm'))}${stockUI.categoria || 'Categoría'}</button>`.texto : '');
+    + (categorias.length ? html`<button type="button" class="chip" data-accion="filtro-categoria" aria-pressed="${String(!!stockUI.categoria)}">${seguro(icono('etiqueta', 'icono-sm'))}${stockUI.categoria || 'Categoría'}</button>`.texto : '')
+    + html`<button type="button" class="chip" data-accion="filtro-empaque" aria-pressed="${String(!!stockUI.empaque)}">${seguro(icono('caja', 'icono-sm'))}${stockUI.empaque || 'Empaque'}</button>`.texto;
 }
 
 function productosFiltradosStock() {
@@ -94,6 +108,7 @@ function productosFiltradosStock() {
     if (stockUI.filtro === 'BAJO' && !(sem === 'bajo' || sem === 'medio')) return false;
     if (stockUI.filtro === 'AGOTADO' && sem !== 'agotado') return false;
     if (stockUI.categoria && normalizarIdentidad(p.categoria) !== normalizarIdentidad(stockUI.categoria)) return false;
+    if (stockUI.empaque && !empaquesDeProducto(p).has(normalizarIdentidad(stockUI.empaque))) return false;
     if (stockUI.texto && !coincidenPalabras(textoBuscableProducto(p), stockUI.texto)) return false;
     return true;
   }).sort((a, b) => {
@@ -111,7 +126,7 @@ function filaStockHTML(p) {
   const presentaciones = Almacen.presentacionesDe(p.idProducto);
   const eq = Almacen.equivalenciasDe(p.idProducto).find(x => x.unidades > 1);
   const sabores = Object.entries(e.porVariante).filter(([k, v]) => k || v);
-  const tieneSabores = sabores.some(([k]) => k);
+  const tieneSabores = sabores.some(([k]) => k) && !stockUI.ocultarSabores;
   const seleccionado = stockUI.seleccion.has(p.idProducto);
   const unidad = (n) => pluralUnidad(p.unidadBase, n);
   return html`<details class="desplegable fila-stock" data-id="${p.idProducto}" ${stockUI.expandirTodo ? 'open' : ''}>
@@ -131,8 +146,8 @@ function filaStockHTML(p) {
     <div class="desplegable-cuerpo">
       <div class="par-dato"><span>Stock</span><strong>${formatearNumero(e.stock)} ${unidad(e.stock)}</strong></div>
       ${e.bonif ? html`<div class="par-dato"><span>Llegó gratis (bonificado)</span><strong>${formatearNumero(Math.min(e.bonif, Math.max(0, e.stock)))} ${unidad(e.bonif)}</strong></div>` : ''}
-      <div class="par-dato"><span>Último costo</span><strong class="cifra">${formatearDinero(p.costo, { decimales: p.costo % 1000 ? 4 : 2 })} / ${p.unidadBase}</strong></div>
-      <div class="par-dato"><span>Costo promedio</span><strong class="cifra">${formatearDinero(e.cpp, { decimales: e.cpp % 1000 ? 4 : 2 })} / ${p.unidadBase}</strong></div>
+      <div class="par-dato"><span>Último costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })} / ${p.unidadBase}</strong></div>
+      <div class="par-dato"><span>Costo promedio</span><strong class="cifra">${formatearDinero(e.cpp, { detalle: true })} / ${p.unidadBase}</strong></div>
       <div class="par-dato"><span>Precio de venta</span><strong class="cifra">${formatearDinero(p.precio)} / ${p.unidadBase}</strong></div>
       ${presentaciones.map(x => html`<div class="par-dato"><span>${x.etiqueta}</span><strong class="cifra">${formatearDinero(x.precio)}</strong></div>`)}
       ${eq ? html`<div class="par-dato"><span>Empaque habitual</span><strong>${eq.nombre} de ${formatearNumero(eq.unidades)}</strong></div>` : ''}
@@ -189,7 +204,42 @@ function pintarBarraSeleccion() {
     <button type="button" class="boton boton-sm boton-texto" data-accion="seleccionar">Listo</button></div>`.texto;
 }
 
+// Filtro por empaque (v2: «tipo de producto») y aviso de stock para todos los del filtro.
+function abrirFiltroEmpaque() {
+  const todos = new Map();
+  Almacen.productosVisibles().forEach(p => empaquesDeProducto(p).forEach((v, k) => todos.set(k, v)));
+  const lista = [...todos.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  const ids = () => productosFiltradosStock().map(p => p.idProducto);
+  const control = abrirHoja({
+    titulo: 'Empaque',
+    contenido: html`<p class="t-pequeno t-secundario">Muestra solo los productos que se guardan en ese empaque (cajas, fardos…).</p>
+      <div class="lista">${[''].concat(lista).map(c => html`<button type="button" class="fila-lista" data-emp="${c}"><span class="titulo">${c || 'Todos'}</span>${normalizarIdentidad(c) === normalizarIdentidad(stockUI.empaque) ? seguro(icono('check', 'lado')) : ''}</button>`)}</div>
+      ${stockUI.empaque ? html`<div class="tarjeta columna">
+        <strong class="t-pequeno">Aviso de stock para los ${formatearNumero(ids().length)} productos de «${stockUI.empaque}»</strong>
+        <div class="rejilla-campos">
+          <div class="campo"><label for="lote-umbral-min">Muy poco con</label><div class="control"><input id="lote-umbral-min" placeholder="4"></div></div>
+          <div class="campo"><label for="lote-umbral-max">Poco con</label><div class="control"><input id="lote-umbral-max" placeholder="6"></div></div>
+        </div>
+        <button type="button" class="boton boton-secundario" data-umbral-lote>Aplicar a todos</button>
+      </div>` : ''}`,
+    alMontar: (hoja) => {
+      $$('[data-emp]', hoja).forEach(b => b.addEventListener('click', () => { stockUI.empaque = b.dataset.emp; control.cerrar(); pintarChipsStock(); pintarListaStock(); }));
+      ['#lote-umbral-min', '#lote-umbral-max'].forEach(id => { const i = $(id, hoja); if (i) prepararCampoNumerico(i, { decimales: 0 }); });
+      const b = $('[data-umbral-lote]', hoja);
+      if (b) b.addEventListener('click', async () => {
+        let op;
+        try { op = operacionAsignarUmbralLote(ids(), leerCantidad($('#lote-umbral-min', hoja)), leerCantidad($('#lote-umbral-max', hoja))); }
+        catch (e) { mostrarDialogo({ titulo: 'Revisa el aviso', mensaje: e.message }); return; }
+        const r = await ejecutarOperacion(op, { boton: b });
+        if (r) { control.cerrar(); avisar(`Aviso de stock actualizado en ${r.cambiados} ${pluralizar(r.cambiados, 'producto')}.`); }
+      });
+    }
+  });
+}
+
 const accionesStock = {
+  'filtro-empaque': () => abrirFiltroEmpaque(),
+  'ocultar-sabores': (b) => { stockUI.ocultarSabores = b.checked; pintarListaStock(); },
   'filtro': (b) => { stockUI.filtro = b.dataset.valor; pintarChipsStock(); pintarListaStock(); },
   'filtro-categoria': () => {
     const cats = Almacen.categorias();

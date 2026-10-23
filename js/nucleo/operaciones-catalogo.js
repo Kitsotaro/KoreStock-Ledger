@@ -15,7 +15,8 @@
 //
 // Expone: rangoFila, prepararProductoNuevo, pasoAgregarProductos,
 //   historicoPrecio, operacionActualizarProducto, operacionCambiarPrecio,
-//   operacionGuardarPresentaciones, operacionGuardarUmbral, sugerirPrecioTotal.
+//   operacionGuardarPresentaciones, operacionGuardarUmbral, sugerirPrecioTotal,
+//   operacionAsignarCategoria, operacionAsignarUmbralLote.
 // Depende de: esquema.js, almacen.js, cola-escritura.js, hoja.js, sku.js,
 //   dinero.js, utilidades.js, sesion.js (actorActual), sincronizacion.js.
 // ============================================================
@@ -227,6 +228,19 @@ function operacionFusionarProductos(idDestino, idsOrigen) {
 }
 
 // Asignar categoría a varios productos en UNA escritura (§24.1).
+// Umbral de semáforo para varios productos a la vez (heredado de la v2:
+// «umbral por tipo de empaque»). Escribe solo las filas que cambian.
+function operacionAsignarUmbralLote(ids, min, max) {
+  if (!(min >= 0) || !(max >= min)) throw new Error('«Muy poco» debe ser menor o igual que «poco».');
+  const cambiados = ids.map(id => Almacen.producto(id)).filter(p => p && (p.umbralMin !== min || p.umbralMax !== max))
+    .map(p => { const n = Object.assign({}, p, { umbralMin: min, umbralMax: max }); marcarModificado(n); return n; });
+  if (!cambiados.length) throw new Error('Esos productos ya tienen ese aviso.');
+  return crearOperacion('Asignar aviso de stock', [
+    pasosCatalogoYPrecios(cambiados, [])[0],
+    { nombre: 'copia local', fn: async (ctx) => { ctx.resultado = { cambiados: cambiados.length }; Almacen.notificar('producto'); guardarCacheBase(); } }
+  ]);
+}
+
 function operacionAsignarCategoria(ids, categoria) {
   const limpia = String(categoria || '').trim();
   const existente = Almacen.categorias().find(c => normalizarIdentidad(c) === normalizarIdentidad(limpia));
