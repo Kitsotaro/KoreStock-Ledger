@@ -8,7 +8,7 @@ button.fila-lista:hover, a.fila-lista:hover { background: var(--superficie-2); }
 .fila-lista .titulo { font-weight: var(--peso-fuerte); line-height: 1.3; }
 .fila-lista .sub { font-size: var(--t-sm); color: var(--texto-2); line-height: 1.35; }
 .fila-lista .lado { margin-left: auto; text-align: right; flex-shrink: 0; }
-.fila-lista .monto { font-family: var(--fuente-mono); font-weight: var(--peso-fuerte); }
+.fila-lista .monto { font-weight: var(--peso-fuerte); font-variant-numeric: tabular-nums; }
 .fila-lista.anulada .titulo, .fila-lista.anulada .monto { text-decoration: line-through; color: var(--texto-3); }
 
 details.desplegable > summary { list-style: none; cursor: pointer; }

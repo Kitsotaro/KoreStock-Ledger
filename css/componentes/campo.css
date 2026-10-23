@@ -19,7 +19,7 @@
 .control .prefijo, .control .sufijo { color: var(--texto-3); font-weight: var(--peso-medio); white-space: nowrap; }
 .control input::placeholder, .control textarea::placeholder { color: var(--texto-3); opacity: 1; }
 .control.grande { min-height: 3.75rem; border-radius: var(--r-sm); }
-.control.grande input { font-size: var(--t-3xl); font-weight: var(--peso-fuerte); font-family: var(--fuente-mono); }
+.control.grande input { font-size: var(--t-3xl); font-weight: var(--peso-fuerte); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .control.error, .campo.error .control { border-color: var(--peligro); }
 .control.deshabilitado { background: var(--superficie-2); opacity: 0.7; }
 .ayuda-campo { font-size: var(--t-xs); color: var(--texto-3); }

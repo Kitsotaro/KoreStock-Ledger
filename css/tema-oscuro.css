@@ -5,48 +5,49 @@
  * está en oscuro y no eligió nada.
  */
 :root[data-tema="oscuro"] {
-  /* Botón «+», elemento seleccionado y control activo: oscuro en claro, claro en oscuro */
-  --seleccion-fondo: #E8EAF0; --seleccion-texto: #12151C; --activo-fondo: #E8EAF0; --activo-texto: #12151C;
-  --fab: #E8EAF0; --sobre-fab: #12151C;
-
   color-scheme: dark;
-  --fondo: #0D1017;
-  --superficie: #131722;
-  --superficie-2: #181C28;
-  --superficie-3: #1F2433;
-  --superficie-elevada: #1A1F2C;
+  /* El claro invertido: grises que dan contraste, sin tinte azul. */
+  --fondo: #0E1013;
+  --superficie: #16191D;
+  --superficie-2: #1C1F24;
+  --superficie-3: #262A30;
+  --superficie-elevada: #1C1F24;
   --velo: rgb(0 0 0 / 0.6);
-  --borde: #3A4054;
-  --borde-fuerte: #8088A0;
+  --borde: #30353C;
+  --borde-fuerte: #7D838E;
 
-  --texto: #E6E8F0;
-  --texto-2: #B6BBCB;
-  --texto-3: #9AA0B2;
+  --texto: #F1F2F4;
+  --texto-2: #B8BDC6;
+  --texto-3: #9AA0AA;
 
-  --primario: #B4BEFF;
-  --sobre-primario: #0F1B66;
-  --primario-suave: #2A3799;
-  --sobre-primario-suave: #E0E4FF;
+  --primario: #9DB4E8;
+  --sobre-primario: #0E1013;
+  --primario-suave: #1F2A44;
+  --sobre-primario-suave: #DCE5F8;
 
-  --entrada: #8DB4FF;
-  --sobre-entrada: #0B1F45;
-  --entrada-suave: #1C2E57;
-  --venta: #4ADE80;
-  --sobre-venta: #052E16;
-  --venta-suave: #133A23;
+  --entrada: #9DB4E8;
+  --sobre-entrada: #0E1013;
+  --entrada-suave: #1F2A44;
+  --venta: #6CCB8F;
+  --sobre-venta: #0E1013;
+  --venta-suave: #16301F;
 
-  --exito: #4ADE80;
-  --exito-suave: #133A23;
-  --aviso: #FFB870;
-  --aviso-suave: #3D2A12;
-  --peligro: #FF8A80;
-  --peligro-suave: #3F1714;
-  --info: #B4BEFF;
-  --info-suave: #23295A;
+  --exito: #6CCB8F;
+  --exito-suave: #16301F;
+  --aviso: #FB923C;
+  --aviso-suave: #3A2210;
+  --peligro: #F28B82;
+  --peligro-suave: #3B1716;
+  --info: #9DB4E8;
+  --info-suave: #1F2A44;
 
-  --foco: #B4BEFF;
-  --grafico-1: #4F8FE6; --grafico-2: #26A69A; --grafico-3: #FFB960; --grafico-4: #E06666;
-  --grafico-5: #A07BE0; --grafico-6: #7CB342; --grafico-7: #F06292; --grafico-8: #26C6DA;
+  --fab: #F1F2F4; --sobre-fab: #0E1013;
+  --seleccion-fondo: #F1F2F4; --seleccion-texto: #0E1013;
+  --activo-fondo: #F1F2F4; --activo-texto: #0E1013;
+
+  --foco: #9DB4E8;
+  --grafico-1: #9DB4E8; --grafico-2: #5EC2B7; --grafico-3: #F0A35E; --grafico-4: #A3ADBD;
+  --grafico-5: #F08BA6; --grafico-6: #A3CF6A; --grafico-7: #B69CF2; --grafico-8: #67C6DA;
   --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --sombra-2: 0 4px 16px rgb(0 0 0 / 0.5);
   --sombra-3: 0 12px 40px rgb(0 0 0 / 0.6);

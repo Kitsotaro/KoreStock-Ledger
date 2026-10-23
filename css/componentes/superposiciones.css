@@ -67,7 +67,7 @@
 .dialogo .mensaje { color: var(--texto-2); white-space: pre-line; }
 .dialogo .acciones { display: flex; flex-wrap: wrap-reverse; gap: var(--e-2); justify-content: flex-end; margin-top: var(--e-2); }
 .dialogo .acciones .boton { flex: 1 1 8rem; }
-.dialogo.resumen .total { font-family: var(--fuente-mono); font-size: var(--t-3xl); font-weight: var(--peso-fuerte); }
+.dialogo.resumen .total { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; font-size: var(--t-3xl); font-weight: var(--peso-fuerte); }
 @keyframes aparecer { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 
 /* Avisos breves (toasts) y franjas fijas */

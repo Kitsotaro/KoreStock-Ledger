@@ -14,7 +14,7 @@
 .cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--e-3); }
 .cifra-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); padding: var(--e-3) var(--e-4); min-width: 0; }
 .cifra-tarjeta .etiqueta { font-size: var(--t-xs); color: var(--texto-2); font-weight: var(--peso-medio); text-transform: uppercase; letter-spacing: 0.04em; }
-.cifra-tarjeta .valor { font-family: var(--fuente-mono); font-size: var(--t-2xl); font-weight: var(--peso-fuerte); line-height: 1.25; margin-top: var(--e-1); overflow-wrap: anywhere; }
+.cifra-tarjeta .valor { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; font-size: var(--t-2xl); font-weight: var(--peso-fuerte); line-height: 1.25; margin-top: var(--e-1); overflow-wrap: anywhere; }
 .cifra-tarjeta .comparacion { font-size: var(--t-xs); margin-top: var(--e-1); display: flex; align-items: center; gap: var(--e-1); }
 .comparacion.sube { color: var(--exito); } .comparacion.baja { color: var(--peligro); } .comparacion.igual { color: var(--texto-3); }
 
