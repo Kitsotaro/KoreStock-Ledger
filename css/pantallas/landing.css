@@ -25,7 +25,50 @@
 .portada-acciones { margin-top: var(--e-6); display: grid; gap: var(--e-2); justify-items: start; }
 .estado-entrada { font-size: var(--t-sm); color: var(--texto-2); min-height: 1.4em; }
 .portada-legal { margin-top: var(--e-3); font-size: var(--t-sm); color: var(--texto-2); }
-.portada-maqueta { min-height: 22rem; border-radius: var(--r-xl); background: linear-gradient(160deg, var(--primario-suave), var(--superficie-2)); border: 1px solid var(--borde); }
+.portada-maqueta { display: grid; place-items: center; padding: var(--e-6) var(--e-4); border-radius: var(--r-xl); background: linear-gradient(160deg, var(--primario-suave), var(--superficie-2)); border: 1px solid var(--borde); overflow: hidden; }
+
+/* Maqueta animada: un teléfono con el Dashboard; ciclo de 9 s */
+.maqueta-telefono { position: relative; width: min(19rem, 100%); padding: var(--e-3) var(--e-3) 4.25rem; border-radius: 2rem; background: var(--fondo); border: 6px solid color-mix(in srgb, var(--texto) 88%, transparent); box-shadow: var(--sombra-3); font-size: 0.72rem; overflow: hidden; }
+.maqueta-barra { display: flex; align-items: center; gap: var(--e-2); margin-bottom: var(--e-3); font-size: 0.85rem; }
+.maqueta-menu { width: 0.9rem; height: 0.55rem; border-top: 2px solid var(--texto); border-bottom: 2px solid var(--texto); }
+.maqueta-pildora { margin-left: auto; padding: 2px 10px; border-radius: var(--r-pildora); border: 1px solid var(--borde); background: var(--superficie); font-size: 0.65rem; font-weight: var(--peso-fuerte); }
+.maqueta-hoy { padding: var(--e-3); border-radius: var(--r-md); background: var(--hoy-fondo); color: var(--sobre-hoy); display: grid; gap: var(--e-2); }
+.maqueta-hoy-cifras { display: flex; justify-content: space-between; align-items: flex-start; }
+.maqueta-etiqueta { display: block; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; font-weight: var(--peso-fuerte); }
+.maqueta-cifra { display: grid; font-size: 1.55rem; font-weight: var(--peso-titulo); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.maqueta-cifra > span, .maqueta-ganancia strong > span { grid-area: 1 / 1; }
+.maqueta-ganancia { text-align: right; } .maqueta-ganancia strong { display: grid; justify-items: end; font-size: 0.9rem; }
+.maqueta-detalle { font-size: 0.6rem; opacity: 0.85; }
+.maqueta-accesos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.maqueta-accesos span { padding: 6px 0; border-radius: var(--r-xs); background: color-mix(in srgb, var(--sobre-hoy) 14%, transparent); text-align: center; font-size: 0.58rem; font-weight: var(--peso-fuerte); }
+.maqueta-lista { margin-top: var(--e-3); border-radius: var(--r-md); border: 1px solid var(--borde); background: var(--superficie); overflow: hidden; }
+.maqueta-dia { display: flex; justify-content: space-between; padding: 6px 10px; background: var(--superficie-2); font-size: 0.58rem; font-weight: var(--peso-fuerte); color: var(--texto-2); }
+.maqueta-dia span:last-child { color: var(--venta); font-family: var(--fuente-mono); }
+.maqueta-fila { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-top: 1px solid var(--borde); }
+.maqueta-fila .crece { display: grid; min-width: 0; } .maqueta-fila .crece b, .maqueta-fila .crece i { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.maqueta-fila i { font-style: normal; font-size: 0.6rem; color: var(--texto-3); }
+.maqueta-insignia { flex: none; padding: 2px 6px; border-radius: var(--r-pildora); font-size: 0.56rem; font-weight: var(--peso-fuerte); }
+.maqueta-insignia.venta { background: var(--venta-suave); color: var(--venta); }
+.maqueta-insignia.entrada { background: var(--entrada-suave, var(--primario-suave)); color: var(--entrada); }
+.maqueta-isla { position: absolute; left: var(--e-3); right: var(--e-3); bottom: var(--e-3); height: 2.6rem; display: flex; align-items: center; justify-content: space-around; border-radius: var(--r-xl); background: var(--superficie-elevada); border: 1px solid var(--borde); box-shadow: var(--sombra-2); }
+.maqueta-isla span { width: 0.9rem; height: 0.9rem; border-radius: 4px; background: var(--superficie-3); }
+.maqueta-isla .maqueta-mas { width: 2.3rem; height: 2.3rem; margin-top: -1.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--fab); color: var(--sobre-fab); font-size: 1.2rem; box-shadow: var(--sombra-2); }
+
+/* Las dos ventas nuevas entran por arriba y las cifras cambian con ellas */
+.maqueta-cifra .paso-1, .maqueta-ganancia .paso-1 { animation: maqueta-paso1 9s infinite; }
+.maqueta-cifra .paso-2, .maqueta-ganancia .paso-2 { animation: maqueta-paso2 9s infinite; }
+.maqueta-cifra .paso-3, .maqueta-ganancia .paso-3 { animation: maqueta-paso3 9s infinite; }
+.maqueta-fila.nueva-1 { animation: maqueta-fila1 9s infinite; }
+.maqueta-fila.nueva-2 { animation: maqueta-fila2 9s infinite; }
+@keyframes maqueta-paso1 { 0%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+@keyframes maqueta-paso2 { 0%, 30% { opacity: 0; } 34%, 63% { opacity: 1; } 67%, 100% { opacity: 0; } }
+@keyframes maqueta-paso3 { 0%, 63% { opacity: 0; } 67%, 96% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes maqueta-fila1 { 0%, 30% { opacity: 0; max-height: 0; padding-block: 0; border-top-width: 0; } 36%, 96% { opacity: 1; max-height: 3rem; } 100% { opacity: 0; } }
+@keyframes maqueta-fila2 { 0%, 63% { opacity: 0; max-height: 0; padding-block: 0; border-top-width: 0; } 69%, 96% { opacity: 1; max-height: 3rem; background: var(--venta-suave); } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .maqueta-telefono * { animation: none !important; }
+  .maqueta-cifra .paso-1, .maqueta-cifra .paso-2, .maqueta-ganancia .paso-1, .maqueta-ganancia .paso-2 { opacity: 0; }
+}
 
 .seccion { padding: var(--e-10) 0; border-top: 1px solid var(--borde); }
 .seccion h2 { font-size: clamp(1.5rem, 4vw, 2rem); letter-spacing: -0.01em; }

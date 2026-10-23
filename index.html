@@ -75,7 +75,31 @@
           </div>
           <p class="portada-legal">Al entrar aceptas los <a href="TERMS.md" data-documento="TERMS.md" data-titulo="Términos de servicio">Términos de servicio</a> y la <a href="PRIVACY.md" data-documento="PRIVACY.md" data-titulo="Política de privacidad">Política de privacidad</a>.</p>
         </div>
-        <div class="portada-maqueta" id="maqueta-portada" aria-hidden="true"></div>
+        <!-- Maqueta animada de la app (decorativa, solo HTML y CSS): las ventas del día
+             van entrando y la tarjeta «Hoy» se actualiza. Quieta si se pide menos movimiento. -->
+        <div class="portada-maqueta" id="maqueta-portada" aria-hidden="true">
+          <div class="maqueta-telefono">
+            <div class="maqueta-barra"><span class="maqueta-menu"></span><strong>Dashboard</strong><span class="maqueta-pildora">Hoy</span></div>
+            <div class="maqueta-hoy">
+              <div class="maqueta-hoy-cifras">
+                <div><span class="maqueta-etiqueta">Vendido hoy</span>
+                  <span class="maqueta-cifra"><span class="paso-1">$84.60</span><span class="paso-2">$97.10</span><span class="paso-3">$128.40</span></span>
+                  <span class="maqueta-detalle">↑ 18 % vs. ayer</span></div>
+                <div class="maqueta-ganancia"><span class="maqueta-etiqueta">Ganancia</span><strong><span class="paso-1">$21.15</span><span class="paso-2">$24.30</span><span class="paso-3">$32.10</span></strong></div>
+              </div>
+              <div class="maqueta-accesos"><span>Vender</span><span>Comprar</span><span>Gasto</span><span>Stock</span></div>
+            </div>
+            <div class="maqueta-lista">
+              <div class="maqueta-dia"><span>HOY</span><span>Vendido $128.40</span></div>
+              <div class="maqueta-fila nueva-2"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Pepsi Lata 355 ml</b><i>2 cajas de 12 · TK-000214</i></span><b>$31.30</b></div>
+              <div class="maqueta-fila nueva-1"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Huevo Cartón 30</b><i>1 cartón · TK-000213</i></span><b>$12.50</b></div>
+              <div class="maqueta-fila"><span class="maqueta-insignia entrada">Entrada</span><span class="crece"><b>Agua Botella 600 ml</b><i>3 fardos de 24 · IN-000088</i></span><b>$43.20</b></div>
+              <div class="maqueta-fila"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Coca Cola Vidrio 1.5 L</b><i>6 botellas · TK-000212</i></span><b>$10.80</b></div>
+              <div class="maqueta-fila"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Diana Tortillitas 30 g</b><i>10 bolsas · TK-000211</i></span><b>$4.00</b></div>
+            </div>
+            <div class="maqueta-isla"><span></span><span></span><span class="maqueta-mas">+</span><span></span><span></span></div>
+          </div>
+        </div>
       </section>
 
       <section class="seccion" id="funciones" aria-labelledby="titulo-funciones">
