@@ -45,6 +45,7 @@
   <link rel="stylesheet" href="css/pantallas/dashboard.css">
   <link rel="stylesheet" href="css/pantallas/panorama.css">
   <link rel="stylesheet" href="css/pantallas/gastos.css">
+  <link rel="stylesheet" href="css/componentes/escritorio.css">
 </head>
 <body data-modo="tienda">
   <noscript><p class="franja aviso-color">KoreStock necesita JavaScript activado para funcionar.</p></noscript>
@@ -194,6 +195,16 @@
     <aside class="panel-lateral" id="panel-lateral" aria-label="Menú" aria-hidden="true">
       <div class="marca"><img src="assets/logo.png" alt=""><div><strong>KoreStock</strong><span class="t-mini t-tenue" id="panel-cuenta"></span></div></div>
       <nav>
+        <!-- En PC (≥1100 px) el panel queda fijo a la izquierda y suma las pantallas
+             principales; la isla y el «+» se ocultan (fase UI, 2026-10-23). -->
+        <section class="grupo-panel solo-escritorio" aria-label="Principal">
+          <button type="button" class="opcion-panel registro-venta" data-ir="venta"><span data-icono="carrito"></span>Venta</button>
+          <button type="button" class="opcion-panel registro-entrada" data-ir="entrada"><span data-icono="entrada"></span>Entrada</button>
+          <hr class="separador-panel">
+          <button type="button" class="opcion-panel" data-ir="dashboard"><span data-icono="grafico-barras"></span>Dashboard</button>
+          <button type="button" class="opcion-panel" data-ir="stock"><span data-icono="caja"></span>Stock</button>
+          <button type="button" class="opcion-panel" data-ir="panorama" data-solo-modo="pro"><span data-icono="panorama"></span>Panorama</button>
+        </section>
         <!-- Tres grupos bien separados (fase UI): Modo · Tu negocio · Preferencias -->
         <section class="grupo-panel" aria-labelledby="g-modo">
           <div class="grupo-titulo" id="g-modo"><span data-icono="modos" data-icono-clase="icono-sm"></span>Modo de trabajo</div>

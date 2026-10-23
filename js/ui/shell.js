@@ -81,6 +81,8 @@ const Shell = {
     Almacen.suscribir((motivo) => { if (motivo === 'sin-conexion') this.marcarSinConexion(true); this.actualizarEstado(); });
     setInterval(() => this.revisarSesion(), 30000);
     this.actualizarPanel();
+    matchMedia('(min-width: 1100px)').addEventListener('change', () => this.ajustarEscritorio());
+    this.ajustarEscritorio();
   },
 
   // ---------- Navegación ----------
@@ -121,6 +123,14 @@ const Shell = {
   },
 
   // ---------- Panel lateral ----------
+  // En PC el panel queda fijo (CSS): siempre visible para lectores de pantalla.
+  esEscritorio() { return matchMedia('(min-width: 1100px)').matches; },
+  ajustarEscritorio() {
+    const panel = $('#panel-lateral');
+    if (!panel) return;
+    if (this.esEscritorio()) { panel.setAttribute('aria-hidden', 'false'); $('#velo-panel').classList.remove('visible'); this.actualizarPanel(); }
+    else if (!panel.classList.contains('abierto')) panel.setAttribute('aria-hidden', 'true');
+  },
   abrirPanel() {
     this.actualizarPanel();
     $('#panel-lateral').classList.add('abierto');
@@ -133,6 +143,7 @@ const Shell = {
   cerrarPanel() {
     const panel = $('#panel-lateral');
     if (!panel || !panel.classList.contains('abierto')) return;
+    if (this.esEscritorio()) { panel.classList.remove('abierto'); $('#velo-panel').classList.remove('visible'); return; }
     panel.classList.remove('abierto');
     panel.setAttribute('aria-hidden', 'true');
     $('#velo-panel').classList.remove('visible');

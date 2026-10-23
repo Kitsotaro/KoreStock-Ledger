@@ -1,0 +1,40 @@
+/* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
+ * ESCRITORIO (≥1100 px, fase UI) — el panel lateral queda fijo a la izquierda con
+ * las pantallas principales; sin isla, sin «+» y sin botón de menú. El contenido
+ * se ensancha y algunas pantallas pasan a dos columnas (formulario | lista). */
+.solo-escritorio, .panel-lateral .solo-escritorio { display: none; }
+
+@media (min-width: 1100px) {
+  :root { --ancho-riel: 17.5rem; --ancho-max-escritorio: 76rem; }
+  .solo-escritorio, .panel-lateral .solo-escritorio { display: flex; }
+
+  /* Riel */
+  .panel-lateral { transform: none; width: var(--ancho-riel); box-shadow: none; border-right: 1px solid var(--borde); z-index: var(--z-barra); }
+  #velo-panel { display: none; }
+  .barra-superior > [data-accion="abrir-panel"] { display: none; }
+  .barra-inferior, .base-isla, .fab-registro { display: none !important; }
+  .opcion-panel.registro-venta { color: var(--venta); }
+  .opcion-panel.registro-entrada { color: var(--entrada); }
+  .opcion-panel.registro-venta[aria-current="page"] { background: var(--venta); color: var(--sobre-venta); }
+  .opcion-panel.registro-entrada[aria-current="page"] { background: var(--entrada); color: var(--sobre-entrada); }
+
+  /* Todo lo demás se corre a la derecha del riel */
+  #app > .barra-superior, #franjas, .contenido { margin-left: var(--ancho-riel); }
+  .barra-superior { padding-left: var(--e-6); padding-right: var(--e-6); }
+  .contenido { max-width: none; padding: var(--e-5) var(--e-6) var(--e-8); }
+  .contenido > .pantalla { max-width: var(--ancho-max-escritorio); margin: 0 auto; }
+  /* Venta y Entrada siguen en una columna cómoda de leer */
+  .contenido > .pantalla[data-pantalla="venta"], .contenido > .pantalla[data-pantalla="entrada"],
+  .contenido > .pantalla[data-pantalla="datos"], .contenido > .pantalla[data-pantalla="ayuda"] { max-width: 46rem; }
+  .filtros-flotantes { right: var(--e-6); bottom: var(--e-6); }
+
+  /* Dos columnas: formulario y cifras a la izquierda, la lista a la derecha */
+  [data-pantalla="gastos"] > .columna, [data-pantalla="combustible"] > .columna, [data-pantalla="clientes"] > .columna {
+    display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-auto-flow: row dense; align-items: start; column-gap: var(--e-5);
+  }
+  [data-pantalla="gastos"] > .columna > *, [data-pantalla="combustible"] > .columna > *, [data-pantalla="clientes"] > .columna > * { grid-column: 1; margin: 0; }
+  #gastos-lista, #comb-lista, #clientes-lista { grid-column: 2 !important; grid-row: 1 / span 20; position: sticky; top: calc(var(--alto-barra-superior) + var(--e-4)); }
+
+  /* Panorama: tres tarjetas por fila */
+  .rejilla-panorama { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

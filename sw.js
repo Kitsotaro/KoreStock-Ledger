@@ -21,7 +21,7 @@ const ARCHIVOS_APP = [
   './css/componentes/tarjeta.css', './css/componentes/chip.css', './css/componentes/lista.css',
   './css/componentes/controles.css', './css/componentes/barras.css', './css/componentes/superposiciones.css',
   './css/pantallas/landing.css', './css/pantallas/app.css', './css/pantallas/registro.css',
-  './css/pantallas/stock.css', './css/pantallas/dashboard.css', './css/pantallas/panorama.css', './css/pantallas/gastos.css',
+  './css/pantallas/stock.css', './css/pantallas/dashboard.css', './css/pantallas/panorama.css', './css/pantallas/gastos.css', './css/componentes/escritorio.css',
   './js/nucleo/config.js', './js/nucleo/dinero.js', './js/nucleo/utilidades.js', './js/nucleo/esquema.js',
   './js/nucleo/calculos.js', './js/nucleo/hoja.js', './js/nucleo/hoja-google.js', './js/demo/hoja-demo.js',
   './js/nucleo/base-datos.js', './js/nucleo/migracion.js', './js/nucleo/cache-local.js', './js/nucleo/almacen.js',
