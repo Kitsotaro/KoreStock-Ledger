@@ -29,6 +29,12 @@ registrarPantalla('venta', {
     venta.el = el;
     el.innerHTML = html`
       <div class="registro registro-venta">
+        <div class="fila-folio">
+          <label class="fila" for="venta-fecha">${seguro(icono('calendario', 'icono-sm'))}<span class="solo-lector">Fecha</span>
+            <span class="control"><input type="date" id="venta-fecha"></span></label>
+          <span class="fila t-pequeno t-secundario">${seguro(icono('reloj', 'icono-sm'))}<span class="cifra" data-reloj></span></span>
+          <span id="venta-folio" class="cifra"></span>
+        </div>
         <div id="venta-selector"></div>
         <div id="venta-producto"></div>
         <div id="venta-carrito"></div>
@@ -36,11 +42,6 @@ registrarPantalla('venta', {
           <summary>${seguro(icono('persona', 'icono-sm'))}<span class="crece">Cliente <span class="t-tenue t-pequeno">(opcional)</span></span><span class="t-pequeno t-secundario" id="venta-cliente-nombre"></span>${seguro(icono('chevron-abajo', 'icono-sm icono-giro'))}</summary>
           <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="venta-cliente-buscar" type="search" placeholder="Buscar o agregar cliente" autocomplete="off"></div></div>
         </details>
-        <div class="fila-folio">
-          <label class="fila" for="venta-fecha">${seguro(icono('calendario', 'icono-sm'))}<span class="solo-lector">Fecha</span>
-            <span class="control"><input type="date" id="venta-fecha"></span></label>
-          <span id="venta-folio" class="cifra"></span>
-        </div>
       </div>`.texto;
     venta.selector = crearSelectorProducto({
       contenedor: $('#venta-selector', el), conCinta: true,
@@ -333,13 +334,18 @@ function editarPrecioProducto(p, alGuardar) {
 function editarPresentaciones(p, alGuardar) {
   const actuales = Almacen.presentacionesDe(p.idProducto).map(x => ({ etiqueta: x.etiqueta, cantidad: x.cantidad, precio: x.precio }));
   while (actuales.length < 3) actuales.push({ etiqueta: '', cantidad: '', precio: '' });
+  // Ejemplos con el producto actual (su empaque más usado o «2 unidades»), nunca fijos.
+  const eq = Almacen.equivalenciasDe(p.idProducto).find(e => e.idProducto === p.idProducto && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase));
+  const ejCant = eq ? eq.unidades : 2;
+  const ejNombre = eq ? `${eq.nombre} ${eq.unidades}` : `${ejCant} ${pluralUnidad(p.unidadBase, ejCant)}`;
+  const ejPrecio = valorCampoDinero(redondearCentavo(multiplicarDinero(p.precio || 0, ejCant))) || '0.00';
   const control = abrirHoja({
     titulo: 'Precios por presentación',
-    contenido: html`<p class="t-pequeno t-secundario">Para vender ${pluralUnidad(p.unidadBase, 2)} juntos a un precio propio (cartón, fardo, mayoreo). Deja vacío lo que no uses.</p>
+    contenido: html`<p class="t-pequeno t-secundario">Para vender ${pluralUnidad(p.unidadBase, 2)} juntos a un precio propio (${eq ? eq.nombre.toLowerCase() : 'paquete'}, mayoreo). Deja vacío lo que no uses.</p>
       ${actuales.map((x, i) => html`<div class="rejilla-campos fila-presentacion" data-i="${i}">
-        <div class="campo"><label for="pres-et-${i}">Nombre</label><div class="control"><input id="pres-et-${i}" value="${x.etiqueta}" placeholder="Cartón 30"></div></div>
-        <div class="campo"><label for="pres-c-${i}">${pluralUnidad(p.unidadBase, 2)}</label><div class="control"><input id="pres-c-${i}" value="${x.cantidad}" placeholder="30"></div></div>
-        <div class="campo"><label for="pres-p-${i}">Precio</label><div class="control"><span class="prefijo">$</span><input id="pres-p-${i}" value="${x.precio === '' ? '' : valorCampoDinero(x.precio)}" placeholder="5.25"></div></div>
+        <div class="campo"><label for="pres-et-${i}">Nombre</label><div class="control"><input id="pres-et-${i}" value="${x.etiqueta}" placeholder="${ejNombre}"></div></div>
+        <div class="campo"><label for="pres-c-${i}">${pluralUnidad(p.unidadBase, 2)}</label><div class="control"><input id="pres-c-${i}" value="${x.cantidad}" placeholder="${ejCant}"></div></div>
+        <div class="campo"><label for="pres-p-${i}">Precio</label><div class="control"><span class="prefijo">$</span><input id="pres-p-${i}" value="${x.precio === '' ? '' : valorCampoDinero(x.precio)}" placeholder="${ejPrecio}"></div></div>
       </div>`)}`,
     acciones: [{ texto: 'Cancelar', fn: (c) => c.cerrar() }, {
       texto: 'Guardar', clase: 'boton-primario', fn: async (c) => {

@@ -53,3 +53,12 @@ function leerDineroCampo(input) {
 function valorCampoDinero(d, decimales) {
   return dineroANumero(redondearDinero(d || 0, decimales ?? 2)).toFixed(decimales ?? 2);
 }
+
+// Reloj de captura (heredado de la v2): la hora exacta con la que se
+// guardará el registro, visible junto a la fecha en Venta y Entrada.
+setInterval(() => {
+  const relojes = document.querySelectorAll('[data-reloj]');
+  if (!relojes.length) return;
+  const hora = obtenerTimestampLocal().slice(11, 19);
+  relojes.forEach(e => { if (e.offsetParent) e.textContent = hora; });
+}, 1000);
