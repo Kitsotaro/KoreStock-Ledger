@@ -18,7 +18,7 @@
 //
 // Expone: icono, html, seguro, mostrarDialogo, cerrarDialogo, confirmar,
 //   confirmarFuerte, mostrarResumen, abrirHoja, avisar, crearBuscador,
-//   pintarPaginado, delegar, $, $$.
+//   pintarPaginado, delegar, activarSugerencias, $, $$.
 // Depende de: utilidades.js (escaparHTML).
 // ============================================================
 
@@ -235,6 +235,50 @@ function crearBuscador({ input, obtener, alElegir, nuevo = null, maximo = 8, alE
     else if (e.key === 'Escape') cerrar();
   });
   return { cerrar, refrescar: pintar };
+}
+
+// ---------- Sugerencias en campos de texto libre ----------
+// El <datalist> del navegador no abre en todos los entornos (p. ej. vistas
+// incrustadas). Cada input[list] se convierte solo en un buscador propio
+// que lee las opciones de su <datalist> cada vez que se abre, con un botón
+// para ver todas. Se activa sola en todo HTML nuevo (MutationObserver).
+function activarSugerencias(raiz) {
+  const inputs = raiz.matches && raiz.matches('input[list]') ? [raiz] : $$('input[list]', raiz);
+  inputs.forEach(input => {
+    const idLista = input.getAttribute('list');
+    input.removeAttribute('list');
+    input.dataset.sugerencias = idLista;
+    const control = input.parentElement;
+    control.classList.add('con-sugerencias');
+    const valores = () => { const dl = document.getElementById(idLista); return dl ? [...dl.options].map(o => o.value).filter(Boolean) : []; };
+    const opcion = (v) => ({ valor: v, html: html`<span class="crece">${v}</span>` });
+    const buscador = crearBuscador({
+      input, maximo: 50,
+      obtener: (q) => valores().filter(v => normalizarIdentidad(v) !== normalizarIdentidad(q) && coincidenPalabras(v, q)).map(opcion),
+      alEnfocarVacio: () => valores().map(opcion),
+      alElegir: (v) => {
+        input.value = v;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        setTimeout(() => buscador.cerrar(), 0);
+      }
+    });
+    const boton = document.createElement('button');
+    boton.type = 'button'; boton.className = 'boton-sugerencias'; boton.tabIndex = -1;
+    boton.setAttribute('aria-label', 'Ver opciones');
+    boton.innerHTML = icono('chevron-abajo', 'icono-sm');
+    boton.addEventListener('mousedown', (e) => e.preventDefault());
+    boton.addEventListener('click', () => {
+      const abierta = input.getAttribute('aria-expanded') === 'true';
+      if (abierta) { buscador.cerrar(); return; }
+      const antes = input.value; input.value = ''; input.focus(); buscador.refrescar(); input.value = antes;
+    });
+    control.appendChild(boton);
+  });
+}
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' && document.body) {
+  new MutationObserver((cambios) => cambios.forEach(c => c.addedNodes.forEach(n => { if (n.nodeType === 1) activarSugerencias(n); })))
+    .observe(document.body, { childList: true, subtree: true });
 }
 
 // ---------- Lista con tope y «Cargar más» (D37) ----------

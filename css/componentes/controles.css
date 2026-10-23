@@ -54,3 +54,9 @@
 .leyenda-item { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); border: 0; background: transparent; padding: var(--e-1); border-radius: var(--r-xs); text-align: left; width: 100%; }
 .leyenda-item .muestra { width: 0.75rem; height: 0.75rem; border-radius: 3px; flex-shrink: 0; }
 .leyenda-item .valor { margin-left: auto; font-family: var(--fuente-mono); color: var(--texto-2); }
+/* Campo con sugerencias (reemplaza el <datalist> del navegador) */
+.control.con-sugerencias { position: relative; padding-right: var(--e-1); }
+.control.con-sugerencias > .desplegable-opciones { left: -1.5px; right: -1.5px; }
+.boton-sugerencias { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border: 0; border-radius: var(--r-xs); background: transparent; color: var(--texto-3); cursor: pointer; }
+.boton-sugerencias:hover { background: var(--superficie-2); color: var(--texto); }
+.control.con-sugerencias:has(input[aria-expanded="true"]) .boton-sugerencias { transform: rotate(180deg); }
