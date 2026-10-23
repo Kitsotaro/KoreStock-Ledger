@@ -24,3 +24,6 @@
 body.sin-conexion [data-accion="cobrar"], body.sin-conexion [data-accion="guardar-entrada"],
 body.sin-conexion [data-accion^="anular"], body.sin-conexion [data-accion^="editar"],
 body.sin-conexion .registro button[type="submit"], body.sin-conexion form button[type="submit"] { opacity: .45; }
+/* Título de grupo entre tarjetas (Datos: «Protege tus datos», «Mantenimiento») */
+.titulo-grupo { margin: var(--e-2) var(--e-1) 0; font-size: var(--t-xs); font-weight: var(--peso-fuerte); color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.titulo-grupo + .tarjeta, .titulo-grupo ~ .tarjeta { margin-top: 0; }
