@@ -15,7 +15,7 @@
 const CACHE_APP = 'korestock-app-v3';
 // Todo lo necesario para abrir y consultar sin conexión (D27).
 const ARCHIVOS_APP = [
-  './', './index.html', './manifest.json', './assets/logo.png', './assets/iconos.svg', './js/ui/arranque.js',
+  './', './index.html', './manifest.json', './assets/logo.png', './assets/icono-192.png', './assets/icono-512.png', './assets/favicon-48.png', './assets/iconos.svg', './js/ui/arranque.js',
   './css/tokens.css', './css/tema-claro.css', './css/tema-oscuro.css', './css/base.css',
   './css/componentes/icono.css', './css/componentes/boton.css', './css/componentes/campo.css',
   './css/componentes/tarjeta.css', './css/componentes/chip.css', './css/componentes/lista.css',
