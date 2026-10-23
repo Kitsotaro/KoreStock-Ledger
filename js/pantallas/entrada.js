@@ -223,6 +223,7 @@ function formularioNuevo() {
     <div class="tarjeta columna" id="formulario-nuevo">
       <div class="fila-separada"><h2 class="fila">${seguro(icono('etiqueta-nueva', 'icono-sm'))} Producto nuevo</h2>
         <button type="button" class="boton boton-icono" data-accion="cancelar-nuevo" aria-label="Cancelar">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
+      <span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Estás creando un producto que no existe en tu catálogo. Al guardar la entrada quedará registrado y marcado como «Nuevo».</span>
       <div class="rejilla-campos">
         ${campo('nuevo-marca', 'Marca', n.marca, { lista: 'lista-marcas', obligatorio: true, placeholder: 'Catalana', campoCat: 'marca' })}
         ${campo('nuevo-linea', 'Producto', n.linea, { lista: 'lista-lineas', obligatorio: true, placeholder: 'Huevo grande', campoCat: 'linea' })}

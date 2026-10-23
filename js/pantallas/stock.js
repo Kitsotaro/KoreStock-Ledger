@@ -314,7 +314,7 @@ function editarProducto(idProducto) {
   const campo = (id, etiqueta, valor, extra) => html`<div class="campo"><label for="${id}">${etiqueta}</label><div class="control">${extra && extra.prefijo ? html`<span class="prefijo">${extra.prefijo}</span>` : ''}<input id="${id}" value="${valor}" ${extra && extra.lista ? html`list="${extra.lista}"` : ''} autocomplete="off" ${extra && extra.deshabilitado ? 'disabled' : ''}>${extra && extra.sufijo ? html`<span class="sufijo">${extra.sufijo}</span>` : ''}</div>${extra && extra.ayuda ? html`<span class="ayuda-campo">${extra.ayuda}</span>` : ''}</div>`;
   const control = abrirHoja({
     titulo: 'Editar producto',
-    contenido: html`<p class="t-pequeno t-tenue">${p.sku} · ID ${p.idProducto}</p>
+    contenido: html`<p class="t-pequeno t-tenue">Código ${p.sku}</p>
       <div class="rejilla-campos">
         ${campo('ed-marca', 'Marca', p.marca)}${campo('ed-linea', 'Producto', p.linea)}
         ${campo('ed-presentacion', 'Presentación', p.presentacion)}${campo('ed-volumen', 'Contenido', p.volumen)}

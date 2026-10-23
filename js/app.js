@@ -109,7 +109,7 @@ const App = {
   async alAutorizar({ gracia }) {
     this.gracia = !!gracia;
     this.mostrar('carga');
-    this.textoCarga('Buscando tu base de datos…');
+    this.textoCarga('Buscando tus datos…');
     try {
       const id = await this.resolverBase();
       if (id) await this.abrir(id);
@@ -121,7 +121,7 @@ const App = {
   errorCarga(e) {
     this.mostrar('carga');
     $('#carga').innerHTML = html`<div class="vacio">${seguro(icono('sin-nube', 'icono-xl'))}<strong>No pudimos abrir tus datos</strong>
-      <p>${e && e.message ? e.message : 'Error desconocido'}</p>
+      <p>${e && e.message ? e.message : 'Ocurrió algo inesperado. Inténtalo de nuevo; si sigue pasando, escríbenos.'}</p>
       <button type="button" class="boton boton-primario" id="reintentar-carga">Reintentar</button></div>`.texto;
     $('#reintentar-carga').addEventListener('click', () => location.reload());
   },
@@ -159,7 +159,7 @@ const App = {
     return new Promise((resolver) => {
       const demo = Sesion.modoDemo;
       mostrarDialogo({
-        titulo: demo ? 'Demostración' : 'No encontramos tu base de datos',
+        titulo: demo ? 'Demostración' : 'No encontramos tus datos',
         mensaje: demo
           ? 'Puedes cargar la base de prueba (una tienda simulada con 6 meses de movimientos) o empezar con una base vacía.'
           : '¿Ya tenías una base de KoreStock en tu Google Drive, o es la primera vez que la usas con esta cuenta?',
@@ -181,7 +181,7 @@ const App = {
           }
         },
         onCancelar: async () => {
-          this.textoCarga('Creando tu base de datos en la carpeta KoreStock…');
+          this.textoCarga('Preparando tu espacio en la carpeta KoreStock…');
           const id = await crearBaseV3({ hojas: { UMBRALES: UMBRALES_INICIALES } });
           guardarLocal(CLAVES_LOCALES.BASE, id);
           resolver(id);

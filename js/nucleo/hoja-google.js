@@ -10,13 +10,23 @@
 //   (1 s, 2 s, 4 s, 8 s) antes de rendirse.
 // - Solo ve archivos que la app creó o que el usuario eligió (drive.file).
 //
-// Expone: MotorGoogle, codigoErrorGoogle.
+// Expone: MotorGoogle, codigoErrorGoogle, mensajeErrorGoogle.
 // Depende de: gapi (cargado por Google), hoja.js (filaDeRango),
 //   sesion.js (Sesion.renovarToken) en tiempo de ejecución.
 // ============================================================
 
 const MIME_HOJA = 'application/vnd.google-apps.spreadsheet';
 const MIME_CARPETA = 'application/vnd.google-apps.folder';
+
+function mensajeErrorGoogle(codigo) {
+  if (codigo === 0) return 'No hay conexión con Google. Revisa tu internet e inténtalo de nuevo.';
+  if (codigo === 401) return 'Tu sesión con Google venció. Vuelve a entrar para continuar.';
+  if (codigo === 403) return 'Google no permitió esta acción con tu cuenta. Si sigue pasando, escríbenos.';
+  if (codigo === 404) return 'No encontramos el archivo en tu Google Drive. Puede que se haya movido o borrado.';
+  if (codigo === 429) return 'Google está recibiendo demasiadas solicitudes. Espera un momento e inténtalo de nuevo.';
+  if (codigo >= 500) return 'Google no está respondiendo como debería. Inténtalo en unos minutos.';
+  return 'Google no pudo completar la acción. Inténtalo de nuevo.';
+}
 
 function codigoErrorGoogle(err) {
   if (!err) return 0;
@@ -43,8 +53,10 @@ async function conReintentosGoogle(fn) {
         await new Promise(r => setTimeout(r, esperas[intento]));
         continue;
       }
-      const mensaje = (err && err.result && err.result.error && err.result.error.message) || (err && err.message) || 'Error de Google';
-      const e = new Error(mensaje);
+      // Mensajes en español y sin tecnicismos (D52); el original queda en `detalle`.
+      const original = (err && err.result && err.result.error && err.result.error.message) || (err && err.message) || '';
+      const e = new Error(mensajeErrorGoogle(codigo));
+      e.detalle = original;
       e.codigo = codigo;
       throw e;
     }

@@ -41,7 +41,7 @@ function pintarAsistenteMigracion(el) {
   el.innerHTML = html`
     <div class="columna">
       <div class="tarjeta">
-        <h2>Tu base de datos necesita actualizarse</h2>
+        <h2>Tus datos necesitan actualizarse</h2>
         <p class="t-secundario">La nueva versión guarda tu stock en unidades, permite varios productos por ticket, clientes y precios por presentación. Para eso se crea una base nueva en tu carpeta <strong>KoreStock</strong> con todos tus datos.</p>
         <ul class="columna t-pequeno" style="margin-top:var(--e-3)">
           <li class="fila">${seguro(icono('escudo', 'icono-sm'))}Tu base actual <strong>no se modifica</strong>: queda como respaldo.</li>
