@@ -6,8 +6,12 @@
 // pantalla (cifras, gráficos y listas). No tocan los datos.
 //   Período (lista única, INV. 14) · Producto «Solo» o «Excluir» · Marca ·
 //   Categoría · Cliente · Sabor.
+// El período además se ve SIEMPRE arriba: una cinta en la barra superior
+// (`#cinta-periodo`) con el período de la pantalla; al tocarla abre la
+// misma hoja de período. Cada filtro activo tiene su «×» para quitar solo ese.
 //
-// Expone: crearEstadoFiltros, crearFiltrosAbajo, predicadoFiltros.
+// Expone: crearEstadoFiltros, crearFiltrosAbajo, predicadoFiltros, filtrosDePantalla,
+//   actualizarCintaPeriodo.
 // Depende de: componentes.js, almacen.js, utilidades.js.
 // ============================================================
 
@@ -35,6 +39,17 @@ function predicadoFiltros(est) {
   };
 }
 
+// Filtros de cada pantalla (para la cinta de período de arriba).
+const filtrosDePantalla = new Map();
+
+function actualizarCintaPeriodo() {
+  const cinta = $('#cinta-periodo');
+  if (!cinta) return;
+  const f = filtrosDePantalla.get(Shell.actual);
+  cinta.hidden = !f || !f.usaPeriodo;
+  if (!cinta.hidden) cinta.innerHTML = html`${seguro(icono('calendario', 'icono-sm'))}<span>${f.textoPeriodo()}</span>`.texto;
+}
+
 // opciones: { contenedor, estado, usar: ['periodo','producto','marca','categoria','cliente','sabor'], alCambiar }
 function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
   contenedor.className = 'filtros-abajo';
@@ -42,7 +57,8 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
     const p = PRESETS_PERIODO.find(x => x.valor === estado.preset);
     return p && estado.preset !== 'PERSONALIZADO' ? p.etiqueta : `${formatearFechaCorta(estado.inicio)} – ${formatearFechaCorta(estado.fin)}`;
   };
-  const chip = (clave, texto, activo, iconoNombre) => html`<button type="button" class="chip" data-filtro="${clave}" aria-pressed="${String(!!activo)}">${seguro(icono(iconoNombre, 'icono-sm'))}${texto}</button>`;
+  // Un chip activo (salvo el período) lleva su «×» para quitar solo ese filtro.
+  const chip = (clave, texto, activo, iconoNombre) => html`<span class="chip-grupo"><button type="button" class="chip" data-filtro="${clave}" aria-pressed="${String(!!activo)}">${seguro(icono(iconoNombre, 'icono-sm'))}${texto}</button>${activo && clave !== 'periodo' ? html`<button type="button" class="chip-quitar" data-quitar="${clave}" aria-label="Quitar filtro">${seguro(icono('cerrar', 'icono-sm'))}</button>` : ''}</span>`;
   const pintar = () => {
     const partes = [];
     if (usar.includes('periodo')) partes.push(chip('periodo', textoPeriodo(), true, 'calendario'));
@@ -54,8 +70,10 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
     const hayAlgo = estado.productos.size || estado.marcas.size || estado.categorias.size || estado.clientes.size || estado.sabor;
     if (hayAlgo) partes.push(html`<button type="button" class="chip" data-filtro="limpiar">${seguro(icono('cerrar', 'icono-sm'))}Quitar filtros</button>`);
     contenedor.innerHTML = `<div class="fila-chips">${partes.map(p => p.texto).join('')}</div>`;
+    if (Shell.actual === pantalla) actualizarCintaPeriodo();
   };
   const cambio = () => { pintar(); alCambiar(); };
+  const quitar = { producto: () => estado.productos.clear(), marca: () => estado.marcas.clear(), categoria: () => estado.categorias.clear(), cliente: () => estado.clientes.clear(), sabor: () => { estado.sabor = ''; } };
 
   const hojaLista = ({ titulo, items, conjunto, buscador, extra }) => {
     const control = abrirHoja({
@@ -118,7 +136,14 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
     },
     limpiar: () => { estado.productos.clear(); estado.marcas.clear(); estado.categorias.clear(); estado.clientes.clear(); estado.sabor = ''; cambio(); }
   };
-  contenedor.addEventListener('click', (e) => { const b = e.target.closest('[data-filtro]'); if (b && acciones[b.dataset.filtro]) acciones[b.dataset.filtro](); });
+  contenedor.addEventListener('click', (e) => {
+    const q = e.target.closest('[data-quitar]');
+    if (q) { if (quitar[q.dataset.quitar]) { quitar[q.dataset.quitar](); cambio(); } return; }
+    const b = e.target.closest('[data-filtro]'); if (b && acciones[b.dataset.filtro]) acciones[b.dataset.filtro]();
+  });
+  const pantalla = (contenedor.closest('.pantalla') || {}).dataset ? contenedor.closest('.pantalla').dataset.pantalla : '';
+  const control = { pintar, abrirPeriodo: acciones.periodo, textoPeriodo, usaPeriodo: usar.includes('periodo') };
+  if (pantalla) filtrosDePantalla.set(pantalla, control);
   pintar();
-  return { pintar };
+  return control;
 }

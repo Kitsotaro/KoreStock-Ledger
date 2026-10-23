@@ -73,3 +73,13 @@ body[data-modo="pro"] .interruptor-registro { flex: 1.35 1 0; }
 .pestana { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Durante la migración no hay a dónde navegar. */
 body[data-pantalla="migracion"] .barra-inferior { display: none; }
+/* Cinta del período en la barra superior: siempre visible donde hay filtro de fechas */
+.cinta-periodo {
+  display: inline-flex; align-items: center; gap: var(--e-1); flex: none; max-width: 52%;
+  min-height: 2rem; padding: 0 var(--e-3); border: 1px solid var(--borde-fuerte); border-radius: var(--r-pildora);
+  background: var(--superficie); color: var(--texto); font-size: var(--t-xs); font-weight: var(--peso-medio); cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cinta-periodo span { overflow: hidden; text-overflow: ellipsis; }
+.cinta-periodo[hidden] { display: none; }
+.cinta-periodo:hover { border-color: var(--primario); }

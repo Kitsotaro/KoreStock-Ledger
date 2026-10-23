@@ -23,3 +23,9 @@
 .insignia.entrada { background: var(--entrada-suave); color: var(--entrada); }
 .insignia.venta { background: var(--venta-suave); color: var(--venta); }
 .insignia.aviso { background: var(--aviso-suave); color: var(--aviso); }
+/* Chip de filtro activo con su «×» para quitar solo ese filtro */
+.chip-grupo { display: inline-flex; align-items: center; flex-shrink: 0; }
+.chip-grupo .chip[aria-pressed="true"] + .chip-quitar { margin-left: -1.75rem; }
+.chip-grupo:has(.chip-quitar) .chip { padding-right: 2rem; }
+.chip-quitar { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%; background: transparent; color: var(--sobre-primario-suave); cursor: pointer; position: relative; }
+.chip-quitar:hover { background: color-mix(in srgb, var(--primario) 18%, transparent); }

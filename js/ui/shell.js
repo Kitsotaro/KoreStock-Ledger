@@ -40,6 +40,7 @@ const Shell = {
     const app = $('#app');
     delegar(app, 'click', {
       'abrir-panel': () => this.abrirPanel(),
+      'cinta-periodo': () => { const f = filtrosDePantalla.get(this.actual); if (f && f.usaPeriodo) f.abrirPeriodo(); },
       'elegir-modo': () => { this.cerrarPanel(); this.elegirModo(); },
       'cambiar-tema': () => { this.cerrarPanel(); this.elegirTema(); },
       'tamano-texto': () => { this.cerrarPanel(); this.elegirTamanoTexto(); },
@@ -90,6 +91,7 @@ const Shell = {
     $$('.panel-lateral [data-ir]').forEach(b => b.setAttribute('aria-current', b.dataset.ir === nombre ? 'page' : 'false'));
     document.body.dataset.pantalla = nombre;
     if (def.mostrar) def.mostrar(el, opciones || {});
+    actualizarCintaPeriodo();
     pintarIconos(el);
     if (anterior !== nombre) window.scrollTo({ top: 0 });
     if (!sinHistorial && anterior !== nombre) history.pushState({ pantalla: nombre }, '');
