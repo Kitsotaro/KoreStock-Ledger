@@ -101,7 +101,10 @@ function leerLibroRestauracion(libro) {
   if (Number(man.ESQUEMA) !== VERSION_ESQUEMA) throw new Error(`La copia es de otra versión de la estructura (${man.ESQUEMA}).`);
   const hojas = {};
   NOMBRES_HOJAS.forEach(n => {
-    if (!libro.SheetNames.includes(n)) throw new Error(`Falta la hoja ${n} en el archivo.`);
+    if (!libro.SheetNames.includes(n)) {
+      if (HOJAS_OPCIONALES_COPIA.includes(n) && man[`FILAS_${n}`] === undefined) { hojas[n] = []; return; }
+      throw new Error(`Falta la hoja ${n} en el archivo.`);
+    }
     const filas = XLSX.utils.sheet_to_json(libro.Sheets[n], { header: 1, raw: true, defval: '' });
     const enc = (filas[0] || []).map(String);
     if (encabezadosDe(n).some((e, i) => enc[i] !== e)) throw new Error(`Los encabezados de ${n} no coinciden: el archivo fue modificado.`);

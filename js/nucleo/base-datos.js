@@ -9,7 +9,7 @@
 //   base:     { korestock: 'base', tipo: 'principal'|'respaldo'|'historico', esquema: '3', ... }
 //
 // Expone: NOMBRE_CARPETA, NOMBRE_BASE, PROPS_CARPETA, asegurarCarpeta,
-//   crearBaseV3, leerHojas, asegurarHojasV3, escribirHojasCompletas.
+//   crearBaseV3, leerHojas, asegurarHojasV3, asegurarHojasUnaVez, escribirHojasCompletas.
 // Depende de: hoja.js, esquema.js.
 // ============================================================
 
@@ -78,6 +78,14 @@ async function leerHojas(id, nombres) {
 
 // Repara una base v3 incompleta: agrega pestañas que falten y escribe los
 // encabezados (por ejemplo, si una versión futura suma una hoja nueva).
+// Una sola revisión por base y sesión (se reutiliza la promesa). Si falla (sin
+// internet), se puede volver a intentar.
+const revisionesHojas = new Map();
+function asegurarHojasUnaVez(id) {
+  if (!revisionesHojas.has(id)) revisionesHojas.set(id, asegurarHojasV3(id).catch((e) => { revisionesHojas.delete(id); throw e; }));
+  return revisionesHojas.get(id);
+}
+
 async function asegurarHojasV3(id) {
   const titulos = await Hoja.titulosHojas(id);
   const faltan = NOMBRES_HOJAS.filter(n => !titulos.includes(n));

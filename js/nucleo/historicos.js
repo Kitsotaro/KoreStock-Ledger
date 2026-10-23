@@ -122,7 +122,8 @@ function prepararRotacion(hojas, opciones) {
     hojas: {
       LOG_TRANS: log, CATALOGO: catalogoNuevo, LOG_HISTORICO_PRECIOS: copiar('LOG_HISTORICO_PRECIOS'), UMBRALES: copiar('UMBRALES'),
       COSTOS_OPERATIVOS: gastos, VEHICULOS: copiar('VEHICULOS'), COSTOS_COMBUSTIBLE: cargas, EQUIVALENCIAS: copiar('EQUIVALENCIAS'),
-      PRESENTACIONES_VENTA: copiar('PRESENTACIONES_VENTA'), CLIENTES: copiar('CLIENTES'), LOG_ACCIONES: copiar('LOG_ACCIONES')
+      PRESENTACIONES_VENTA: copiar('PRESENTACIONES_VENTA'), CLIENTES: copiar('CLIENTES'), LOG_ACCIONES: copiar('LOG_ACCIONES'),
+      COLORES: copiar('COLORES')
     }
   };
 }

@@ -83,8 +83,15 @@ const ESQUEMA = {
     ['idAccion', 'ID_ACCION', 't'], ['timestamp', 'TIMESTAMP', 'f'], ['tipo', 'TIPO', 't'], ['alcance', 'ALCANCE', 't'],
     ['foliosAnulados', 'FOLIOS_ANULADOS', 't'], ['foliosNuevos', 'FOLIOS_NUEVOS', 't'], ['estado', 'ESTADO_ACCION', 't'],
     ['timestampReversion', 'TIMESTAMP_REVERSION', 'f'], ['actor', 'ACTOR', 't']
-  ]
+  ],
+  // Colores elegidos para la leyenda de los gráficos (2026-10-23). Es su propio
+  // registro: cada cambio agrega una fila y vale la última de cada NIVEL + NOMBRE;
+  // un COLOR vacío vuelve al color automático.
+  COLORES: [['nivel', 'NIVEL', 't'], ['nombre', 'NOMBRE', 't'], ['color', 'COLOR', 't'], ['timestamp', 'TIMESTAMP', 'f']]
 };
+
+// Hojas que una copia exportada antes de existir puede no traer (se restauran vacías).
+const HOJAS_OPCIONALES_COPIA = ['COLORES'];
 
 const NOMBRES_HOJAS = Object.keys(ESQUEMA);
 

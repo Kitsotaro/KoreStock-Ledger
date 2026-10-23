@@ -9,11 +9,21 @@
 //     (Todo · 10 = 5 mayores + 5 menores · Top 5 = 3 + 2).
 //   - Unidades o valor en $ (el stock mezcla unidades distintas: huevos,
 //     latas…; el valor permite comparar parejo).
-//   - Leyenda propia, accesible y tocable; colores del tema.
+//   - Leyenda propia, accesible y tocable; colores del tema o el elegido
+//     tocando el cuadrito (hoja COLORES, con fecha: queda registrado).
 //
 // Expone: GraficoStock.
 // Depende de: cargador.js (cargarChart), almacen.js, dinero.js, componentes.js, shell.js.
 // ============================================================
+
+// <input type="color"> solo acepta #RRGGBB.
+function aHex(color) {
+  const c = String(color || '').trim();
+  if (/^#[0-9a-f]{6}$/i.test(c)) return c;
+  if (/^#[0-9a-f]{3}$/i.test(c)) return '#' + c.slice(1).split('').map(x => x + x).join('');
+  const m = c.match(/\d+/g);
+  return m && m.length >= 3 ? '#' + m.slice(0, 3).map(n => Number(n).toString(16).padStart(2, '0')).join('') : '#888888';
+}
 
 const NIVELES_GRAFICO = [
   { campo: 'marca', nombre: 'Marcas' },
@@ -54,6 +64,13 @@ const GraficoStock = {
       if (item) this.bajar(item.dataset.bajar);
     });
     $('select', contenedor).addEventListener('change', (e) => { this.recorte = e.target.value; this.pintar(); });
+    // El selector de color avisa al cerrarse («change»): se guarda una sola vez.
+    contenedor.addEventListener('change', async (e) => {
+      const i = e.target.closest('input[data-color]');
+      if (!i) return;
+      const r = await ejecutarOperacion(operacionGuardarColor(this.nivelColor(), i.dataset.color, i.value));
+      if (r !== null) { avisar('Color guardado.', { accion: 'Automático', alAccion: () => ejecutarOperacion(operacionGuardarColor(this.nivelColor(), i.dataset.color, '')).then(() => this.pintar()) }); this.pintar(); }
+    });
     Shell.alCambiarTema(() => { if (Shell.actual === 'stock') this.pintar(); });
   },
 
@@ -82,6 +99,11 @@ const GraficoStock = {
     }
     return { nivel, grupos, sinAsignar };
   },
+
+  // Clave del color: el nivel y el camino («Pepsi › Lata 355 ml»), para que el
+  // mismo nombre en dos marcas pueda tener colores distintos.
+  nivelColor() { return NIVELES_GRAFICO[this.camino.length].campo; },
+  nombreColor(etiqueta) { return this.camino.map(p => p.valor).concat(etiqueta).join(' › '); },
 
   claveProducto(p, campo) {
     if (campo === 'presentacionContenido') return [p.presentacion, p.volumen].filter(Boolean).join(' ') || 'Sin dato';
@@ -116,16 +138,18 @@ const GraficoStock = {
       if (this.recorte === 'TOP5' && n > 5) items = items.slice(0, 3).concat(items.slice(-2));
     }
     const estilo = getComputedStyle(document.documentElement);
-    const colores = Array.from({ length: 8 }, (_, i) => estilo.getPropertyValue(`--grafico-${i + 1}`).trim());
+    const paleta = Array.from({ length: 8 }, (_, i) => estilo.getPropertyValue(`--grafico-${i + 1}`).trim());
+    const colores = items.map((it, i) => Almacen.colorGrafico(this.nivelColor(), this.nombreColor(it.etiqueta)) || paleta[i % 8]);
     const fmt = (v) => this.medida === 'VALOR' ? formatearDinero(dinero(v)) : formatearNumero(v);
     const nota = $('.nota-grafico', c);
     nota.textContent = nivel.campo === 'sabor'
       ? `Según registros.${sinAsignar ? ` Sin asignar: ${formatearNumero(sinAsignar)}.` : ''}`
       : (this.medida === 'UNIDADES' ? 'Unidades en bodega (cada producto en su propia unidad).' : 'Valor en bodega a último costo.');
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
-    $('.leyenda', c).innerHTML = items.length ? items.map((it, i) => html`<button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}>
-        <span class="muestra" style="background:${colores[i % 8]}"></span><span class="recortar">${it.etiqueta}</span>
-        <span class="valor">${fmt(it.valor)} · ${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></button>`.texto).join('')
+    $('.leyenda', c).innerHTML = items.length ? items.map((it, i) => html`<div class="leyenda-fila">
+        <label class="muestra-color" style="background:${colores[i]}" title="Cambiar color"><input type="color" data-color="${this.nombreColor(it.etiqueta)}" value="${aHex(colores[i])}" aria-label="Color de ${it.etiqueta}"></label>
+        <button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}><span class="recortar">${it.etiqueta}</span>
+        <span class="valor">${fmt(it.valor)} · ${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></button></div>`.texto).join('')
       : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto;
 
     try { await cargarChart(); } catch (e) { return; }
@@ -140,9 +164,9 @@ const GraficoStock = {
       onClick: (evt, el) => { if (el.length && puedeBajar) this.bajar(items[el[0].index].etiqueta); }
     };
     this.instancia = new Chart(lienzo, this.tipo === 'PASTEL'
-      ? { type: 'doughnut', data: { labels: items.map(i => i.etiqueta), datasets: [{ data: items.map(i => i.valor), backgroundColor: items.map((_, i) => colores[i % 8]), borderColor: colorBorde, borderWidth: 2 }] },
+      ? { type: 'doughnut', data: { labels: items.map(i => i.etiqueta), datasets: [{ data: items.map(i => i.valor), backgroundColor: colores, borderColor: colorBorde, borderWidth: 2 }] },
           options: Object.assign({ cutout: '55%' }, comun) }
-      : { type: 'bar', data: { labels: items.map(i => i.etiqueta), datasets: [{ data: items.map(i => total ? i.valor / total * 100 : 0), backgroundColor: items.map((_, i) => colores[i % 8]), borderRadius: 6 }] },
+      : { type: 'bar', data: { labels: items.map(i => i.etiqueta), datasets: [{ data: items.map(i => total ? i.valor / total * 100 : 0), backgroundColor: colores, borderRadius: 6 }] },
           options: Object.assign({}, comun, { indexAxis: 'y', scales: { x: { min: 0, max: 100, ticks: { color: colorTexto, callback: (v) => v + '%' }, grid: { color: estilo.getPropertyValue('--borde').trim() } }, y: { ticks: { color: colorTexto } , grid: { display: false } } },
             plugins: Object.assign({}, comun.plugins, { tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(1)}% · ${fmt(items[ctx.dataIndex].valor)}` } } }) }) });
   }

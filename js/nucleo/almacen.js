@@ -169,6 +169,15 @@ const Almacen = {
     this.productosVisibles().forEach(p => { if (p.categoria) vistos.set(normalizarIdentidad(p.categoria), p.categoria); });
     return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
   },
+  // Último color registrado para un elemento de la leyenda ('' = automático).
+  colorGrafico(nivel, nombre) {
+    const k = normalizarTexto(nivel) + '|' + normalizarTexto(nombre);
+    const filas = this.hojas.COLORES || [];
+    for (let i = filas.length - 1; i >= 0; i--) {
+      if (normalizarTexto(filas[i].nivel) + '|' + normalizarTexto(filas[i].nombre) === k) return filas[i].color || '';
+    }
+    return '';
+  },
   umbral(clave) {
     const u = this.hojas.UMBRALES.find(x => normalizarTexto(x.clave) === normalizarTexto(clave));
     return u ? { min: u.min, max: u.max } : null;

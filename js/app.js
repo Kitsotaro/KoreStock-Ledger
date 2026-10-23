@@ -130,7 +130,9 @@ const App = {
     const guardado = leerLocal(CLAVES_LOCALES.BASE);
     if (guardado) {
       const copia = await CacheLocal.leer(guardado);
-      if (copia && copia.version === VERSION_ESQUEMA) return guardado;
+      // Con copia local se abre al instante; las hojas nuevas de una versión
+      // reciente se agregan al Excel en segundo plano cuando hay internet.
+      if (copia && copia.version === VERSION_ESQUEMA) { asegurarHojasUnaVez(guardado).catch(() => {}); return guardado; }
       if (await Hoja.existe(guardado)) {
         const v = await detectarVersionEsquema(guardado);
         if (v.version === 3) { await asegurarHojasV3(guardado); return guardado; }

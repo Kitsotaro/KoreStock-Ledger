@@ -141,3 +141,19 @@ prueba('10 a $1 + 10 a $2; vender 5 a $10: guardada $0 (último costo), con prom
   const mas = movs.concat([mov('VENTA', 1, 5, { cobrado: 10, fecha: '2026-01-04' })]);
   igual(formatearDinero(calcularUtilidadCostoPromedio(mas, '2026-01-04', '2026-01-04').utilidad), '$2.50');
 });
+
+grupo('Colores de la leyenda (hoja COLORES)');
+prueba('vale el último color de cada nivel y nombre; vacío vuelve al automático', () => {
+  const antes = Almacen.hojas.COLORES;
+  Almacen.hojas.COLORES = [
+    { nivel: 'marca', nombre: 'Pepsi', color: '#112233' },
+    { nivel: 'marca', nombre: 'Diana', color: '#445566' },
+    { nivel: 'marca', nombre: 'pepsi', color: '#AABBCC' }
+  ];
+  igual(Almacen.colorGrafico('marca', 'Pepsi'), '#AABBCC');
+  igual(Almacen.colorGrafico('linea', 'Pepsi'), '');
+  Almacen.hojas.COLORES.push({ nivel: 'marca', nombre: 'Pepsi', color: '' });
+  igual(Almacen.colorGrafico('marca', 'Pepsi'), '');
+  igual(Almacen.colorGrafico('marca', 'Diana'), '#445566');
+  Almacen.hojas.COLORES = antes;
+});

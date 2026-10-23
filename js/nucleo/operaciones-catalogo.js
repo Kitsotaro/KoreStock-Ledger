@@ -159,6 +159,22 @@ function operacionGuardarPresentaciones(idProducto, lista) {
   ]);
 }
 
+// Color de la leyenda: nunca se reescribe una fila, se agrega otra (queda el historial).
+function operacionGuardarColor(nivel, nombre, color) {
+  const limpio = /^#[0-9a-f]{6}$/i.test(color || '') ? color.toUpperCase() : '';
+  const obj = { nivel, nombre, color: limpio, timestamp: obtenerTimestampLocal() };
+  return crearOperacion('Guardar color', [{
+    nombre: 'color',
+    fn: async () => {
+      await asegurarHojasUnaVez(Almacen.baseId); // bases creadas antes de existir la hoja
+      const r = await Hoja.agregar(Almacen.baseId, 'COLORES', [objetoAFila('COLORES', obj, true)]);
+      obj._fila = r.primeraFila;
+      Almacen.agregarFilas('COLORES', [obj]);
+      Almacen.notificar('colores'); guardarCacheBase();
+    }
+  }]);
+}
+
 function operacionGuardarUmbral(clave, min, max) {
   const existente = Almacen.hojas.UMBRALES.find(u => normalizarTexto(u.clave) === normalizarTexto(clave));
   const obj = Object.assign({}, existente || {}, { clave, min, max });

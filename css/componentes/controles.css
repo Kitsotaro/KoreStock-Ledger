@@ -63,3 +63,9 @@
 /* «Precios por presentación» oculto por ahora (auditoría 2026-10-23: confunde; se busca mejor solución).
    Las presentaciones ya guardadas se siguen usando al vender. */
 [data-accion="editar-presentaciones"], [data-accion="presentaciones-entrada"], #ed-presentaciones { display: none !important; }
+/* Leyenda con color editable: el cuadrito abre el selector de color */
+.leyenda-fila { display: flex; align-items: center; gap: var(--e-1); }
+.leyenda-fila .leyenda-item { flex: 1; min-width: 0; }
+.muestra-color { position: relative; width: 1.1rem; height: 1.1rem; flex: none; border-radius: 4px; cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--texto) 15%, transparent); }
+.muestra-color:hover { outline: 2px solid var(--borde-fuerte); outline-offset: 2px; }
+.muestra-color input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
