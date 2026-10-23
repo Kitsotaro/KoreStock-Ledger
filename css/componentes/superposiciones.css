@@ -113,19 +113,21 @@ body.cambiando-modo .contenido { opacity: 0.35; }
   /* Sin overflow aquí: la flecha que señala el ícono vive fuera de la caja */
   position: fixed; z-index: var(--z-dialogo); width: min(18rem, calc(100vw - 24px));
   padding: var(--e-3) var(--e-3) var(--e-3); border-radius: var(--r-md); border: 1px solid var(--borde);
-  background: var(--superficie-elevada); color: var(--texto); box-shadow: var(--sombra-3);
+  /* Colores invertidos (como un tooltip): se separa de las tarjetas y la flecha se ve */
+  background: var(--activo-fondo); color: var(--activo-texto); border-color: transparent; box-shadow: var(--sombra-3);
   opacity: 0; transform: translateY(-4px) scale(0.98); transition: opacity var(--dur-rapida) var(--curva), transform var(--dur-rapida) var(--curva);
 }
 .infobox.arriba { transform: translateY(4px) scale(0.98); }
 .infobox.visible { opacity: 1; transform: none; }
 .infobox-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); margin-bottom: var(--e-1); font-size: var(--t-sm); }
-.infobox-cuerpo { font-size: var(--t-xs); line-height: 1.5; color: var(--texto-2); max-height: 60vh; overflow-y: auto; }
+.infobox-cuerpo { font-size: var(--t-xs); line-height: 1.5; color: color-mix(in srgb, var(--activo-texto) 82%, transparent); max-height: 60vh; overflow-y: auto; }
 .infobox-cuerpo > * + * { margin-top: var(--e-2); }
-.infobox-cuerpo strong { color: var(--texto); }
+.infobox-cuerpo strong { color: var(--activo-texto); }
+.infobox .boton-info { color: var(--activo-texto); }
 .infobox-cuerpo ul { padding-left: 1.1rem; }
-.infobox-cuerpo pre { margin: var(--e-2) 0; padding: var(--e-2) var(--e-3); border-radius: var(--r-xs); background: var(--superficie-2); overflow-x: auto; }
-.infobox-cuerpo pre code { font-family: var(--fuente-mono); font-size: var(--t-xs); color: var(--texto); white-space: pre-wrap; }
-.infobox-flecha { position: absolute; width: 14px; height: 14px; background: var(--superficie-elevada); border: 1px solid var(--borde); transform: rotate(45deg); z-index: 1; }
+.infobox-cuerpo pre { margin: var(--e-2) 0; padding: var(--e-2) var(--e-3); border-radius: var(--r-xs); background: color-mix(in srgb, var(--activo-texto) 12%, transparent); overflow-x: auto; }
+.infobox-cuerpo pre code { font-family: var(--fuente-mono); font-size: var(--t-xs); color: var(--activo-texto); white-space: pre-wrap; }
+.infobox-flecha { position: absolute; width: 14px; height: 14px; background: var(--activo-fondo); transform: rotate(45deg); z-index: 1; }
 .infobox.abajo .infobox-flecha { top: -8px; border-right: 0; border-bottom: 0; }
 .infobox.arriba .infobox-flecha { bottom: -8px; border-left: 0; border-top: 0; }
 
