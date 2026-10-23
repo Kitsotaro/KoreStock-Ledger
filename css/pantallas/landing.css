@@ -50,3 +50,7 @@
 .preguntas p { color: var(--texto-2); margin-top: var(--e-2); }
 .landing-pie { border-top: 1px solid var(--borde); padding: var(--e-6) var(--e-4) calc(env(safe-area-inset-bottom) + var(--e-6)); display: grid; gap: var(--e-2); justify-items: center; text-align: center; color: var(--texto-2); font-size: var(--t-sm); }
 .landing-pie nav { display: flex; gap: var(--e-4); }
+/* Página 404 propia */
+.pagina-404 { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: var(--e-3); padding: var(--e-6) var(--e-4); text-align: center; max-width: 32rem; margin: 0 auto; }
+.pagina-404 h1 { font-size: var(--t-2xl, 1.75rem); }
+.pagina-404 p { color: var(--texto-2); }

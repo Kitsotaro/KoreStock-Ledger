@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /pruebas/
+Disallow: /herramientas/
+
+Sitemap: https://korestock.kitsotaro.com/sitemap.xml
