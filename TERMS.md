@@ -34,7 +34,7 @@ El código, el diseño, el nombre y la marca de la Aplicación pertenecen al Aut
 
 ## 7. Soporte
 
-El Autor podrá atender consultas y reportes de errores en kitsotaro@gmail.com, sin compromiso de plazos de respuesta ni de resolución.
+El Autor podrá atender consultas y reportes de errores en contacto@kitsotaro.com, sin compromiso de plazos de respuesta ni de resolución.
 
 ## 8. Limitación de responsabilidad
 

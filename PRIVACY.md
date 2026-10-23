@@ -2,7 +2,7 @@
 
 **KoreStock Ledger** · Última actualización: octubre de 2026
 
-Este aviso describe qué datos trata la aplicación KoreStock Ledger (en adelante, «la Aplicación»), con qué finalidad, dónde se almacenan y cómo puede el usuario ejercer control sobre ellos. El responsable de la Aplicación es Wilber Adonay Escobar Solórzano (en adelante, «el Autor»). Contacto: kitsotaro@gmail.com.
+Este aviso describe qué datos trata la aplicación KoreStock Ledger (en adelante, «la Aplicación»), con qué finalidad, dónde se almacenan y cómo puede el usuario ejercer control sobre ellos. El responsable de la Aplicación es Wilber Adonay Escobar Solórzano (en adelante, «el Autor»). Contacto: contacto@kitsotaro.com.
 
 ## 1. Arquitectura: la Aplicación no tiene servidor propio
 

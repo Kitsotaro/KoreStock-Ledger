@@ -38,7 +38,6 @@
 .tabla-modos { display: grid; gap: var(--e-3); margin-top: var(--e-6); }
 @media (min-width: 760px) { .tabla-modos { grid-template-columns: repeat(3, 1fr); } }
 .modo-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); padding: var(--e-5); display: grid; gap: var(--e-2); }
-.modo-tarjeta.destacada { border: 2px solid var(--primario); }
 .modo-tarjeta > span { color: var(--primario); }
 .confianza { display: grid; gap: var(--e-4); margin-top: var(--e-6); }
 @media (min-width: 760px) { .confianza { grid-template-columns: repeat(3, 1fr); } }
@@ -61,3 +60,7 @@
 .lista-drive { list-style: none; display: grid; gap: var(--e-3); margin: var(--e-4) 0; padding: 0; }
 .lista-drive li { display: flex; gap: var(--e-3); align-items: flex-start; }
 .lista-drive li > span:first-child { color: var(--primario); flex: none; }
+/* Los enlaces de la cabecera llevan al título de cada sección sin quedar tapado por la cabecera fija */
+.landing [id] { scroll-margin-top: calc(env(safe-area-inset-top) + 5rem); }
+html:has(.landing:not([hidden])) { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html:has(.landing:not([hidden])) { scroll-behavior: auto; } }
