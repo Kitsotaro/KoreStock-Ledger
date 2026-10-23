@@ -82,13 +82,13 @@ prueba('repetible: correrla dos veces da dos bases correctas', async () => {
   verdadero(a.ok && b.ok && a.idNuevo !== b.idNuevo);
 });
 
-prueba('si el stock guardado no cuadra con el historial, no se activa', async () => {
+prueba('si el stock guardado no cuadra con el historial, no se activa sin avisar antes', async () => {
   if (!hayBasePrueba()) return;
   const id = await prepararDemoConBaseV2();
   DriveDemo.archivos[id].hojas.CATALOGO[1][8] = 999; // stock alterado a mano
   const r = await migrarBaseV2(id, []);
-  verdadero(!r.ok && r.etapa === 'verificacion');
-  verdadero(r.verificacion.errores.some(e => e.includes('999')));
+  verdadero(!r.ok && r.etapa === 'diferencias', 'pide confirmación (ya no bloquea, decisión 2026-10-22)');
+  verdadero(r.verificacion.diferencias.some(d => d.guardado === 999));
 });
 
 grupo('Esquema e identidad');
@@ -111,4 +111,22 @@ prueba('fila ↔ objeto conserva el dinero exacto', () => {
   const f = objetoAFila('LOG_TRANS', o, true);
   igual(f[12], 0.16667);
   igual(f.length, 19, 'el estado vacío del final no se escribe');
+});
+
+prueba('stock guardado distinto del historial: avisa y migra con el historial (auditoría 2026-10-22)', async () => {
+  if (!hayBasePrueba()) return;
+  DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo);
+  const id = cargarBasePruebaEnDemo(leerArchivoBinario(RUTA_BASE_PRUEBA));
+  const cat = DriveDemo.archivo(id).hojas.CATALOGO;
+  const col = cat[0].findIndex(h => /STOCK/i.test(String(h)) && !/BONIF/i.test(String(h)));
+  verdadero(col >= 0, 'columna de stock en la v2');
+  cat[1][col] = Number(cat[1][col] || 0) + 5;
+  const r1 = await migrarBaseV2(id, []);
+  igual(r1.ok, false); igual(r1.etapa, 'diferencias');
+  igual(r1.verificacion.diferencias.length, 1);
+  igual(r1.verificacion.diferencias[0].guardado - r1.verificacion.diferencias[0].historial, 5);
+  const r2 = await migrarBaseV2(id, [], null, { aceptarDiferencias: true });
+  verdadero(r2.ok, 'migra con el historial');
+  await abrirBase(r2.idNuevo);
+  igual(Almacen.stock(r1.verificacion.diferencias[0].id), r1.verificacion.diferencias[0].historial);
 });

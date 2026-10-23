@@ -90,7 +90,20 @@ async function ejecutarMigracionUI(el, boton) {
   progreso.setAttribute('role', 'status');
   boton.after(progreso);
   try {
-    const r = await migrarBaseV2(_migracion.idViejo, props, (paso, texto) => { progreso.textContent = `Paso ${paso} de 6 · ${texto}`; });
+    const alProgreso = (paso, texto) => { progreso.textContent = `Paso ${paso} de 6 · ${texto}`; };
+    let r = await migrarBaseV2(_migracion.idViejo, props, alProgreso);
+    if (!r.ok && r.etapa === 'diferencias') {
+      // El stock guardado no coincide con el historial: se avisa y, si acepta, se migra con el historial.
+      const d = r.verificacion.diferencias;
+      const seguir = await confirmar({
+        titulo: `${d.length} ${pluralizar(d.length, 'producto tiene', 'productos tienen')} un stock distinto`,
+        mensaje: `En tu versión anterior, el stock guardado de ${d.length === 1 ? 'este producto no coincide' : 'estos productos no coincide'} con sus compras y ventas registradas. KoreStock calcula el stock con el historial (lo que compraste menos lo que vendiste), así que tras actualizar verás el número del historial.\n\nDespués haz un conteo físico de ${d.length === 1 ? 'ese producto' : 'esos productos'} y, si hace falta, corrige con una entrada o una venta.`,
+        contenido: html`<ul class="columna t-pequeno">${d.slice(0, 12).map(x => html`<li>• ${x.nombre}: guardado ${formatearNumero(x.guardado)} · historial ${formatearNumero(x.historial)}</li>`)}${d.length > 12 ? html`<li>…y ${d.length - 12} más.</li>` : ''}</ul>`,
+        textoConfirmar: 'Actualizar con el historial', textoCancelar: 'Ahora no'
+      });
+      if (!seguir) { boton.classList.remove('cargando'); progreso.remove(); return; }
+      r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { aceptarDiferencias: true });
+    }
     if (!r.ok) {
       boton.classList.remove('cargando');
       const errores = (r.verificacion && r.verificacion.errores || []).concat(r.comparacion ? r.comparacion.errores : []);

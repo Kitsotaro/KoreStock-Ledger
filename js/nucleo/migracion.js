@@ -310,23 +310,26 @@ function verificarMigracion(datos, resultado) {
     guardado[destino] = (guardado[destino] || 0) + p.stockCache * f;
   });
   Object.keys(guardado).forEach(id => { esperado[id] = guardado[id]; });
+  // Si el stock guardado en la v2 no coincide con su historial, YA NO se
+  // bloquea (Kitso, 2026-10-22): se migra con el stock del historial y se
+  // devuelve la lista de diferencias para advertir al usuario.
   const nombre = (id) => { const p = v3.CATALOGO.find(x => String(x.idProducto) === String(id)); return p ? nombreProductoV2(p) : `producto ${id}`; };
+  const diferencias = [];
   Object.keys(esperado).forEach(id => {
     const calc = Math.round(((stockV3[id] && stockV3[id].stock) || 0) * 1000) / 1000;
     const esp = Math.round(esperado[id] * 1000) / 1000;
-    if (calc !== esp) {
-      errores.push(`Stock de ${nombre(id)}: el catálogo guardado dice ${esp} y el historial da ${calc}.`);
-    }
+    if (calc !== esp) diferencias.push({ id: Number(id), nombre: nombre(id), guardado: esp, historial: calc });
   });
+  const conDiferencia = new Set(diferencias.map(d => d.id));
 
   // Valor de bodega (costo vigente × stock) de los productos NO fusionados.
   let valorAntes = 0, valorDespues = 0;
   datos.CATALOGO.forEach(p => {
-    if (!p.idProducto || p.estado === ESTADOS.OBSOLETO || resultado.destinoDe.has(p.idProducto)) return;
+    if (!p.idProducto || p.estado === ESTADOS.OBSOLETO || resultado.destinoDe.has(p.idProducto) || conDiferencia.has(p.idProducto)) return;
     valorAntes = sumarDinero(valorAntes, multiplicarDinero(p.costo, p.stockCache));
   });
   v3.CATALOGO.forEach(p => {
-    if (!p.idProducto || p.estado !== ESTADOS.ACTIVO || resultado.destinoDe.has(p.idProducto)) return;
+    if (!p.idProducto || p.estado !== ESTADOS.ACTIVO || resultado.destinoDe.has(p.idProducto) || conDiferencia.has(p.idProducto)) return;
     valorDespues = sumarDinero(valorDespues, multiplicarDinero(p.costo, p.stockCache));
   });
   if (redondearCentavo(valorAntes) !== redondearCentavo(valorDespues)) {
@@ -335,7 +338,7 @@ function verificarMigracion(datos, resultado) {
   if (resultado.destinoDe.size) avisos.push('En los productos fusionados el valor de bodega se recalcula con el costo por unidad del producto que queda; el stock en unidades sí es idéntico.');
 
   return {
-    ok: errores.length === 0, errores, avisos,
+    ok: errores.length === 0, errores, avisos, diferencias,
     resumen: { antes, despues, valorBodegaSinFusionar: valorDespues, productos: v3.CATALOGO.filter(p => p.estado === ESTADOS.ACTIVO).length }
   };
 }
@@ -357,7 +360,8 @@ function compararReleida(escrito, releido) {
 // Orquestador: lee la base v2, convierte, verifica, escribe una base NUEVA,
 // la relee y la verifica otra vez. No activa nada: devuelve el resultado
 // para que quien llama decida (y guarde el id solo si todo está bien).
-async function migrarBaseV2(idViejo, fusiones, alProgreso) {
+// opciones.aceptarDiferencias: el usuario ya vio las diferencias de stock y acepta migrar con el historial.
+async function migrarBaseV2(idViejo, fusiones, alProgreso, opciones) {
   const avisar = (paso, texto) => { if (alProgreso) alProgreso(paso, texto); };
   avisar(1, 'Leyendo tu base actual…');
   const datos = await leerBaseV2(idViejo);
@@ -368,6 +372,7 @@ async function migrarBaseV2(idViejo, fusiones, alProgreso) {
   avisar(3, 'Comprobando que todo cuadre…');
   const verificacion = verificarMigracion(datos, resultado);
   if (!verificacion.ok) return { ok: false, etapa: 'verificacion', verificacion };
+  if (verificacion.diferencias.length && !(opciones && opciones.aceptarDiferencias)) return { ok: false, etapa: 'diferencias', verificacion };
   avisar(4, 'Creando tu base nueva en la carpeta KoreStock…');
   const idNuevo = await crearBaseV3({ hojas: resultado.hojas, propiedades: { origen: idViejo, migrada: obtenerFechaLocal() } });
   avisar(5, 'Releyendo la base nueva para confirmar…');
