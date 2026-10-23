@@ -163,7 +163,7 @@ const App = {
       mostrarDialogo({
         titulo: demo ? 'Demostración' : 'No encontramos tus datos',
         mensaje: demo
-          ? 'Puedes cargar la base de prueba (una tienda simulada con 6 meses de movimientos) o empezar con una base vacía.'
+          ? 'Puedes cargar la base de prueba (un mes de una distribuidora: bebidas, snacks y cuidado personal) o empezar con una base vacía.'
           : '¿Ya tenías una base de KoreStock en tu Google Drive, o es la primera vez que la usas con esta cuenta?',
         textoConfirmar: demo ? 'Cargar base de prueba' : 'Ya tengo una, elegirla',
         textoCancelar: 'Empezar de cero',
@@ -173,6 +173,8 @@ const App = {
               this.textoCarga('Cargando la base de prueba…');
               const id = await cargarBasePruebaDemo();
               guardarLocal(CLAVES_LOCALES.BASE, id);
+              // La base de demostración ya viene en la versión nueva; una v2 pasa por la migración.
+              if ((await detectarVersionEsquema(id)).version === 3) { resolver(id); return; }
               this.migrar(id);
               resolver(null);
               return;

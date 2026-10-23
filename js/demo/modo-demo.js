@@ -8,7 +8,10 @@
 // Depende de: hoja-demo.js (DriveDemo), cargador.js (cargarXLSX).
 // ============================================================
 
-const RUTA_BASE_PRUEBA_DEMO = '_privado/pruebas/StockCentral_DB_Prueba.xlsx';
+// Base de demostración v3 (2026-10-23): los datos de la base real de Kitso
+// recolocados como si se hubieran capturado en la app (generar_base_demo_v3.js).
+// Las pruebas automáticas siguen usando StockCentral_DB_Prueba.xlsx (v2).
+const RUTA_BASE_PRUEBA_DEMO = '_privado/pruebas/KoreStock_Demo_v3.xlsx';
 
 function esEntornoLocal() {
   const h = location.hostname;
@@ -31,5 +34,5 @@ async function cargarXlsxEnDemo(bytes, nombre) {
 async function cargarBasePruebaDemo() {
   const resp = await fetch(RUTA_BASE_PRUEBA_DEMO, { cache: 'no-store' });
   if (!resp.ok) throw new Error('No se encontró la base de prueba en este equipo.');
-  return cargarXlsxEnDemo(new Uint8Array(await resp.arrayBuffer()), NOMBRE_BASE_V2);
+  return cargarXlsxEnDemo(new Uint8Array(await resp.arrayBuffer()), NOMBRE_BASE);
 }
