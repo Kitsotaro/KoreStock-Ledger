@@ -69,6 +69,7 @@ function pintarHoyDashboard() {
 
 function pintarDashboard() {
   pintarHoyDashboard();
+  $('#dash-cuerpo', dashUI.el).dataset.vista = estadoDashboard.vista; // en PC, Resumen va en cuadrícula
   $$('[data-accion="vista"]', dashUI.el).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.valor === estadoDashboard.vista)));
   if (estadoDashboard.vista === 'RESUMEN') pintarResumenDashboard();
   else pintarMovimientosDashboard();

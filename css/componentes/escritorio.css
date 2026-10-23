@@ -35,6 +35,20 @@
   [data-pantalla="gastos"] > .columna > *, [data-pantalla="combustible"] > .columna > *, [data-pantalla="clientes"] > .columna > * { grid-column: 1; margin: 0; }
   #gastos-lista, #comb-lista, #clientes-lista { grid-column: 2 !important; grid-row: 1 / span 20; position: sticky; top: calc(var(--alto-barra-superior) + var(--e-4)); }
 
+  /* Dashboard: el selector de vista no ocupa todo el ancho; Resumen en cuadrícula de 3
+     (cifras y tendencia a lo ancho, los tres rankings lado a lado). */
+  [data-pantalla="dashboard"] .segmentado { max-width: 26rem; }
+  #dash-cuerpo[data-vista="RESUMEN"] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-4); align-items: start; }
+  #dash-cuerpo[data-vista="RESUMEN"] > * { margin: 0; }
+  #dash-cuerpo[data-vista="RESUMEN"] > .cifras, #dash-cuerpo[data-vista="RESUMEN"] > .tarjeta:has(canvas), #dash-cuerpo[data-vista="RESUMEN"] > :not(.tarjeta):not(.cifras) { grid-column: 1 / -1; }
+  #dash-cuerpo[data-vista="RESUMEN"] .contenedor-grafico { height: 20rem; }
+
+  /* Stock: cifras y gráfico a la izquierda (fijos al desplazar), catálogo a la derecha */
+  [data-pantalla="stock"] > .columna { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); grid-auto-flow: row dense; align-items: start; column-gap: var(--e-5); }
+  [data-pantalla="stock"] > .columna > * { grid-column: 2; margin: 0; }
+  #stock-cifras { grid-column: 1 !important; grid-row: 1; }
+  #stock-grafico { grid-column: 1 !important; grid-row: 2 / span 20; position: sticky; top: calc(var(--alto-barra-superior) + var(--e-4)); }
+
   /* Panorama: tres tarjetas por fila */
   .rejilla-panorama { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
