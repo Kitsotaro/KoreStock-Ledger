@@ -32,6 +32,10 @@ const App = {
     Sesion.alAutorizar = (info) => this.alAutorizar(info);
     Sesion.alRechazo = (info) => this.alRechazo(info);
 
+    // Copia del dispositivo con más de 3 días sin actualizarse: se borra (seguridad).
+    if (!esModoDemo()) {
+      try { if (await CacheLocal.purgarVencidas()) avisar('Tus datos guardados en este dispositivo tenían más de 3 días sin actualizarse y se borraron por seguridad. Entra con internet para volver a verlos.', { duracion: 8000 }); } catch (e) { /* sin copia */ }
+    }
     if (esModoDemo()) {
       DriveDemo.cargar();
       Hoja.usar(MotorDemo);

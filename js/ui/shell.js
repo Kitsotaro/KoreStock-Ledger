@@ -234,7 +234,10 @@ const Shell = {
     document.body.classList.toggle('sin-conexion', !!sin);
     if (sin) {
       const cuando = Almacen.actualizadoEn ? Almacen.actualizadoEn.slice(0, 16) : '';
-      this.mostrarFranja('conexion', html`${seguro(icono('sin-nube', 'icono-sm'))}<span>Sin conexión${cuando ? ` · datos al ${cuando}` : ''}. Puedes consultar; para guardar necesitas internet.</span>`, 'aviso-color');
+      const vence = vencimientoCopia(Almacen.actualizadoEn);
+      const hasta = vence ? new Date(vence) : null;
+      const textoHasta = hasta ? ` Sin internet podrás verlos hasta el ${formatearFechaCorta(fechaATexto(hasta))} a las ${String(hasta.getHours()).padStart(2, '0')}:${String(hasta.getMinutes()).padStart(2, '0')}.` : '';
+      this.mostrarFranja('conexion', html`${seguro(icono('sin-nube', 'icono-sm'))}<span>Sin conexión${cuando ? ` · datos al ${cuando}` : ''}. Puedes consultar; para guardar necesitas internet.${textoHasta}</span>`, 'aviso-color');
     } else this.quitarFranja('conexion');
     this.actualizarEstado();
     this.refrescarActual();

@@ -104,7 +104,8 @@ const Sesion = {
   },
   // D27/D66: sin internet solo abre la copia del dispositivo (en solo
   // lectura) quien ya fue autorizado antes en este dispositivo.
-  autorizadoAntes() { const r = this.leerRegistro(); return !!(r && r.ultimaAutorizacion); },
+  // Y como máximo 3 días después de su última verificación (igual que la copia).
+  autorizadoAntes() { const r = this.leerRegistro(); return !!(r && r.ultimaAutorizacion && Date.now() - r.ultimaAutorizacion < VIGENCIA_COPIA_MS); },
   borrarToken() { try { localStorage.removeItem(CLAVES_LOCALES.TOKEN); } catch (e) { /* nada */ } },
 
   minutosRestantes() {

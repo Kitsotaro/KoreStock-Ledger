@@ -72,3 +72,14 @@ prueba('plural de unidades', () => {
   igual(pluralUnidad('cartón', 3), 'cartones'); igual(pluralUnidad('huevo', 2), 'huevos');
   igual(pluralUnidad('unidad', 5), 'unidades'); igual(pluralUnidad('lata', 1), 'lata');
 });
+
+prueba('la copia del dispositivo vence a los 3 días y se borra (auditoría 2026-10-22)', async () => {
+  await CacheLocal.borrarTodo();
+  await CacheLocal.guardar({ id: 'base-x', hojas: {}, guardado: '2026-10-01 10:00:00', version: VERSION_ESQUEMA });
+  await CacheLocal.guardar({ id: 'base-x', hojas: { LOG_TRANS: [] }, desde: '2026-01-01' }, 'historicos');
+  igual(await CacheLocal.purgarVencidas(new Date(2026, 9, 4, 9, 59).getTime()), false, 'aún dentro de los 3 días');
+  verdadero(!!(await CacheLocal.leer('base-x')));
+  igual(await CacheLocal.purgarVencidas(new Date(2026, 9, 4, 10, 0, 1).getTime()), true, 'pasados los 3 días');
+  igual(await CacheLocal.leer('base-x'), null);
+  igual(await CacheLocal.leer('base-x', 'historicos'), null, 'también los históricos');
+});
