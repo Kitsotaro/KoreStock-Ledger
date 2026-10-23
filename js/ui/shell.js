@@ -86,9 +86,11 @@ const Shell = {
   // ---------- Navegación ----------
   ir(nombre, opciones) {
     const { sinHistorial = false } = opciones || {};
+    // Panorama es solo de Pro: se redirige ANTES de elegir la pantalla (si no, se
+    // montaba Panorama dentro de la sección del Dashboard y la tapaba).
+    if (nombre === 'panorama' && this.modo !== 'pro') nombre = 'dashboard';
     const def = Pantallas[nombre];
     if (!def) return;
-    if (nombre === 'panorama' && this.modo !== 'pro') nombre = 'dashboard';
     const anterior = this.actual;
     if (anterior && Pantallas[anterior] && Pantallas[anterior].ocultar) Pantallas[anterior].ocultar();
     $$('.pantalla').forEach(s => { s.hidden = s.dataset.pantalla !== nombre; });
