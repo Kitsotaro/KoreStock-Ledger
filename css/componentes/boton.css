@@ -19,6 +19,7 @@
 .boton-secundario { background: transparent; border-color: var(--borde-fuerte); color: var(--texto); }
 .boton-texto { background: transparent; color: var(--primario); padding: 0 var(--e-3); }
 .boton-texto.peligro { color: var(--peligro); }
+.boton-secundario.peligro { color: var(--peligro); border-color: color-mix(in srgb, var(--peligro) 45%, transparent); }
 .boton-bloque { width: 100%; }
 .boton-grande { min-height: 3.5rem; font-size: var(--t-lg); border-radius: var(--r-md); }
 .boton-sm { min-height: var(--alto-control-sm); padding: 0 var(--e-3); font-size: var(--t-sm); border-radius: var(--r-xs); }

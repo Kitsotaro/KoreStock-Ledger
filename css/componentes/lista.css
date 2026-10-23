@@ -34,3 +34,6 @@ details.desplegable[open] > summary .chevron { transform: rotate(180deg); }
 /* Lista dibujada por ventana (Stock con miles de productos, §23.4) */
 .lista-ventana { position: relative; }
 .lista-ventana .espaciador { width: 100%; }
+/* Encabezado de día dentro de una lista (Dashboard, Gastos) */
+.lista > .encabezado-dia { display: flex; justify-content: space-between; align-items: baseline; padding: var(--e-3) var(--e-4) var(--e-1); background: var(--superficie-2); font-size: var(--t-xs); font-weight: var(--peso-fuerte); color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.lista > .encabezado-dia .cifra { text-transform: none; letter-spacing: 0; }

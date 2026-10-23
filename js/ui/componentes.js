@@ -213,7 +213,8 @@ function crearBuscador({ input, obtener, alElegir, nuevo = null, maximo = 8, alE
   const pintar = () => {
     const q = input.value.trim();
     opciones = q ? obtener(q).slice(0, maximo) : (alEnfocarVacio ? alEnfocarVacio().slice(0, maximo) : []);
-    if (q && nuevo) opciones.push({ esNuevo: true, html: nuevo.html(q) });
+    const htmlNuevo = q && nuevo ? nuevo.html(q) : null;
+    if (htmlNuevo) opciones.push({ esNuevo: true, html: htmlNuevo });
     resaltada = opciones.length ? 0 : -1;
     if (!opciones.length) { cerrar(); return; }
     lista.innerHTML = opciones.map((o, i) => `<div class="opcion${o.esNuevo ? ' nuevo' : ''}${i === 0 ? ' resaltada' : ''}" role="option" data-i="${i}">${o.html.texto !== undefined ? o.html.texto : o.html}</div>`).join('');
@@ -299,16 +300,21 @@ function activarSugerencias(raiz) {
     control.classList.add('con-sugerencias');
     const valores = () => { const dl = document.getElementById(idLista); return dl ? [...dl.options].map(o => o.value).filter(Boolean) : []; };
     const opcion = (v) => ({ valor: v, html: html`<span class="crece">${v}</span>` });
+    // Con data-permite-nuevo, si lo escrito no existe se ofrece «Agregar «X»» al final.
+    const ponerValor = (v) => {
+      input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const nuevo = input.dataset.permiteNuevo === undefined ? null : {
+      html: (q) => valores().some(v => normalizarIdentidad(v) === normalizarIdentidad(q)) ? null : html`${seguro(icono('mas', 'icono-sm'))}<span class="crece">Agregar «${q}»</span>`,
+      fn: (v) => { ponerValor(v); setTimeout(() => buscador.cerrar(), 0); }
+    };
     const buscador = crearBuscador({
-      input, maximo: 50,
+      input, maximo: 50, nuevo,
       obtener: (q) => valores().filter(v => normalizarIdentidad(v) !== normalizarIdentidad(q) && coincidenPalabras(v, q)).map(opcion),
       alEnfocarVacio: () => valores().map(opcion),
-      alElegir: (v) => {
-        input.value = v;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        setTimeout(() => buscador.cerrar(), 0);
-      }
+      alElegir: (v) => { ponerValor(v); setTimeout(() => buscador.cerrar(), 0); }
     });
     const boton = document.createElement('button');
     boton.type = 'button'; boton.className = 'boton-sugerencias'; boton.tabIndex = -1;
