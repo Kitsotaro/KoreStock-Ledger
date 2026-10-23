@@ -58,7 +58,9 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
     return p && estado.preset !== 'PERSONALIZADO' ? p.etiqueta : `${formatearFechaCorta(estado.inicio)} – ${formatearFechaCorta(estado.fin)}`;
   };
   // Un chip activo (salvo el período) lleva su «×» para quitar solo ese filtro.
-  const chip = (clave, texto, activo, iconoNombre) => html`<span class="chip-grupo"><button type="button" class="chip" data-filtro="${clave}" aria-pressed="${String(!!activo)}">${seguro(icono(iconoNombre, 'icono-sm'))}${texto}</button>${activo && clave !== 'periodo' ? html`<button type="button" class="chip-quitar" data-quitar="${clave}" aria-label="Quitar filtro">${seguro(icono('cerrar', 'icono-sm'))}</button>` : ''}</span>`;
+  // Compactos (como el explorador de Zeghi): inactivos solo muestran el ícono y
+  // se despliegan con su texto al activarse; el período siempre lleva texto.
+  const chip = (clave, texto, activo, iconoNombre) => html`<span class="chip-grupo"><button type="button" class="chip chip-compacto" data-filtro="${clave}" aria-pressed="${String(!!activo)}" aria-label="${texto}" title="${texto}">${seguro(icono(iconoNombre, 'icono-sm'))}<span class="etiqueta-chip">${texto}</span></button>${activo && clave !== 'periodo' ? html`<button type="button" class="chip-quitar" data-quitar="${clave}" aria-label="Quitar filtro">${seguro(icono('cerrar', 'icono-sm'))}</button>` : ''}</span>`;
   const pintar = () => {
     const partes = [];
     if (usar.includes('periodo')) partes.push(chip('periodo', textoPeriodo(), true, 'calendario'));

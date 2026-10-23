@@ -29,3 +29,10 @@
 .chip-grupo:has(.chip-quitar) .chip { padding-right: 2rem; }
 .chip-quitar { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%; background: transparent; color: var(--sobre-primario-suave); cursor: pointer; position: relative; }
 .chip-quitar:hover { background: color-mix(in srgb, var(--primario) 18%, transparent); }
+
+/* Chips compactos (filtros): el texto se pliega cuando el filtro no está activo.
+   Solo cambian max-width y opacity de la etiqueta; el resto no se mueve. */
+.chip-compacto .etiqueta-chip { display: inline-block; max-width: 12rem; overflow: hidden; white-space: nowrap; vertical-align: bottom; transition: max-width var(--dur-lenta) var(--curva), opacity var(--dur-media) var(--curva); }
+.chip-compacto[aria-pressed="false"] { padding: 0 var(--e-3); }
+.chip-compacto[aria-pressed="false"] .etiqueta-chip { max-width: 0; opacity: 0; }
+.chip-compacto[aria-pressed="false"] { gap: 0; }
