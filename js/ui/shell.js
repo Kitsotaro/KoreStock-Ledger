@@ -17,6 +17,9 @@
 //   sincronizacion.js, cache-local.js.
 // ============================================================
 
+// Tamaños de texto: clave, nombre y escala (debe coincidir con tokens.css).
+const TAMANOS_TEXTO = [['pequeno', 'Pequeño', 0.9375], ['normal', 'Normal', 1], ['grande', 'Grande', 1.0625], ['muy-grande', 'Muy grande', 1.125]];
+
 const MODOS = {
   bodega: { nombre: 'Bodega', icono: 'bodega', frase: 'Grandes volúmenes por caja: entradas, despachos, stock, gastos y combustible.' },
   tienda: { nombre: 'Tienda', icono: 'tienda', frase: 'Venta por unidad, precios por presentación y clientes. Lo de Bodega incluido.' },
@@ -127,7 +130,7 @@ const Shell = {
     const m = $('#panel-modo'); if (m) m.textContent = modo ? modo.nombre : '';
     const t = $('#panel-tema'); if (t) t.textContent = { claro: 'Claro', oscuro: 'Oscuro' }[leerLocal(CLAVES_LOCALES.TEMA)] || 'Como el sistema';
     const dc = $('#panel-decimales'); if (dc) dc.textContent = this.todosLosDecimales() ? 'Todos (5)' : '2';
-    const tx = $('#panel-texto'); if (tx) tx.textContent = { grande: 'Grande', 'muy-grande': 'Muy grande' }[leerLocal(CLAVES_LOCALES.TAMANO_TEXTO)] || 'Normal';
+    const tx = $('#panel-texto'); if (tx) tx.textContent = (TAMANOS_TEXTO.find(t => t[0] === (leerLocal(CLAVES_LOCALES.TAMANO_TEXTO) || 'normal')) || TAMANOS_TEXTO[1])[1];
     const c = $('#panel-cuenta'); if (c) c.textContent = Sesion.modoDemo ? 'Demostración' : (Sesion.correo || '');
     const r = $('#panel-respaldo'); if (r) r.textContent = this.textoRespaldo();
     const pie = $('#panel-pie');
@@ -211,17 +214,31 @@ const Shell = {
     avisar(si ? 'Se muestran todos los decimales en costos por unidad y CPP.' : 'Cifras redondeadas a 2 decimales.');
   },
 
+  // Tamaño de texto: cada opción y la muestra se dibujan con el tamaño REAL
+  // que tendrá la app (en px, sin depender del tamaño actual). Elegir solo
+  // cambia la muestra; «Aceptar» aplica una vez (no se re-dibuja la app en cada toque).
   elegirTamanoTexto() {
     const actual = leerLocal(CLAVES_LOCALES.TAMANO_TEXTO) || 'normal';
-    const opciones = [['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']];
+    let elegido = actual;
+    const px = (escala, rem) => `${(16 * escala * rem).toFixed(2)}px`;
+    const muestra = (escala) => html`<div class="muestra-texto">
+      <div style="font-size:${px(escala, 0.75)}" class="t-secundario">VENTAS DE HOY</div>
+      <div style="font-size:${px(escala, 2)};font-weight:700">$1,284.50</div>
+      <div style="font-size:${px(escala, 0.9375)}">Pepsi Black Lata 355 ml · 45 latas</div>
+      <div style="font-size:${px(escala, 0.8125)}" class="t-secundario">Así se leen las listas y los detalles.</div></div>`;
     const control = abrirHoja({
       titulo: 'Tamaño de texto',
-      contenido: html`<div class="lista">${opciones.map(([v, t]) => html`<button type="button" class="fila-lista" data-tamano="${v}"><span class="titulo" style="font-size:${v === 'normal' ? '1rem' : v === 'grande' ? '1.125rem' : '1.25rem'}">${t}</span>${v === actual ? seguro(icono('check', 'lado')) : ''}</button>`)}</div>`,
+      contenido: html`<div class="fila-chips" role="group" aria-label="Tamaño" style="flex-wrap:wrap">${TAMANOS_TEXTO.map(([v, t, escala]) => html`<button type="button" class="chip" data-tamano="${v}" aria-pressed="${String(v === actual)}" style="font-size:${px(escala, 0.9375)}">${t}</button>`)}</div>
+        <div data-muestra>${muestra((TAMANOS_TEXTO.find(t => t[0] === actual) || TAMANOS_TEXTO[1])[2])}</div>`,
+      acciones: [{ texto: 'Cancelar', fn: (c) => c.cerrar() }, { texto: 'Aceptar', clase: 'boton-primario', fn: (c) => {
+        guardarLocal(CLAVES_LOCALES.TAMANO_TEXTO, elegido === 'normal' ? null : elegido);
+        if (elegido === 'normal') document.documentElement.removeAttribute('data-tamano-texto'); else document.documentElement.dataset.tamanoTexto = elegido;
+        this.actualizarPanel(); c.cerrar();
+      } }],
       alMontar: (hoja) => $$('[data-tamano]', hoja).forEach(b => b.addEventListener('click', () => {
-        const v = b.dataset.tamano;
-        guardarLocal(CLAVES_LOCALES.TAMANO_TEXTO, v === 'normal' ? null : v);
-        if (v === 'normal') document.documentElement.removeAttribute('data-tamano-texto'); else document.documentElement.dataset.tamanoTexto = v;
-        this.actualizarPanel(); control.cerrar();
+        elegido = b.dataset.tamano;
+        $$('[data-tamano]', hoja).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        $('[data-muestra]', hoja).innerHTML = muestra(TAMANOS_TEXTO.find(t => t[0] === elegido)[2]).texto;
       }))
     });
   },

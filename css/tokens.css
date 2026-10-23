@@ -1,7 +1,7 @@
 /* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * TOKENS.CSS — escalas del sistema visual (no colores: esos están en tema-claro/tema-oscuro).
  * Inspirado en Zeghi (GLO-02): radios 8/12/16/20/28, tipografía de 12 a 32, peso 600 en
- * títulos y acciones. Todo en rem: el tamaño de texto de la app (3 niveles) cambia --escala.
+ * títulos y acciones. Todo en rem: el tamaño de texto de la app (4 niveles: 94 %, 100 %, 106 %, 113 %) cambia --escala.
  */
 :root {
   --escala: 1;
@@ -53,8 +53,9 @@
   --sombra-3: 0 12px 40px rgb(0 0 0 / 0.22);
 }
 
-:root[data-tamano-texto="grande"] { --escala: 1.125; }
-:root[data-tamano-texto="muy-grande"] { --escala: 1.25; }
+:root[data-tamano-texto="pequeno"] { --escala: 0.9375; }
+:root[data-tamano-texto="grande"] { --escala: 1.0625; }
+:root[data-tamano-texto="muy-grande"] { --escala: 1.125; }
 
 @media (prefers-reduced-motion: reduce) {
   :root { --dur-rapida: 0ms; --dur-media: 0ms; --dur-lenta: 0ms; }

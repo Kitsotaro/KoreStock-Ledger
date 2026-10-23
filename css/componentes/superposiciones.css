@@ -92,3 +92,6 @@ body.cambiando-modo .contenido { opacity: 0.35; }
   .transicion-modo, .transicion-modo .contenido-transicion, .contenido { transition: none; }
   .transicion-modo .contenido-transicion { transform: none; }
 }
+
+/* Muestra del tamaño de texto (tamaños en px reales) */
+.muestra-texto { display: grid; gap: var(--e-1); padding: var(--e-4); border: 1px solid var(--borde); border-radius: var(--r-md); background: var(--superficie); line-height: 1.35; }

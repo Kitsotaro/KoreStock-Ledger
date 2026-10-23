@@ -11,7 +11,7 @@
   }
   raiz.setAttribute('data-tema', tema);
   var tamano = leer('korestock-tamano-texto');
-  if (tamano === 'grande' || tamano === 'muy-grande') raiz.setAttribute('data-tamano-texto', tamano);
+  if (tamano === 'pequeno' || tamano === 'grande' || tamano === 'muy-grande') raiz.setAttribute('data-tamano-texto', tamano);
   document.addEventListener('DOMContentLoaded', function () {
     var modo = leer('korestock-modo');
     if (modo === 'bodega' || modo === 'tienda' || modo === 'pro') document.body.setAttribute('data-modo', modo);
