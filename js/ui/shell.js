@@ -36,6 +36,7 @@ const Shell = {
   get modo() { return document.body.dataset.modo || 'tienda'; },
 
   iniciar() {
+    fijarTodosLosDecimales(this.todosLosDecimales());
     pintarIconos(document);
     const app = $('#app');
     delegar(app, 'click', {
@@ -44,6 +45,7 @@ const Shell = {
       'elegir-modo': () => { this.cerrarPanel(); this.elegirModo(); },
       'cambiar-tema': () => { this.cerrarPanel(); this.elegirTema(); },
       'tamano-texto': () => { this.cerrarPanel(); this.elegirTamanoTexto(); },
+      'todos-decimales': () => this.cambiarTodosLosDecimales(!this.todosLosDecimales()),
       'salir': () => { this.cerrarPanel(); this.salir(); }
     });
     app.addEventListener('click', (e) => {
@@ -124,6 +126,7 @@ const Shell = {
     const modo = MODOS[this.modo];
     const m = $('#panel-modo'); if (m) m.textContent = modo ? modo.nombre : '';
     const t = $('#panel-tema'); if (t) t.textContent = { claro: 'Claro', oscuro: 'Oscuro' }[leerLocal(CLAVES_LOCALES.TEMA)] || 'Como el sistema';
+    const dc = $('#panel-decimales'); if (dc) dc.textContent = this.todosLosDecimales() ? 'Todos (5)' : '2';
     const tx = $('#panel-texto'); if (tx) tx.textContent = { grande: 'Grande', 'muy-grande': 'Muy grande' }[leerLocal(CLAVES_LOCALES.TAMANO_TEXTO)] || 'Normal';
     const c = $('#panel-cuenta'); if (c) c.textContent = Sesion.modoDemo ? 'Demostración' : (Sesion.correo || '');
     const r = $('#panel-respaldo'); if (r) r.textContent = this.textoRespaldo();
@@ -180,6 +183,16 @@ const Shell = {
       alMontar: (hoja) => $$('[data-tema]', hoja).forEach(b => b.addEventListener('click', () => { this.aplicarTema(b.dataset.tema); control.cerrar(); }))
     });
   },
+  // «Mostrar todos los decimales» (v2: casilla del CPP): por defecto 2.
+  todosLosDecimales() { return leerLocal(CLAVES_LOCALES.TODOS_DECIMALES) === '1'; },
+  cambiarTodosLosDecimales(si) {
+    guardarLocal(CLAVES_LOCALES.TODOS_DECIMALES, si ? '1' : null);
+    fijarTodosLosDecimales(si);
+    this.actualizarPanel();
+    this.refrescarActual();
+    avisar(si ? 'Se muestran todos los decimales en costos por unidad y CPP.' : 'Cifras redondeadas a 2 decimales.');
+  },
+
   elegirTamanoTexto() {
     const actual = leerLocal(CLAVES_LOCALES.TAMANO_TEXTO) || 'normal';
     const opciones = [['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']];

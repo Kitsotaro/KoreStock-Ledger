@@ -36,5 +36,6 @@ const CLAVES_LOCALES = {
   MODO: 'korestock-modo',
   TAMANO_TEXTO: 'korestock-tamano-texto',
   AVISOS_LEIDOS: 'korestock-avisos-leidos',
-  ULTIMO_RESPALDO: 'korestock-ultimo-respaldo'
+  ULTIMO_RESPALDO: 'korestock-ultimo-respaldo',
+  TODOS_DECIMALES: 'korestock-todos-decimales'
 };

@@ -24,6 +24,7 @@
 // ignora (ignorarApertura) y el resultado debe ser el mismo.
 //
 // Expone: esMovValido, esGastoValido, esMovVisible, stockDerivadoPorProducto, calcularEstadoProductos,
+//   calcularUtilidadCostoPromedio,
 //   redondearCantidad, enPeriodo, calcularResumenPeriodo, serieDiaria,
 //   calcularROI, calcularProyeccion, calcularPuntoEquilibrio,
 //   calcularRendimientos, calcularResumenCombustible, diasSinCarga,
@@ -46,7 +47,7 @@ function enPeriodo(fecha, inicio, fin) {
 // Estado completo por producto, recorriendo el historial en orden.
 // opciones: { ignorarApertura, hasta (fecha 'YYYY-MM-DD' inclusive), filtro(m) }
 function calcularEstadoProductos(movimientos, opciones) {
-  const { ignorarApertura = false, hasta = null, filtro = null } = opciones || {};
+  const { ignorarApertura = false, hasta = null, filtro = null, alSalir = null } = opciones || {};
   const r = {};
   for (const m of movimientos) {
     if (!esMovValido(m) || !m.idProducto) continue;
@@ -75,12 +76,14 @@ function calcularEstadoProductos(movimientos, opciones) {
       e.unidadesFondo += cantidad + bonif;
     } else if (m.tipo === TIPOS_MOV.VENTA) {
       const q = Math.abs(cantidad);
+      let salida = 0;
       if (e.unidadesFondo > 0) {
-        const salida = q >= e.unidadesFondo ? e.fondo : dividirDinero(multiplicarDinero(e.fondo, q), e.unidadesFondo);
+        salida = q >= e.unidadesFondo ? e.fondo : dividirDinero(multiplicarDinero(e.fondo, q), e.unidadesFondo);
         e.fondo = restarDinero(e.fondo, salida);
         e.unidadesFondo = redondearCantidad(e.unidadesFondo - q);
         if (e.unidadesFondo <= 0) { e.unidadesFondo = 0; e.fondo = 0; }
       }
+      if (alSalir) alSalir(m, salida);
       e.unidadesVendidas += q;
       if (m.fecha > e.ultimaVenta) e.ultimaVenta = m.fecha;
     }
@@ -126,6 +129,21 @@ function semaforoStock(stock, producto) {
   if (stock <= min) return 'bajo';
   if (stock <= max) return 'medio';
   return 'optimo';
+}
+
+// Utilidad con costo promedio (interruptor del Dashboard): por cada venta
+// del período, lo cobrado menos lo que sale del fondo de costo en ese
+// momento. La utilidad «normal» es la que se guardó en cada venta (último
+// costo, como la v2). Se recorre TODO el historial para que el fondo sea
+// el correcto; el período y los filtros solo eligen qué ventas se suman.
+function calcularUtilidadCostoPromedio(movimientos, inicio, fin, filtro) {
+  let utilidad = 0, costo = 0;
+  calcularEstadoProductos(movimientos, { alSalir: (m, salida) => {
+    if (!enPeriodo(m.fecha, inicio, fin) || (filtro && !filtro(m))) return;
+    costo = sumarDinero(costo, salida);
+    utilidad = sumarDinero(utilidad, restarDinero(m.totalVenta || 0, salida));
+  } });
+  return { utilidad, costo };
 }
 
 // Resumen de un período: ventas, utilidad, entradas (inversión), unidades.

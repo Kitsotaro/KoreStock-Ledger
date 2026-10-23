@@ -236,8 +236,8 @@ function pintarProductoEntrada() {
           <div class="control total-pagado"><span class="prefijo">$</span><input id="entrada-total" value="${valorCampoDinero(total)}"></div></div>
       </div>
       <div class="calculo" id="entrada-calculo">
-        <span>≈ <strong>${formatearDinero(costoUnidad, { decimales: 4 })}</strong> por ${unidad}</span>
-        ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { decimales: 4 })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen <strong>${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
+        <span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
+        ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen <strong>${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
       </div>
 
       <details class="desplegable" ${n || cambiaPrecio ? 'open' : ''}>
@@ -313,8 +313,8 @@ function actualizarCalculoEntrada() {
   const inTotal = $('#entrada-total', cont); if (inTotal && document.activeElement !== inTotal) inTotal.value = valorCampoDinero(total);
   const inCosto = $('#entrada-costo', cont); if (inCosto && document.activeElement !== inCosto && entrada.totalEditado) inCosto.value = valorCampoDinero(entrada.costoEmp, 4);
   const calc = $('#entrada-calculo', cont);
-  if (calc) calc.innerHTML = html`<span>≈ <strong>${formatearDinero(costoUnidad, { decimales: 4 })}</strong> por ${unidad}</span>
-    ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { decimales: 4 })}</strong>${factor > 1 ? html` · por empaque: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen <strong>${(precio > 0 ? porcentajeDe(ganUnidad, precio) : 0).toFixed(1)}%</strong></span>` : ''}`.texto;
+  if (calc) calc.innerHTML = html`<span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
+    ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por empaque: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen <strong>${(precio > 0 ? porcentajeDe(ganUnidad, precio) : 0).toFixed(1)}%</strong></span>` : ''}`.texto;
   const b = $('[data-accion="guardar-entrada"]', cont); if (b) b.lastChild.textContent = `Guardar entrada · ${formatearDinero(total)}`;
 }
 

@@ -120,7 +120,8 @@ function pintarPanorama() {
       html`<div class="fila envolver t-pequeno">Ritmo de los últimos <input class="umbral" data-ventana value="${est.ventana}" aria-label="Días de la ventana"> días · urgente ≤ <input class="umbral" data-umbral="AGOTAMIENTO-min" value="${ua.min}" aria-label="Días urgente"> · pronto ≤ <input class="umbral" data-umbral="AGOTAMIENTO-max" value="${ua.max}" aria-label="Días pronto"></div>
         <div data-lista="proyeccion"></div>`)}
     ${tarjetaPanorama('cpp', 'Costo promedio (CPP)', 'billete', formatearDinero(valorCpp), 'Valor del inventario a costo promedio',
-      html`<div class="control">${seguro(icono('buscar', 'icono-sm'))}<input type="search" data-buscar="cpp" placeholder="Buscar producto" value="${est.buscarCpp}"></div><div data-lista="cpp"></div>`)}
+      html`<div class="control">${seguro(icono('buscar', 'icono-sm'))}<input type="search" data-buscar="cpp" placeholder="Buscar producto" value="${est.buscarCpp}"></div>
+      <label class="casilla t-pequeno"><input type="checkbox" data-accion="todos-decimales" ${Shell.todosLosDecimales() ? 'checked' : ''}> Mostrar todos los decimales</label><div data-lista="cpp"></div>`)}
     ${vehiculos.length ? tarjetaPanorama('combustible', 'Combustible', 'combustible', formatearDinero(gastoComb), `${galones.toFixed(2)} galones en el período`,
       html`<div class="lista">${vehiculos.map(v => {
         const d = comb[v.placa] || { galones: 0, gastado: 0, km: null, rendimiento: null, cargas: 0 };
@@ -148,7 +149,7 @@ function pintarPanorama() {
     vacio: html`<p class="t-tenue t-pequeno">Sin productos.</p>`,
     pintarItem: (x) => html`<div class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreProducto(x.p, { conVariante: false })}</div>
       <div class="sub">${describirCantidad(x.p.idProducto, x.e.stock)} · en bodega ${formatearDinero(redondearCentavo(x.e.fondo))}</div></div>
-      <div class="lado"><div class="monto">${formatearDinero(x.e.cpp, { decimales: 4 })}</div><div class="sub">por ${x.p.unidadBase}</div></div></div>` });
+      <div class="lado"><div class="monto">${formatearDinero(x.e.cpp, { detalle: true })}</div><div class="sub">por ${x.p.unidadBase}</div></div></div>` });
   $$('[data-buscar]', cuerpo).forEach(i => i.addEventListener('change', () => {
     if (i.dataset.buscar === 'roi') est.buscarRoi = i.value; else est.buscarCpp = i.value;
     pintarPanorama();

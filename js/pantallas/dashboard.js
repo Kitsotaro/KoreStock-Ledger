@@ -17,7 +17,7 @@
 //   operaciones-movimientos.js, cargador.js (Chart).
 // ============================================================
 
-const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'RESUMEN', tipo: 'TODO', texto: '', soloNuevos: false });
+const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'RESUMEN', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false });
 const dashUI = { el: null, filtros: null, grafico: null };
 
 registrarPantalla('dashboard', {
@@ -68,6 +68,7 @@ function pintarResumenDashboard() {
   const movs = PeriodosLargos.hojasPara(desde).LOG_TRANS;
   incluirHistoricosUI(desde, pintarDashboard);
   const r = calcularResumenPeriodo(movs, est.inicio, est.fin, filtro);
+  const cpp = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, est.inicio, est.fin, filtro) : null;
   const ra = calcularResumenPeriodo(movs, ant.inicio, ant.fin, filtro);
   const bodega = Shell.modo === 'bodega';
   const ranking = (claveDe, nombreDe, conUltimo) => rankingProductos(movs, est.inicio, est.fin, claveDe, filtro).slice(0, 5)
@@ -80,10 +81,12 @@ function pintarResumenDashboard() {
   $('#dash-cuerpo', dashUI.el).innerHTML = html`
     ${notaHistoricosHTML(est.inicio)}
     <div class="cifras">
-      <div class="cifra-tarjeta"><div class="etiqueta">Ventas</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}</div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Utilidad</div><div class="valor ${r.utilidad < 0 ? 't-peligro' : ''}">${formatearDinero(r.utilidad)}</div>${comparacionHTML(r.utilidad, ra.utilidad, true)}</div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Entradas</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}</div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Ventas</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'unidad vendida', 'unidades vendidas')}</div></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Utilidad</div><div class="valor ${r.utilidad < 0 ? 't-peligro' : ''}">${formatearDinero(r.utilidad)}</div>${comparacionHTML(r.utilidad, ra.utilidad, true)}
+        ${est.verCostoPromedio ? html`<div class="t-mini t-secundario">Con costo promedio: <strong>${formatearDinero(cpp.utilidad)}</strong></div>` : ''}</div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Total invertido</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'unidad ingresada', 'unidades ingresadas')}</div></div>
     </div>
+    <label class="casilla t-pequeno"><input type="checkbox" data-accion="ver-costo-promedio" ${est.verCostoPromedio ? 'checked' : ''}> Ver también la utilidad con costo promedio</label>
     ${bodega ? '' : html`
     <div class="tarjeta">
       <div class="tarjeta-titulo"><h2>${seguro(icono('tendencia', 'icono-sm'))} Tendencia</h2><span class="t-pequeno t-secundario">${formatearFechaCorta(est.inicio)} – ${formatearFechaCorta(est.fin)}</span></div>
@@ -181,7 +184,7 @@ function filaGrupoHTML(g) {
   return html`<details class="desplegable">
     <summary class="fila-lista ${todoAnulado ? 'anulada' : ''}">
       <span class="insignia ${esVenta ? 'venta' : 'entrada'}">${etiquetaTipo}</span>
-      <div class="crece"><div class="titulo recortar">${g.lineas.length === 1 ? nombre1(g.lineas[0]) : `${g.lineas.length} productos`}${hayNuevo ? html` <span class="insignia nuevo">Nuevo</span>` : ''}</div>
+      <div class="crece"><div class="titulo recortar">${g.lineas.length === 1 ? nombre1(g.lineas[0]) : `${g.lineas.length} productos`}${hayNuevo ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${g.lineas.some(m => m.bonif > 0) ? html` <span class="insignia">+Bonif.</span>` : ''}</div>
         <div class="sub">${formatearFechaCorta(g.fecha)} ${String(g.timestamp || '').slice(11, 16)} · ${g.clave}${cliente ? html` · ${cliente.nombre}` : ''}${anuladas && !todoAnulado ? html` · ${anuladas} anulada${anuladas > 1 ? 's' : ''}` : ''}</div></div>
       <span class="monto">${formatearDinero(totalGrupo(g))}</span>
       ${seguro(icono('chevron-abajo', 'icono-sm chevron'))}
@@ -190,7 +193,8 @@ function filaGrupoHTML(g) {
       ${g.lineas.map(m => { const p = Almacen.producto(m.idProducto); const u = p ? pluralUnidad(p.unidadBase, Math.abs(m.cantidad)) : ''; return html`
         <div class="linea-mov ${esMovValido(m) ? '' : 'anulada'}">
           <div class="crece"><div class="t-pequeno t-fuerte">${nombre1(m)}${m.variante ? html` · ${m.variante}` : ''}${m.productoNuevo === 'SI' ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${esMovValido(m) ? '' : html` <span class="insignia anulada">Anulada</span>`}</div>
-            <div class="t-mini t-secundario">${m.folio} · ${formatearNumero(Math.abs(m.cantidad))} ${u}${m.bonif ? html` + ${formatearNumero(m.bonif)} gratis` : ''}${m.unidPorEmpaque > 1 ? html` (${formatearNumero(m.cantEmpaques)} ${m.empaqueMov} de ${formatearNumero(m.unidPorEmpaque)})` : ''}${esVenta ? html` · gana ${formatearDinero(m.utilidad || 0)}` : ''}</div></div>
+            <div class="t-mini t-secundario">${m.folio} · ${formatearNumero(Math.abs(m.cantidad))} ${u}${m.bonif ? html` + ${formatearNumero(m.bonif)} gratis` : ''}${m.unidPorEmpaque > 1 ? html` (${formatearNumero(m.cantEmpaques)} ${m.empaqueMov} de ${formatearNumero(m.unidPorEmpaque)})` : ''}${esVenta ? html` · gana ${formatearDinero(m.utilidad || 0)}` : ''}</div>
+            <div class="t-mini t-tenue">Código ${m.sku || '—'} · capturado ${String(m.timestamp || '').slice(0, 16) || '—'} · costo ${formatearDinero(m.costoUnit || 0, { detalle: true })} · precio ${formatearDinero(m.precioUnit || 0)}</div></div>
           <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
           ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
         </div>`; })}
@@ -243,6 +247,7 @@ async function anularConConfirmacion(folios, accion) {
 
 const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
+  'ver-costo-promedio': (b) => { estadoDashboard.verCostoPromedio = b.checked; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarMovimientosDashboard(); },
   'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarMovimientosDashboard(); },
   'anular-linea': (b) => anularConConfirmacion([b.dataset.folio]),

@@ -18,7 +18,7 @@
 // Expone: ESCALA_DINERO, dinero, esDineroValido, sumarDinero, restarDinero,
 //   multiplicarDinero, dividirDinero, redondearCentavo, redondearDinero,
 //   dineroANumero, formatearDinero, porcentajeDe, distribuirDinero,
-//   precioUnitario, totalLinea.
+//   precioUnitario, totalLinea, fijarTodosLosDecimales.
 // Depende de: nada (se puede cargar primero y en Node para las pruebas).
 // ============================================================
 
@@ -133,8 +133,15 @@ function dineroANumero(d) {
 }
 
 // "$1,234.56" — con signo negativo delante del símbolo. decimales 0..5.
+// Decimales que se MUESTRAN (los cálculos siempre usan los 5): 2 por defecto;
+// 5 si el usuario activa «Mostrar todos los decimales». `detalle: true`
+// marca cifras que pueden necesitar más de 2 (costos por unidad, CPP).
+let decimalesDetalle = 2;
+function fijarTodosLosDecimales(si) { decimalesDetalle = si ? DECIMALES_DINERO : 2; }
+
 function formatearDinero(d, opciones) {
-  const { decimales = 2, simbolo = '$' } = opciones || {};
+  const { detalle = false, simbolo = '$' } = opciones || {};
+  const decimales = (opciones && opciones.decimales !== undefined) ? opciones.decimales : (detalle ? decimalesDetalle : 2);
   const redondo = redondearDinero(d || 0, decimales);
   const negativo = redondo < 0;
   const abs = Math.abs(redondo);

@@ -129,3 +129,15 @@ prueba('equilibrio con la base de prueba completa coincide con el cálculo a man
   verdadero(Math.abs(dineroANumero(e.puntoEquilibrio) - esperado) < 0.01, `${dineroANumero(e.puntoEquilibrio)} vs ${esperado}`);
   verdadero(gastos > 600 && ventas > 800, 'septiembre tiene gastos y ventas');
 });
+
+grupo('Utilidad con costo promedio (interruptor del Dashboard)');
+prueba('10 a $1 + 10 a $2; vender 5 a $10: guardada $0 (último costo), con promedio $2.50', () => {
+  const movs = [mov('ENTRADA', 1, 10, { inversion: 10 }), mov('ENTRADA', 1, 10, { inversion: 20, fecha: '2026-01-02' }),
+    mov('VENTA', 1, 5, { cobrado: 10, utilidad: 0, fecha: '2026-01-03' })];
+  igual(formatearDinero(calcularResumenPeriodo(movs, null, null).utilidad), '$0.00');
+  const r = calcularUtilidadCostoPromedio(movs, '2026-01-03', '2026-01-03');
+  igual(formatearDinero(r.costo), '$7.50'); igual(formatearDinero(r.utilidad), '$2.50');
+  // Ventas fuera del período no suman, pero sí mueven el fondo.
+  const mas = movs.concat([mov('VENTA', 1, 5, { cobrado: 10, fecha: '2026-01-04' })]);
+  igual(formatearDinero(calcularUtilidadCostoPromedio(mas, '2026-01-04', '2026-01-04').utilidad), '$2.50');
+});
