@@ -143,11 +143,29 @@ const Shell = {
   // ---------- Modos (D10, D22) ----------
   cambiarModo(modo) {
     if (!MODOS[modo]) return;
-    document.body.dataset.modo = modo;
-    guardarLocal(CLAVES_LOCALES.MODO, modo);
-    this.actualizarPanel();
-    if (this.actual === 'panorama' && modo !== 'pro') this.ir('dashboard');
-    else this.refrescarActual();
+    const aplicar = () => {
+      document.body.dataset.modo = modo;
+      guardarLocal(CLAVES_LOCALES.MODO, modo);
+      this.actualizarPanel();
+      if (this.actual === 'panorama' && modo !== 'pro') this.ir('dashboard');
+      else this.refrescarActual();
+    };
+    if (document.body.dataset.modo === modo || !$('#app') || $('#app').hidden) { aplicar(); return; }
+    // Transición (auditoría 2026-10-22): aunque la interfaz sea parecida, se
+    // nota que el modo cambió. Solo opacidad y transform; sin movimiento si
+    // el sistema pide reducirlo (lo resuelve el CSS).
+    const m = MODOS[modo];
+    const capa = document.createElement('div');
+    capa.className = 'transicion-modo';
+    capa.setAttribute('aria-hidden', 'true');
+    capa.innerHTML = html`<div class="contenido-transicion">${seguro(icono(m.icono, 'icono-xl'))}<strong>Modo ${m.nombre}</strong><span>${m.frase}</span></div>`.texto;
+    document.body.appendChild(capa);
+    document.body.classList.add('cambiando-modo');
+    requestAnimationFrame(() => capa.classList.add('visible'));
+    setTimeout(aplicar, 220);
+    setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 700);
+    setTimeout(() => capa.remove(), 1100);
+    avisar(`Modo ${m.nombre}`);
   },
   elegirModo(alElegir) {
     const actual = this.modo;
