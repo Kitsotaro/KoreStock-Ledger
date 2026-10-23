@@ -3,7 +3,7 @@
  * cinta deslizable de productos, autocompletado y esqueletos de carga. */
 .segmentado { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 3px; border-radius: var(--r-sm); background: var(--superficie-3); }
 .segmentado button { border: 0; background: transparent; color: var(--texto-2); min-height: var(--alto-control-sm); border-radius: calc(var(--r-sm) - 3px); font-weight: var(--peso-fuerte); font-size: var(--t-sm); }
-.segmentado button[aria-pressed="true"] { background: var(--superficie); color: var(--texto); box-shadow: var(--sombra-1); }
+.segmentado button[aria-pressed="true"], .segmentado button[aria-checked="true"] { background: var(--superficie); color: var(--texto); box-shadow: var(--sombra-1); }
 
 /* Semáforo: nunca solo color */
 .semaforo { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-xs); font-weight: var(--peso-fuerte); white-space: nowrap; }

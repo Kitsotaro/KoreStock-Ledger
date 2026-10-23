@@ -1,5 +1,6 @@
 /* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
- * GASTOS — reparto por categoría, ícono por categoría y total por día. */
+ * GASTOS — reparto por categoría, ícono por categoría y total por día.
+ * También lo comparten Combustible (.icono-gasto) y Clientes (.avatar-cliente). */
 .cifra-tarjeta.por-categoria { display: grid; gap: var(--e-2); align-content: start; }
 .cat-gasto { display: grid; gap: 3px; font-size: var(--t-xs); }
 .cat-gasto .mini-barra { width: 100%; height: 4px; }
@@ -12,3 +13,5 @@
 .anillo-centro { position: absolute; inset: 22%; display: grid; place-content: center; text-align: center; pointer-events: none; }
 .anillo-centro strong { font-size: var(--t-lg); line-height: 1.1; }
 .anillo-centro span { font-size: 0.7rem; color: var(--texto-2); max-width: 4.2rem; }
+/* Clientes: avatar con iniciales */
+.avatar-cliente { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border-radius: 50%; background: var(--primario-suave); color: var(--sobre-primario-suave); font-size: var(--t-xs); font-weight: var(--peso-fuerte); }
