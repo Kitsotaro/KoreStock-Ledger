@@ -43,3 +43,13 @@
 .frase .control { min-height: var(--alto-control-sm); padding: 0 var(--e-2); }
 .frase .control input { width: 4.5rem; text-align: center; font-weight: var(--peso-fuerte); }
 .frase .control.ancho input { width: 7.5rem; text-align: left; }
+/* Cambio importante (precio): contorno naranja */
+.control.precio-cambiado { border-color: var(--aviso); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aviso) 22%, transparent); }
+/* «Compré …» en un solo renglón con nota bajo cada caja (fase UI) */
+.frase-notas { flex-wrap: nowrap; align-items: flex-start; line-height: 1.3; }
+.frase-notas.con-nivel { flex-wrap: wrap; }
+.frase-notas .frase-palabra { flex: none; padding-top: 0.55rem; }
+.frase-notas .frase-campo { display: grid; gap: 2px; min-width: 0; flex: 1 1 3.5rem; }
+.frase-notas .frase-campo.ancho { flex: 2 1 6rem; }
+.frase-notas .frase-campo .control input { width: 100%; }
+.nota-campo { font-size: var(--t-xs); color: var(--texto-3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

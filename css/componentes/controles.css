@@ -15,7 +15,7 @@
 .fondo-agotado { background: var(--peligro); } .fondo-bajo { background: var(--aviso); } .fondo-bien { background: var(--exito); } .fondo-critico { background: var(--peligro); }
 
 /* Cinta de productos (más vendidos, §12.2 punto 1) */
-.cinta { display: flex; gap: var(--e-2); overflow-x: auto; scrollbar-width: none; padding: var(--e-1) 0 var(--e-2); scroll-snap-type: x proximity; }
+.cinta { display: flex; gap: var(--e-2); overflow-x: auto; scrollbar-width: none; margin-top: var(--e-3); padding: var(--e-1) 2px var(--e-2); scroll-snap-type: x proximity; }
 .cinta::-webkit-scrollbar { display: none; }
 .cinta-item {
   flex: 0 0 auto; scroll-snap-align: start; width: 8.5rem; text-align: left;
@@ -60,3 +60,6 @@
 .boton-sugerencias { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border: 0; border-radius: var(--r-xs); background: transparent; color: var(--texto-3); cursor: pointer; }
 .boton-sugerencias:hover { background: var(--superficie-2); color: var(--texto); }
 .control.con-sugerencias:has(input[aria-expanded="true"]) .boton-sugerencias { transform: rotate(180deg); }
+/* «Precios por presentación» oculto por ahora (auditoría 2026-10-23: confunde; se busca mejor solución).
+   Las presentaciones ya guardadas se siguen usando al vender. */
+[data-accion="editar-presentaciones"], [data-accion="presentaciones-entrada"], #ed-presentaciones { display: none !important; }

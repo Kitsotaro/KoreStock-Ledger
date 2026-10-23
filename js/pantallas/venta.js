@@ -106,9 +106,16 @@ function enCarrito(idProducto) {
   return venta.carrito.filter(l => l.idProducto === idProducto).reduce((s, l) => s + l.cantidad, 0);
 }
 
+// El cliente se pide solo cuando ya hay algo que vender (auditoría 2026-10-23).
+function actualizarClienteVenta() {
+  const cli = $('#venta-cliente', venta.el);
+  if (cli) cli.hidden = !(venta.producto || venta.carrito.length);
+}
+
 function pintarProductoVenta() {
   const cont = $('#venta-producto', venta.el);
   const p = venta.producto;
+  actualizarClienteVenta();
   if (!p) {
     cont.innerHTML = venta.carrito.length ? '' : html`<div class="vacio">${seguro(icono('carrito', 'icono-xl'))}<strong>¿Qué vendiste?</strong><p>Busca el producto o toca uno de los más vendidos.</p></div>`.texto;
     return;
@@ -212,6 +219,7 @@ function totalTicketVenta() {
 
 function pintarCarritoVenta() {
   const cont = $('#venta-carrito', venta.el);
+  actualizarClienteVenta();
   if (!venta.carrito.length) { cont.innerHTML = ''; return; }
   const total = totalTicketVenta();
   cont.innerHTML = html`
@@ -325,7 +333,12 @@ function editarPrecioProducto(p, alGuardar) {
         if (r) { c.cerrar(); avisar(`Precio actualizado a ${formatearDinero(nuevo)}.`); if (alGuardar) alGuardar(); }
       }
     }],
-    alMontar: (hoja) => { const i = $('#precio-nuevo', hoja); prepararCampoNumerico(i, { decimales: 2 }); i.addEventListener('focus', () => i.select()); }
+    alMontar: (hoja) => {
+      const i = $('#precio-nuevo', hoja); prepararCampoNumerico(i, { decimales: 2 }); i.addEventListener('focus', () => i.select());
+      // Cambio importante: el precio y «Guardar precio» se marcan en naranja si el valor cambió.
+      const boton = $('.acciones .boton-primario', hoja);
+      i.addEventListener('input', () => { const cambia = leerDineroCampo(i) !== p.precio; i.parentElement.classList.toggle('precio-cambiado', cambia); boton.classList.toggle('boton-aviso', cambia); });
+    }
   });
   return control;
 }

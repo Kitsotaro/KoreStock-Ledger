@@ -63,7 +63,7 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
   const chip = (clave, texto, activo, iconoNombre) => html`<span class="chip-grupo"><button type="button" class="chip chip-compacto" data-filtro="${clave}" aria-pressed="${String(!!activo)}" aria-label="${texto}" title="${texto}">${seguro(icono(iconoNombre, 'icono-sm'))}<span class="etiqueta-chip">${texto}</span></button>${activo && clave !== 'periodo' ? html`<button type="button" class="chip-quitar" data-quitar="${clave}" aria-label="Quitar filtro">${seguro(icono('cerrar', 'icono-sm'))}</button>` : ''}</span>`;
   // Fase UI: todos los filtros viven en un botón flotante (esquina inferior
   // derecha) con su contador; al tocarlo se abre el panel con los chips.
-  contenedor.innerHTML = html`<button type="button" class="boton-filtros" data-abrir-filtros aria-expanded="false" aria-label="Filtros">${seguro(icono('filtros'))}<span class="contador-filtros" hidden></span></button>
+  contenedor.innerHTML = html`<button type="button" class="boton-filtros" data-abrir-filtros aria-expanded="false" aria-label="Filtros">${seguro(icono('embudo'))}<span class="contador-filtros" hidden></span></button>
     <div class="panel-filtros" role="dialog" aria-label="Filtros" hidden>
       <div class="panel-filtros-cabecera"><strong>Filtros</strong><button type="button" class="boton boton-texto boton-sm" data-filtro="limpiar">${seguro(icono('cerrar', 'icono-sm'))}Limpiar</button></div>
       <div class="fila-chips envolver" data-chips></div>
@@ -110,21 +110,37 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
   };
 
   const acciones = {
+    // Período: con «Hoy» o «Ayer» se usa una sola fecha (y una casilla para
+    // agregar la segunda); con cualquier rango se muestran «Desde» y «Hasta».
     periodo: () => {
+      let dos = !['HOY', 'AYER'].includes(estado.preset) && estado.inicio !== estado.fin;
+      const campos = () => dos
+        ? html`<div class="rejilla-campos"><div class="campo"><label for="f-inicio">Desde</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div>
+            <div class="campo"><label for="f-fin">Hasta</label><div class="control"><input type="date" id="f-fin" value="${estado.fin}"></div></div></div>`
+        : html`<div class="campo"><label for="f-inicio">Fecha</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div>`;
       const control = abrirHoja({
         titulo: 'Período',
         contenido: html`<div class="fila-chips envolver" style="flex-wrap:wrap">${PRESETS_PERIODO.filter(p => p.valor !== 'PERSONALIZADO').map(p => html`<button type="button" class="chip" data-preset="${p.valor}" aria-pressed="${String(p.valor === estado.preset)}">${p.etiqueta}</button>`)}</div>
-          <div class="rejilla-campos"><div class="campo"><label for="f-inicio">Desde</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div>
-          <div class="campo"><label for="f-fin">Hasta</label><div class="control"><input type="date" id="f-fin" value="${estado.fin}"></div></div></div>`,
+          <label class="casilla t-pequeno"><input type="checkbox" data-dos-fechas ${dos ? 'checked' : ''}> Usar dos fechas (desde / hasta)</label>
+          <div data-campos-fecha>${campos()}</div>`,
         acciones: [{ texto: 'Usar estas fechas', clase: 'boton-primario', fn: (c) => {
-          const i = $('#f-inicio', c.el).value, f = $('#f-fin', c.el).value;
+          const i = $('#f-inicio', c.el).value, f = dos ? $('#f-fin', c.el).value : i;
           if (!i || !f || i > f) { avisar('Revisa las fechas: «desde» debe ser antes que «hasta».'); return; }
           estado.preset = 'PERSONALIZADO'; estado.inicio = i; estado.fin = f; c.cerrar(); cambio();
         } }],
-        alMontar: (hoja) => $$('[data-preset]', hoja).forEach(b => b.addEventListener('click', () => {
-          const r = calcularFechasPreset(b.dataset.preset);
-          estado.preset = b.dataset.preset; estado.inicio = r.inicio; estado.fin = r.fin; control.cerrar(); cambio();
-        }))
+        alMontar: (hoja) => {
+          $$('[data-preset]', hoja).forEach(b => b.addEventListener('click', () => {
+            const r = calcularFechasPreset(b.dataset.preset);
+            estado.preset = b.dataset.preset; estado.inicio = r.inicio; estado.fin = r.fin; control.cerrar(); cambio();
+          }));
+          $('[data-dos-fechas]', hoja).addEventListener('change', (e) => {
+            const actual = $('#f-inicio', hoja).value;
+            dos = e.target.checked;
+            $('[data-campos-fecha]', hoja).innerHTML = campos().texto;
+            $('#f-inicio', hoja).value = actual;
+            if (dos) $('#f-fin', hoja).value = estado.fin >= actual ? estado.fin : actual;
+          });
+        }
       });
     },
     producto: () => {

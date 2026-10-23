@@ -134,6 +134,8 @@ function totalPagadoEntrada() {
   if (entrada.totalEditado) return redondearCentavo(entrada.total);
   return redondearCentavo(multiplicarDinero(costoEmpaqueEntrada(), entrada.cantEmp));
 }
+// Verde si gana, rojo si pierde (solo la cifra, no el texto).
+const claseSigno = (v) => (v > 0 ? 't-exito' : v < 0 ? 't-peligro' : '');
 // Margen sobre el costo: cuánto % se gana sobre lo invertido (como la v2).
 function margenSobreCosto(ganUnidad, costoUnidad) { return costoUnidad > 0 ? porcentajeDe(ganUnidad, costoUnidad) : 0; }
 
@@ -228,15 +230,15 @@ function formularioNuevo() {
         ${campo('nuevo-marca', 'Marca', n.marca, { lista: 'lista-marcas', obligatorio: true, placeholder: 'Catalana', campoCat: 'marca' })}
         ${campo('nuevo-linea', 'Producto', n.linea, { lista: 'lista-lineas', obligatorio: true, placeholder: 'Huevo grande', campoCat: 'linea' })}
         ${campo('nuevo-presentacion', 'Presentación', n.presentacion, { lista: 'lista-presentaciones', placeholder: 'Botella, lata, bolsa', campoCat: 'presentacion' })}
-        ${campo('nuevo-volumen', 'Contenido', n.volumen, { placeholder: '500 ml, 30 g, grande', ayuda: 'El tamaño de una unidad, no cuántas trae la caja.' })}
+        ${campo('nuevo-volumen', 'Contenido', n.volumen, { lista: 'lista-volumenes', placeholder: '500 ml, 30 g, grande', ayuda: 'El tamaño de una unidad, no cuántas trae la caja.', campoCat: 'volumen' })}
       </div>
+      ${campo('nuevo-empaque', 'Tipo de empaque', n.tipoEmpaque, { lista: 'lista-empaques', obligatorio: true, placeholder: 'Caja, fardo, bolsa', campoCat: 'tipoEmpaque', ayuda: 'Cómo te llega o lo guardas en bodega.' })}
       ${campo('nuevo-unidad', '¿Cómo lo cuentas al vender?', n.unidadBase, { lista: 'lista-unidades', obligatorio: true, placeholder: 'huevo, lata, botella, libra', ayuda: 'Es la unidad más pequeña que vendes. El stock se lleva en esta unidad.' })}
-      <details class="desplegable">
+      <details class="desplegable" ${entrada.masDatos ? 'open' : ''}>
         <summary class="fila t-pequeno">${seguro(icono('ajustes', 'icono-sm'))}<span class="crece">Más datos <span class="t-tenue">(opcional)</span></span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
         <div class="columna" style="padding-top:var(--e-3)">
           <div class="rejilla-campos">
             ${campo('nuevo-categoria', 'Categoría', n.categoria, { lista: 'lista-categorias', placeholder: 'Bebidas, farmacia…', campoCat: 'categoria' })}
-            ${campo('nuevo-empaque', 'Tipo de empaque', n.tipoEmpaque, { lista: 'lista-empaques', placeholder: 'Caja, fardo' })}
           </div>
           <div class="rejilla-campos">
             <div class="campo"><label for="nuevo-umbral-min">Avisar «muy poco» con</label><div class="control"><input id="nuevo-umbral-min" value="${n.umbralMin}"><span class="sufijo">${pluralUnidad(unidadBaseEntrada(), 2)}</span></div></div>
@@ -251,10 +253,20 @@ function formularioNuevo() {
       ${datalist('lista-unidades', valoresUnicos('unidadBase'))}
       ${datalist('lista-categorias', Almacen.categorias())}
       ${datalist('lista-empaques', valoresUnicos('tipoEmpaque'))}
+      ${datalist('lista-volumenes', valoresUnicos('volumen'))}
     </div>`;
 }
 
+// Redibuja después de que el foco ya pasó al siguiente campo (Tab) y lo devuelve ahí.
+function repintarEntradaDespues() { setTimeout(() => pintarProductoEntrada(), 0); }
+
 function pintarProductoEntrada() {
+  const enfocado = document.activeElement && entrada.el.contains(document.activeElement) ? document.activeElement.id : '';
+  pintarProductoEntradaSinFoco();
+  if (enfocado) { const f = document.getElementById(enfocado); if (f && f !== document.activeElement) { f.focus({ preventScroll: true }); try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) { /* no es de texto */ } } }
+}
+
+function pintarProductoEntradaSinFoco() {
   const cont = $('#entrada-producto', entrada.el);
   const p = entrada.producto, n = entrada.nuevo;
   if (!p && !n) {
@@ -276,24 +288,24 @@ function pintarProductoEntrada() {
   const variantes = p ? Almacen.variantesDe(p.idProducto) : [];
   const opciones = p && !enModoBodega() ? empaquesRegistrados(p) : [];
   const claveActual = claveEmpaqueEntrada();
-  const listaEmpaques = [unidad].concat(Almacen.hojas.EQUIVALENCIAS.map(e => e.nombre)).filter((v, i, a) => v && a.findIndex(x => normalizarTexto(x) === normalizarTexto(v)) === i);
+  const listaEmpaques = [unidad].concat(Almacen.hojas.EQUIVALENCIAS.map(e => e.nombre), Almacen.productosVisibles().map(x => x.tipoEmpaque)).filter((v, i, a) => v && a.findIndex(x => normalizarTexto(x) === normalizarTexto(v)) === i);
   const error = editor ? validarEmpaqueEntrada() : '';
 
   // Frase libre (modo editor o producto nuevo).
+  const nota = (texto) => html`<span class="nota-campo">${texto}</span>`;
   const fraseLibre = html`
-      <div class="frase" aria-label="Cantidad comprada">
-        <span>Compré</span>
-        <span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>
+      <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Cantidad comprada">
+        <span class="frase-palabra">Compré</span>
+        <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Unidades')}</span>
         ${enModoBodega()
-          ? html`<span class="t-fuerte">${pluralUnidad(unidad, entrada.cantEmp)}</span>`
-          : html`<span class="control ancho"><input id="entrada-empaque" value="${nombreEmp}" list="lista-empaques-entrada" aria-label="Empaque" autocomplete="off"></span>
-            ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span>de</span>
+          ? html`<span class="frase-palabra t-fuerte">${pluralUnidad(unidad, entrada.cantEmp)}</span>`
+          : html`<span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${nombreEmp}" list="lista-empaques-entrada" aria-label="Tipo de empaque" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
+            ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
               ${entrada.conNivel
-                ? html`<span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>
-                  <span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="empaque de adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>
-                  <span>de</span><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>`
-                : html`<span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>`}
-              <span class="t-fuerte">${pluralUnidad(unidad, 2)}</span>`}`}
+                ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
+                  <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>${nota('Empaque de adentro')}</span>
+                  <span class="frase-palabra">de</span><span class="frase-campo"><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>${nota(pluralUnidad(unidad, 2))}</span>`
+                : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}`}
         ${datalist('lista-empaques-entrada', listaEmpaques)}
       </div>
       ${!enModoBodega() && !empaqueEsUnidad ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Quitar el empaque de adentro` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
@@ -339,7 +351,7 @@ function pintarProductoEntrada() {
       ${p && !editor ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
       <div class="calculo" id="entrada-calculo">
         <span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
-        ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong>${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
+        ${precio > 0 ? html`<span>Ganancia por ${unidad}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong class="${claseSigno(ganUnidad)}">${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
       </div>
 
       ${editor ? html`<div class="columna">
@@ -368,7 +380,7 @@ function pintarProductoEntrada() {
 }
 
 function conectarCamposEntrada(cont) {
-  const num = (id, dec, fn) => { const i = $(id, cont); if (!i) return; prepararCampoNumerico(i, { decimales: dec }); i.addEventListener('input', () => { fn(i); actualizarCalculoEntrada(); }); i.addEventListener('change', () => pintarProductoEntrada()); i.addEventListener('focus', () => i.select()); };
+  const num = (id, dec, fn) => { const i = $(id, cont); if (!i) return; prepararCampoNumerico(i, { decimales: dec }); i.addEventListener('input', () => { fn(i); actualizarCalculoEntrada(); }); i.addEventListener('change', () => repintarEntradaDespues()); i.addEventListener('focus', () => i.select()); };
   const decCant = (entrada.producto ? entrada.producto.decimales : (entrada.nuevo && entrada.nuevo.decimales)) ? 3 : 0;
   num('#entrada-cant', decCant, (i) => { entrada.cantEmp = leerCantidad(i); });
   num('#entrada-por', 0, (i) => { entrada.unidades = leerCantidad(i) || 1; });
@@ -383,7 +395,7 @@ function conectarCamposEntrada(cont) {
   });
   num('#entrada-precio', 2, (i) => { entrada.precioNuevo = leerDineroCampo(i); if (entrada.nuevo) entrada.nuevo.precio = entrada.precioNuevo; });
   num('#entrada-bonif', decCant, (i) => { entrada.bonif = leerCantidad(i); });
-  const texto = (id, fn, repintar) => { const i = $(id, cont); if (!i) return; i.addEventListener('input', () => fn(i.value)); i.addEventListener('change', () => { fn(i.value); if (repintar) pintarProductoEntrada(); }); };
+  const texto = (id, fn, repintar) => { const i = $(id, cont); if (!i) return; i.addEventListener('input', () => fn(i.value)); i.addEventListener('change', () => { fn(i.value); if (repintar) repintarEntradaDespues(); }); };
   texto('#entrada-empaque', (v) => { entrada.empaque = v.trim(); }, true);
   texto('#entrada-sub', (v) => { entrada.subEmpaque = v.trim(); });
   texto('#entrada-sabor', (v) => { entrada.variante = v.trim(); });
@@ -399,6 +411,10 @@ function conectarCamposEntrada(cont) {
     num('#nuevo-umbral-min', 0, (i) => { n.umbralMin = leerCantidad(i); });
     num('#nuevo-umbral-max', 0, (i) => { n.umbralMax = leerCantidad(i); });
     const dec = $('#nuevo-decimales', cont); if (dec) dec.addEventListener('change', () => { n.decimales = dec.checked; pintarProductoEntrada(); });
+    const masDatos = $('#formulario-nuevo details', cont); if (masDatos) masDatos.addEventListener('toggle', () => { entrada.masDatos = masDatos.open; });
+    // 20. Presentación, contenido y tipo de empaque: un valor que no existe se confirma (evita errores por ir rápido).
+    [['#nuevo-presentacion', 'presentacion', ['una presentación nueva', 'presentación'], (v) => { n.presentacion = v; }], ['#nuevo-volumen', 'volumen', ['un contenido nuevo', 'contenido'], (v) => { n.volumen = v; }], ['#nuevo-empaque', 'tipoEmpaque', ['un tipo de empaque nuevo', 'tipo de empaque'], (v) => { n.tipoEmpaque = v; }]]
+      .forEach(([id, campo, nombre, poner]) => { const i = $(id, cont); if (i) i.addEventListener('change', () => confirmarValorNuevo(i, campo, nombre, poner)); });
     ['#nuevo-marca', '#nuevo-linea', '#nuevo-presentacion', '#nuevo-volumen'].forEach(id => { const i = $(id, cont); if (i) i.addEventListener('change', () => revisarDuplicadoNuevo()); });
   }
 }
@@ -418,8 +434,21 @@ function actualizarCalculoEntrada() {
   const inCosto = $('#entrada-costo', cont); if (inCosto && document.activeElement !== inCosto) inCosto.value = valorCampoDinero(costoEmpaqueEntrada(), 5);
   const calc = $('#entrada-calculo', cont);
   if (calc) calc.innerHTML = html`<span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
-    ${precio > 0 ? html`<span class="${ganUnidad < 0 ? 't-peligro' : ''}">Ganancia por ${unidad}: <strong>${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por empaque: <strong>${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong>${margenSobreCosto(ganUnidad, costoUnidad).toFixed(1)}%</strong></span>` : ''}`.texto;
+    ${precio > 0 ? html`<span>Ganancia por ${unidad}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por empaque: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong class="${claseSigno(ganUnidad)}">${margenSobreCosto(ganUnidad, costoUnidad).toFixed(1)}%</strong></span>` : ''}`.texto;
   const b = $('[data-accion="guardar-entrada"]', cont); if (b) b.lastChild.textContent = `Guardar entrada · ${formatearDinero(total)}`;
+}
+
+// Valor nuevo en un campo delicado: se pide confirmar; si no, se borra para corregirlo.
+const valoresNuevosAceptados = new Set();
+async function confirmarValorNuevo(input, campo, [conArticulo, nombre], poner) {
+  const v = input.value.trim();
+  const clave = `${campo}|${normalizarIdentidad(v)}`;
+  if (!v || !esValorNuevo(campo, v) || valoresNuevosAceptados.has(clave)) return;
+  const ok = await confirmar({ titulo: `¿Crear ${conArticulo}?`, mensaje: `«${v}» no existe todavía como ${nombre} en tu catálogo. Si es correcto, acéptalo; si quisiste elegir uno que ya tienes, corrígelo para no duplicar datos.`, textoConfirmar: 'Aceptar', textoCancelar: 'Corregir' });
+  if (ok) { valoresNuevosAceptados.add(clave); return; }
+  input.value = ''; poner('');
+  pintarProductoEntrada();
+  setTimeout(() => { const i = document.getElementById(input.id); if (i) i.focus(); }, 50);
 }
 
 async function revisarDuplicadoNuevo() {
@@ -470,6 +499,7 @@ function validarNuevo() {
   if (!n) return '';
   if (!n.marca || !n.linea) return 'Escribe la marca y el producto.';
   if (!n.unidadBase) return 'Indica cómo cuentas el producto al venderlo (huevo, lata, botella…).';
+  if (!n.tipoEmpaque) return 'Indica el tipo de empaque (caja, fardo, bolsa…).';
   if (buscarProductoMismaIdentidad(n, Almacen.productos)) return 'Ese producto ya existe: elígelo de la lista.';
   return '';
 }

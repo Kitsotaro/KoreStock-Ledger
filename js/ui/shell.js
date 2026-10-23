@@ -156,7 +156,7 @@ const Shell = {
     const ultimo = leerLocal(CLAVES_LOCALES.ULTIMO_RESPALDO);
     if (!ultimo) return '';
     const dias = diasEntre(ultimo.slice(0, 10), obtenerFechaLocal());
-    return dias <= 0 ? 'Último respaldo: hoy' : `Último respaldo: hace ${dias} ${pluralizar(dias, 'día')}`;
+    return dias <= 0 ? 'hoy' : `hace ${dias} ${pluralizar(dias, 'día')}`;
   },
 
   // ---------- Modos (D10, D22) ----------
@@ -188,9 +188,10 @@ const Shell = {
     document.body.classList.add('cambiando-modo');
     document.documentElement.classList.add('sin-desplazar'); // la capa tapa todo, también la barra de desplazamiento
     requestAnimationFrame(() => capa.classList.add('visible'));
+    // 3 s en pantalla para poder leer qué incluye el modo (Kitso, 2026-10-23).
     setTimeout(aplicar, 220);
-    setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 700);
-    setTimeout(() => { capa.remove(); document.documentElement.classList.remove('sin-desplazar'); }, 1100);
+    setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 3000);
+    setTimeout(() => { capa.remove(); document.documentElement.classList.remove('sin-desplazar'); }, 3400);
   },
   elegirModo(alElegir) {
     const actual = this.modo;

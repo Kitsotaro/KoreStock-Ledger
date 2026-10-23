@@ -17,7 +17,7 @@
 //   operaciones-movimientos.js, cargador.js (Chart).
 // ============================================================
 
-const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'RESUMEN', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false });
+const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'MOVIMIENTOS', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false });
 const dashUI = { el: null, filtros: null, grafico: null };
 
 registrarPantalla('dashboard', {
@@ -27,8 +27,8 @@ registrarPantalla('dashboard', {
     el.innerHTML = html`
       <div class="columna">
         <div class="segmentado" role="group" aria-label="Vista">
-          <button type="button" data-accion="vista" data-valor="RESUMEN">Resumen</button>
           <button type="button" data-accion="vista" data-valor="MOVIMIENTOS">Movimientos</button>
+          <button type="button" data-accion="vista" data-valor="RESUMEN">Resumen</button>
         </div>
         <div id="dash-cuerpo"></div>
       </div>
@@ -68,8 +68,10 @@ function pintarResumenDashboard() {
   const movs = PeriodosLargos.hojasPara(desde).LOG_TRANS;
   incluirHistoricosUI(desde, pintarDashboard);
   const r = calcularResumenPeriodo(movs, est.inicio, est.fin, filtro);
-  const cpp = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, est.inicio, est.fin, filtro) : null;
   const ra = calcularResumenPeriodo(movs, ant.inicio, ant.fin, filtro);
+  // Ganancia: por defecto la guardada (último costo); el chip «Costo promedio» la cambia.
+  const ganancia = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, est.inicio, est.fin, filtro).utilidad : r.utilidad;
+  const gananciaAnt = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, ant.inicio, ant.fin, filtro).utilidad : ra.utilidad;
   const bodega = Shell.modo === 'bodega';
   const ranking = (claveDe, nombreDe, conUltimo) => rankingProductos(movs, est.inicio, est.fin, claveDe, filtro).slice(0, 5)
     .map(x => html`<li class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreDe(x.clave)}</div>
@@ -81,16 +83,15 @@ function pintarResumenDashboard() {
   $('#dash-cuerpo', dashUI.el).innerHTML = html`
     ${notaHistoricosHTML(est.inicio)}
     <div class="cifras">
-      <div class="cifra-tarjeta"><div class="etiqueta">Ventas ${botonInfo('Ventas', 'Suma de lo que cobraste en las ventas del período (lo cobrado es el dato, aunque hayas hecho rebaja). No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'vendida', 'vendidas')}</div></div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Utilidad ${botonInfo('Utilidad', 'Lo que ganaste: lo cobrado menos lo que te costó cada producto (último costo de compra al momento de vender). Con la casilla de abajo ves también el cálculo con costo promedio. No incluye anuladas.')}</div><div class="valor ${r.utilidad < 0 ? 't-peligro' : ''}">${formatearDinero(r.utilidad)}</div>${comparacionHTML(r.utilidad, ra.utilidad, true)}
-        ${est.verCostoPromedio ? html`<div class="t-mini t-secundario">Con costo promedio: <strong>${formatearDinero(cpp.utilidad)}</strong></div>` : ''}</div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Invertido ${botonInfo('Invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'ingresada', 'ingresadas')}</div></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Ventas ${botonInfo('Ventas', 'Suma de lo que cobraste en las ventas del período (lo cobrado es el dato, aunque hayas hecho rebaja). No incluye anuladas.'+' El porcentaje compara con el período anterior de igual duración; deja el cursor sobre él para ver ese monto.')}</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'vendida', 'vendidas')}</div></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Ganancia ${botonInfo('Ganancia', '**La utilidad es lo que ganaste**: lo cobrado menos lo que te costó cada producto.\n\n- **Último costo** (por defecto): el costo de tu compra más reciente al momento de vender, como lo calcularías a mano.\n- **Costo promedio** (chip de la tarjeta): el promedio de todo lo que tienes en bodega.\n\nNo incluye anuladas.'+' El porcentaje compara con el período anterior de igual duración; deja el cursor sobre él para ver ese monto.')}</div><div class="valor ${ganancia < 0 ? 't-peligro' : ''}">${formatearDinero(ganancia)}</div>${comparacionHTML(ganancia, gananciaAnt, true)}
+        <button type="button" class="chip chip-mini" data-accion="ver-costo-promedio" aria-pressed="${String(!!est.verCostoPromedio)}">${seguro(icono(est.verCostoPromedio ? 'check' : 'intercambiar', 'icono-sm'))}Costo promedio</button></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Invertido ${botonInfo('Invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.'+' El porcentaje compara con el período anterior de igual duración; deja el cursor sobre él para ver ese monto.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'ingresada', 'ingresadas')}</div></div>
     </div>
-    <label class="casilla t-pequeno"><input type="checkbox" data-accion="ver-costo-promedio" ${est.verCostoPromedio ? 'checked' : ''}> Ver también la utilidad con costo promedio</label>
     ${bodega ? '' : html`
     <div class="tarjeta">
       <div class="tarjeta-titulo"><h2>${seguro(icono('tendencia', 'icono-sm'))} Tendencia</h2><span class="t-pequeno t-secundario">${formatearFechaCorta(est.inicio)} – ${formatearFechaCorta(est.fin)}</span></div>
-      <div class="contenedor-grafico"><canvas id="dash-tendencia" role="img" aria-label="Ventas y utilidad por día"></canvas></div>
+      <div class="contenedor-grafico"><canvas id="dash-tendencia" role="img" aria-label="Ventas y ganancia por día"></canvas></div>
     </div>
     <div class="tarjeta"><div class="tarjeta-titulo"><h2>Productos que más venden</h2></div>${rankProd.length ? html`<ul class="lista">${rankProd}</ul>` : html`<p class="t-tenue t-pequeno">Sin ventas en el período.</p>`}</div>
     <div class="tarjeta"><div class="tarjeta-titulo"><h2>Marcas</h2></div>${rankMarca.length ? html`<ul class="lista">${rankMarca}</ul>` : html`<p class="t-tenue t-pequeno">Sin ventas en el período.</p>`}</div>
@@ -115,22 +116,40 @@ async function pintarTendencia(movs, est, filtro) {
   const estilo = getComputedStyle(document.documentElement);
   const color = (v) => estilo.getPropertyValue(v).trim();
   if (dashUI.grafico) dashUI.grafico.destroy();
+  // Ventas y ganancia superpuestas: cada una con su propio eje (ventas a la
+  // izquierda, ganancia a la derecha) para que la ganancia no quede aplastada
+  // abajo; áreas transparentes como en la referencia. El tooltip da el margen.
+  const area = (ctx, c) => {
+    const { chartArea, ctx: g } = ctx.chart;
+    if (!chartArea) return c;
+    const grad = g.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    grad.addColorStop(0, c + '55'); grad.addColorStop(1, c + '00');
+    return grad;
+  };
+  const cVenta = color('--venta'), cGanancia = color('--primario');
   dashUI.grafico = new Chart(lienzo, {
     type: 'line',
     data: {
       labels: serie.map(d => formatearFechaCorta(d.fecha)),
       datasets: [
-        { label: 'Ventas', data: serie.map(d => dineroANumero(d.ventas)), borderColor: color('--venta'), backgroundColor: color('--venta'), tension: 0.3, pointRadius: serie.length > 31 ? 0 : 3, borderWidth: 2.5 },
-        { label: 'Utilidad', data: serie.map(d => dineroANumero(d.utilidad)), borderColor: color('--primario'), backgroundColor: color('--primario'), tension: 0.3, pointRadius: serie.length > 31 ? 0 : 3, borderWidth: 2.5, borderDash: [6, 4] }
+        { label: 'Ventas', yAxisID: 'yVentas', data: serie.map(d => dineroANumero(d.ventas)), borderColor: cVenta, backgroundColor: (c) => area(c, cVenta), fill: 'origin', tension: 0.35, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2.5 },
+        { label: 'Ganancia', yAxisID: 'yGanancia', data: serie.map(d => dineroANumero(d.utilidad)), borderColor: cGanancia, backgroundColor: (c) => area(c, cGanancia), fill: 'origin', tension: 0.35, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2.5 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300 },
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { color: color('--texto-2'), usePointStyle: true } }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${formatearDinero(dinero(c.raw))}` } } },
+      plugins: {
+        legend: { labels: { color: color('--texto-2'), usePointStyle: true, pointStyle: 'line' } },
+        tooltip: { callbacks: {
+          label: (c) => ` ${c.dataset.label}: ${formatearDinero(dinero(c.raw))}`,
+          footer: (items) => { const v = items.find(i => i.dataset.label === 'Ventas'), g = items.find(i => i.dataset.label === 'Ganancia'); return v && g && v.raw ? `Margen: ${(g.raw / v.raw * 100).toFixed(1)} %` : ''; }
+        } }
+      },
       scales: {
-        x: { ticks: { color: color('--texto-3'), maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { display: false } },
-        y: { ticks: { color: color('--texto-3'), callback: (v) => '$' + v }, grid: { color: color('--borde') } }
+        x: { ticks: { color: color('--texto-3'), maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } },
+        yVentas: { position: 'left', beginAtZero: true, ticks: { color: cVenta, maxTicksLimit: 5, callback: (v) => '$' + v }, grid: { color: color('--borde') } },
+        yGanancia: { position: 'right', beginAtZero: true, ticks: { color: cGanancia, maxTicksLimit: 5, callback: (v) => '$' + v }, grid: { display: false } }
       }
     }
   });
@@ -212,16 +231,16 @@ function pintarMovimientosDashboard() {
   cuerpo.innerHTML = html`
     <div class="fila-busqueda">
       <div class="buscador crece"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="dash-buscar" type="search" placeholder="Buscar folio, producto o cliente" value="${est.texto}" autocomplete="off"></div></div>
-      <button type="button" class="boton boton-icono boton-ajustes-criticos" data-accion="ajustes-movimientos" aria-expanded="${String(!!est.ajustesAbiertos)}" aria-label="Ajustes de movimientos">${seguro(icono('ajustes'))}</button>
+      <button type="button" class="boton boton-icono boton-ajustes-criticos" data-solo-modo="pro" data-accion="ajustes-movimientos" aria-expanded="${String(!!est.ajustesAbiertos)}" aria-label="Ajustes de movimientos">${seguro(icono('ajustes'))}</button>
     </div>
-    <div class="ajustes-criticos" id="dash-ajustes" ${est.ajustesAbiertos ? '' : 'hidden'}>
+    <div class="ajustes-criticos" id="dash-ajustes" data-solo-modo="pro" ${est.ajustesAbiertos ? '' : 'hidden'}>
       <div class="ajustes-criticos-aviso">${seguro(icono('peligro', 'icono-sm'))}<span><strong>Ajustes de alto nivel.</strong> Cambian tu historial: revisa la vista previa antes de confirmar. Se pueden revertir durante ${DIAS_REVERSION} días.</span></div>
       <div class="grupo-botones" data-solo-modo="tienda pro" id="dash-acciones-lote"></div>
       <div id="dash-acciones-recientes"></div>
     </div>
     <div class="fila-chips" role="group" aria-label="Tipo">
       ${[['TODO', 'Todo'], ['VENTA', 'Ventas'], ['ENTRADA', 'Entradas']].map(([v, t]) => html`<button type="button" class="chip" data-accion="tipo" data-valor="${v}" aria-pressed="${String(est.tipo === v)}">${t}</button>`)}
-      <button type="button" class="chip" data-accion="solo-nuevos" aria-pressed="${String(est.soloNuevos)}">${seguro(icono('estrella', 'icono-sm'))}Productos nuevos</button>
+      <button type="button" class="chip" data-accion="solo-nuevos" aria-pressed="${String(est.soloNuevos)}">${seguro(icono('archivo-nuevo', 'icono-sm'))}Productos nuevos</button>
     </div>
     <div id="dash-lista"></div>`.texto;
   const buscar = $('#dash-buscar', cuerpo);
@@ -257,7 +276,7 @@ async function anularConConfirmacion(folios, accion) {
 const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
   'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
-  'ver-costo-promedio': (b) => { estadoDashboard.verCostoPromedio = b.checked; pintarDashboard(); },
+  'ver-costo-promedio': () => { estadoDashboard.verCostoPromedio = !estadoDashboard.verCostoPromedio; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarMovimientosDashboard(); },
   'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarMovimientosDashboard(); },
   // Toda anulación queda registrada para poder revertirla (7 días), también una línea suelta.

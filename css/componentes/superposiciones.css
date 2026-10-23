@@ -90,7 +90,7 @@
 /* Transición al cambiar de modo (Bodega / Tienda / Pro) */
 .transicion-modo {
   position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; pointer-events: none;
-  background: color-mix(in srgb, var(--fondo) 92%, transparent); opacity: 0; transition: opacity var(--dur-media) var(--curva);
+  background: color-mix(in srgb, var(--fondo) 90%, transparent); opacity: 0; transition: opacity var(--dur-media) var(--curva);
 }
 .transicion-modo.visible { opacity: 1; }
 .transicion-modo .contenido-transicion { display: grid; justify-items: center; gap: var(--e-2); text-align: center; color: var(--primario); transform: translateY(8px) scale(0.96); transition: transform var(--dur-lenta) var(--curva); }
@@ -127,9 +127,9 @@ body.cambiando-modo .contenido { opacity: 0.35; }
 .infobox-cuerpo ul { padding-left: 1.1rem; }
 .infobox-cuerpo pre { margin: var(--e-2) 0; padding: var(--e-2) var(--e-3); border-radius: var(--r-xs); background: color-mix(in srgb, var(--activo-texto) 12%, transparent); overflow-x: auto; }
 .infobox-cuerpo pre code { font-family: var(--fuente-mono); font-size: var(--t-xs); color: var(--activo-texto); white-space: pre-wrap; }
-.infobox-flecha { position: absolute; width: 14px; height: 14px; background: var(--activo-fondo); transform: rotate(45deg); z-index: 1; }
-.infobox.abajo .infobox-flecha { top: -8px; border-right: 0; border-bottom: 0; }
-.infobox.arriba .infobox-flecha { bottom: -8px; border-left: 0; border-top: 0; }
+.infobox-flecha { position: absolute; width: 14px; height: 14px; background: var(--activo-fondo); transform: rotate(45deg); z-index: 1; border-radius: 3px; }
+.infobox.abajo .infobox-flecha { top: -6px; }
+.infobox.arriba .infobox-flecha { bottom: -6px; }
 
 /* Grupo de una sola opción (Exportar / Importar, Cerrar sesión) */
 .panel-lateral .grupo-solo { padding: var(--e-1); }
@@ -137,7 +137,7 @@ body.cambiando-modo .contenido { opacity: 0.35; }
 
 /* Selector de 3 posiciones (tema Día / Noche / Auto) */
 .selector-tres { position: relative; display: grid; grid-template-columns: repeat(3, 1.75rem); height: 1.75rem; padding: 2px; border-radius: var(--r-pildora); background: var(--superficie-3); border: 1px solid var(--borde); flex: none; }
-.selector-tres .ranura { position: relative; z-index: 1; display: grid; place-items: center; color: var(--texto-3); font-size: var(--t-xs); font-weight: var(--peso-titulo); transition: color var(--dur-media) var(--curva); }
+.selector-tres .ranura { position: relative; z-index: 1; display: grid; place-items: center; padding-left: 3px; color: var(--texto-3); font-size: var(--t-xs); font-weight: var(--peso-titulo); transition: color var(--dur-media) var(--curva); }
 .selector-tres .perilla { position: absolute; top: 2px; left: 2px; width: 1.75rem; height: calc(100% - 4px); border-radius: var(--r-pildora); background: var(--activo-fondo); box-shadow: var(--sombra-1); transition: transform var(--dur-media) var(--curva); }
 [data-posicion="oscuro"] .selector-tres .perilla { transform: translateX(1.75rem); }
 [data-posicion="sistema"] .selector-tres .perilla { transform: translateX(3.5rem); }
@@ -146,3 +146,4 @@ body.cambiando-modo .contenido { opacity: 0.35; }
 /* Mientras se ve la capa de cambio de modo no se puede desplazar (la barra no asoma) */
 html { scrollbar-gutter: stable; }
 html.sin-desplazar { overflow: hidden; }
+.separador-panel { border: 0; border-top: 1px solid var(--borde); margin: var(--e-1) var(--e-3); }
