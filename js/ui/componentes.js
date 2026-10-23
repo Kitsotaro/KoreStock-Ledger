@@ -18,7 +18,7 @@
 //
 // Expone: icono, html, seguro, mostrarDialogo, cerrarDialogo, confirmar,
 //   confirmarFuerte, mostrarResumen, abrirHoja, avisar, crearBuscador,
-//   pintarPaginado, delegar, activarSugerencias, botonInfo, $, $$.
+//   pintarPaginado, delegar, activarSugerencias, botonInfo, mostrarInfobox, cerrarInfobox, $, $$.
 // Depende de: utilidades.js (escaparHTML).
 // ============================================================
 
@@ -237,16 +237,51 @@ function crearBuscador({ input, obtener, alElegir, nuevo = null, maximo = 8, alE
   return { cerrar, refrescar: pintar };
 }
 
-// ---------- ⓘ explicativos (heredado de la v2: toggleInfoTip) ----------
-// Botón pequeño junto a una cifra; al tocarlo explica de dónde sale.
+// ---------- ⓘ explicativos e infobox (fase UI) ----------
+// Botón pequeño junto a una cifra; al tocarlo abre un INFOBOX anclado (no un
+// diálogo) con markdown enriquecido: listas, negritas y fórmulas completas en
+// bloques ```formula```. El texto es siempre propio de la app (nunca del usuario).
 function botonInfo(titulo, texto) {
   return html`<button type="button" class="boton-info" data-info-titulo="${titulo}" data-info="${texto}" aria-label="Qué es ${titulo}">${seguro(icono('info', 'icono-sm'))}</button>`;
 }
+
+let infoboxAbierto = null;
+function cerrarInfobox() { if (infoboxAbierto) { infoboxAbierto.remove(); infoboxAbierto = null; } }
+
+async function mostrarInfobox(ancla, titulo, markdown) {
+  cerrarInfobox();
+  const caja = document.createElement('div');
+  caja.className = 'infobox';
+  caja.setAttribute('role', 'dialog');
+  caja.setAttribute('aria-label', titulo);
+  caja.innerHTML = html`<div class="infobox-cabecera"><strong>${titulo}</strong><button type="button" class="boton-info" data-cerrar-infobox aria-label="Cerrar">${seguro(icono('cerrar', 'icono-sm'))}</button></div><div class="infobox-cuerpo">${markdown}</div><span class="infobox-flecha"></span>`.texto;
+  document.body.appendChild(caja);
+  infoboxAbierto = caja;
+  try {
+    await cargarMarked();
+    const cuerpo = $('.infobox-cuerpo', caja);
+    if (cuerpo && infoboxAbierto === caja) cuerpo.innerHTML = marked.parse(markdown);
+  } catch (e) { /* queda el texto plano */ }
+  // Posición: debajo del ícono si cabe; si no, encima. Flecha apuntando al ícono.
+  const r = ancla.getBoundingClientRect();
+  const ancho = Math.min(caja.offsetWidth, window.innerWidth - 24);
+  const izq = Math.max(12, Math.min(r.left + r.width / 2 - ancho / 2, window.innerWidth - ancho - 12));
+  const debajo = r.bottom + 10 + caja.offsetHeight < window.innerHeight - 80;
+  caja.style.left = `${izq}px`;
+  caja.style.top = `${debajo ? r.bottom + 10 : Math.max(12, r.top - caja.offsetHeight - 10)}px`;
+  caja.classList.add(debajo ? 'abajo' : 'arriba');
+  $('.infobox-flecha', caja).style.left = `${r.left + r.width / 2 - izq - 7}px`;
+  requestAnimationFrame(() => caja.classList.add('visible'));
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-info]');
-    if (b) { e.preventDefault(); e.stopPropagation(); mostrarDialogo({ titulo: b.dataset.infoTitulo, mensaje: b.dataset.info }); }
+    if (b) { e.preventDefault(); e.stopPropagation(); mostrarInfobox(b, b.dataset.infoTitulo, b.dataset.info); return; }
+    if (infoboxAbierto && (e.target.closest('[data-cerrar-infobox]') || !e.target.closest('.infobox'))) cerrarInfobox();
   }, true);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarInfobox(); });
+  window.addEventListener('scroll', cerrarInfobox, { passive: true });
 }
 
 // ---------- Sugerencias en campos de texto libre ----------

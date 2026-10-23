@@ -19,12 +19,13 @@
 const estadoPanorama = Object.assign(crearEstadoFiltros('MES'), { ventana: 30, abiertas: new Set(), buscarRoi: '', buscarCpp: '' });
 const panUI = { el: null, filtros: null };
 
+// Fórmulas completas en markdown (infobox). Los términos exactos se permiten aquí (D52).
 const FORMULAS = {
-  roi: 'ROI = utilidad de las ventas ÷ inversión en entradas del período × 100.\nRotación = unidades vendidas en el período ÷ stock actual.\nLa apertura de una base rotada no cuenta como compra.',
-  equilibrio: 'Margen de contribución = utilidad ÷ ventas × 100.\nPunto de equilibrio = gastos fijos del período ÷ margen.\nEs cuánto necesitas vender para cubrir tus gastos, sin ganar ni perder. No incluye combustible.',
-  proyeccion: 'Ritmo diario = unidades vendidas en los últimos N días ÷ N.\nDías restantes = stock actual ÷ ritmo diario.',
-  cpp: 'Costo promedio ponderado: cada compra se mezcla con lo que ya tenías: (valor anterior + total pagado) ÷ unidades. Las unidades gratis bajan el costo promedio; vender no lo cambia.',
-  combustible: 'Kilómetros = última lectura del período − la lectura anterior al período.\nRendimiento = kilómetros ÷ galones.'
+  roi: '**Retorno sobre la inversión (ROI)**\n\n```formula\nROI = utilidad de las ventas ÷ inversión en entradas × 100\n```\n\n**Rotación** de cada producto:\n\n```formula\nRotación = unidades vendidas en el período ÷ stock actual\n```\n\n*Ejemplo:* invertiste $500 y ganaste $125 → 125 ÷ 500 × 100 = **25 %**.\n\nLa apertura de una base archivada no cuenta como compra.',
+  equilibrio: '**Punto de equilibrio**: cuánto necesitas vender para cubrir tus gastos, sin ganar ni perder.\n\n```formula\nMargen de contribución = utilidad ÷ ventas\nPunto de equilibrio   = gastos fijos ÷ margen de contribución\n```\n\n*Ejemplo:* vendiste $1,000 y ganaste $250 (margen 25 %); con gastos fijos de $500 → 500 ÷ 0.25 = **$2,000**.\n\nNo incluye combustible.',
+  proyeccion: '**Proyección de agotamiento**\n\n```formula\nRitmo diario    = unidades vendidas en los últimos N días ÷ N\nDías restantes  = stock actual ÷ ritmo diario\n```\n\n*Ejemplo:* vendiste 60 en 30 días (2 por día) y te quedan 18 → **9 días**.',
+  cpp: '**Costo promedio ponderado (CPP)**: cada compra se mezcla con lo que ya tenías.\n\n```formula\nCPP = (valor en bodega + total pagado) ÷ (unidades en bodega + unidades compradas)\nAl vender sale: CPP × unidades vendidas\n```\n\n- Las unidades gratis (bonificadas) entran con costo $0 y **bajan** el promedio.\n- Vender **no cambia** el costo promedio.\n\n*Ejemplo:* 24 a $4.40 y 30 a $5.00 → $9.40 ÷ 54 = **$0.17407** por unidad.',
+  combustible: '**Rendimiento de combustible**\n\n```formula\nKilómetros  = última lectura del período − lectura anterior al período\nRendimiento = kilómetros ÷ galones\n```\n\n*Ejemplo:* de 12,000 a 12,450 km con 15 galones → 450 ÷ 15 = **30 km/galón**.'
 };
 
 registrarPantalla('panorama', {
@@ -172,5 +173,5 @@ async function cambiarUmbralPanorama(input) {
 }
 
 const accionesPanorama = {
-  'formula': (b, e) => { e.preventDefault(); e.stopPropagation(); mostrarDialogo({ titulo: 'Cómo se calcula', mensaje: FORMULAS[b.dataset.clave] }); }
+  'formula': (b, e) => { e.preventDefault(); e.stopPropagation(); mostrarInfobox(b, 'Cómo se calcula', FORMULAS[b.dataset.clave]); }
 };
