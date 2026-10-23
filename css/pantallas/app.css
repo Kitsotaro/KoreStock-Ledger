@@ -27,3 +27,9 @@ body.sin-conexion .registro button[type="submit"], body.sin-conexion form button
 /* Título de grupo entre tarjetas (Datos: «Protege tus datos», «Mantenimiento») */
 .titulo-grupo { margin: var(--e-2) var(--e-1) 0; font-size: var(--t-xs); font-weight: var(--peso-fuerte); color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.04em; }
 .titulo-grupo + .tarjeta, .titulo-grupo ~ .tarjeta { margin-top: 0; }
+/* Migración: unidad de conteo por producto */
+.fila-unidad { display: grid; gap: var(--e-2); padding: var(--e-3) var(--e-4); border-top: 1px solid var(--borde); }
+.fila-unidad .titulo { font-weight: var(--peso-fuerte); }
+.fila-unidad .sub { font-size: var(--t-xs); color: var(--texto-2); }
+.fila-unidad .segmentado-compra { justify-self: start; flex-wrap: wrap; }
+.fila-unidad .control-n { max-width: 16rem; }

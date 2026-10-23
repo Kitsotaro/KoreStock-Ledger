@@ -60,6 +60,9 @@ function elegirArchivoImportacion() {
       await cargarXLSX();
       const datos = new Uint8Array(await archivo.arrayBuffer());
       const libro = XLSX.read(datos, { type: 'array' });
+      // Una base completa (LOG_TRANS + CATALOGO) no es una lista para importar:
+      // va por la migración (Kitso, 2026-10-23: «faltan Marca o Producto»).
+      if (libro.SheetNames.includes('LOG_TRANS') && libro.SheetNames.includes('CATALOGO')) { avisarBaseCompleta(datos, archivo.name); return; }
       const filas = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { defval: '', raw: true });
       confirmarImportacion(analizarFilasImportadas(filas));
     } catch (e) {
@@ -67,6 +70,24 @@ function elegirArchivoImportacion() {
     }
   });
   input.click();
+}
+
+function avisarBaseCompleta(bytes, nombre) {
+  const demo = typeof Sesion !== 'undefined' && Sesion.modoDemo;
+  mostrarDialogo({
+    titulo: 'Este archivo es una base completa',
+    mensaje: demo
+      ? 'No es una lista de compras y ventas: es una base de KoreStock con catálogo y movimientos. En la demostración puedes pasarla a esta versión con el asistente de migración (tu base de demostración actual no se borra).'
+      : 'No es una lista de compras y ventas: es una base de KoreStock con catálogo y movimientos. Para pasarla a esta versión se usa el asistente de migración, que se abre al elegir esa base en tu Google Drive. Escríbenos si necesitas ayuda.',
+    textoConfirmar: demo ? 'Migrar en la demostración' : 'Entendido',
+    textoCancelar: demo ? 'Cancelar' : undefined,
+    onConfirmar: demo ? async () => {
+      const id = await cargarXlsxEnDemo(bytes, String(nombre || 'StockCentral_DB').replace(/\.xlsx?$/i, ''));
+      const v = await detectarVersionEsquema(id);
+      if (v.version !== 2) { mostrarDialogo({ titulo: 'No se puede migrar', mensaje: v.version === 3 ? 'Esta base ya está en la versión nueva: no hace falta migrarla.' : 'No se reconocen las hojas de una base de KoreStock.' }); return; }
+      App.migrar(id);
+    } : undefined
+  });
 }
 
 // Valida y clasifica las filas (función pura sobre el almacén actual).

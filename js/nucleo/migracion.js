@@ -24,7 +24,7 @@
 //
 // Expone: detectarVersionEsquema, leerBaseV2, proponerFusiones,
 //   convertirAV3, verificarMigracion, compararReleida, migrarBaseV2,
-//   HOJAS_V2, sugerirUnidadBase.
+//   HOJAS_V2, sugerirUnidadBase, MODOS_UNIDAD, unidadesPorDefecto, nombreUnidadV2.
 // Depende de: hoja.js, esquema.js, base-datos.js, dinero.js,
 //   utilidades.js, calculos.js.
 // ============================================================
@@ -121,9 +121,29 @@ function proponerFusiones(datos) {
 
 function capitalizar(t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); }
 
+// Unidad de conteo de cada producto (Kitso, 2026-10-23): en la v2 la misma
+// columna TIPO_EMPAQUE a veces era el empaque en que llega lo que se cuenta
+// por unidad (lata a $0.52, «Caja») y a veces lo que de verdad se contaba
+// (Pepsi 3 Lts a $8.50 la caja). El asistente pregunta, producto por producto:
+//   PRESENTACION → se cuenta en la presentación (botella), sin cambios.
+//   EMPAQUE      → se cuenta en el empaque (caja), sin cambios en cantidades.
+//   CONVERTIR    → «caja de N botellas»: cantidades × N, costos y precios ÷ N,
+//                  y la caja queda como empaque conocido (EQUIVALENCIAS).
+const MODOS_UNIDAD = ['PRESENTACION', 'EMPAQUE', 'CONVERTIR'];
+function unidadesPorDefecto(datos) {
+  const r = {};
+  datos.CATALOGO.forEach(p => { if (p.idProducto) r[p.idProducto] = { modo: 'PRESENTACION', unidades: 1 }; });
+  return r;
+}
+function nombreUnidadV2(p, modo) {
+  const t = String((modo === 'EMPAQUE' ? p.tipoEmpaque : p.presentacion) || p.tipoEmpaque || p.presentacion || 'unidad').trim().toLowerCase();
+  return t || 'unidad';
+}
+
 // Conversión PURA v2 → v3. `fusiones` = propuestas con aceptada === true.
+// opciones.unidades = { [idProducto]: { modo, unidades } } (ver MODOS_UNIDAD).
 function convertirAV3(datos, fusiones, opciones) {
-  const { actor = '', ahora = obtenerTimestampLocal() } = opciones || {};
+  const { actor = '', ahora = obtenerTimestampLocal(), unidades = {} } = opciones || {};
   const aceptadas = (fusiones || []).filter(f => f.aceptada);
   const avisos = [];
 
@@ -132,6 +152,19 @@ function convertirAV3(datos, fusiones, opciones) {
   aceptadas.forEach(f => f.productos.forEach(id => {
     destinoDe.set(id, f.destino); factorDe.set(id, f.tipo === 'UNIDADES' ? f.factores[id] : 1); fusionDe.set(id, f);
   }));
+  // Unidad elegida por producto (los fusionados usan la unidad de su unión).
+  const modoDe = new Map(), conversionDe = new Map();
+  datos.CATALOGO.forEach(p => {
+    if (!p.idProducto || fusionDe.has(p.idProducto)) return;
+    const u = unidades[p.idProducto] || {};
+    const modo = MODOS_UNIDAD.includes(u.modo) ? u.modo : 'PRESENTACION';
+    const n = Number(u.unidades);
+    if (modo === 'CONVERTIR') {
+      if (!(Number.isInteger(n) && n > 1)) throw new Error(`Indica cuántas unidades trae el empaque de «${nombreProductoV2(p)}» (un número entero mayor que 1).`);
+      conversionDe.set(p.idProducto, n); factorDe.set(p.idProducto, n);
+    }
+    modoDe.set(p.idProducto, modo);
+  });
 
   // Índices para enlazar cada movimiento viejo (que solo trae SKU y datos
   // copiados) con su producto. El SKU podía repetirse en la v2, así que
@@ -192,6 +225,18 @@ function convertirAV3(datos, fusiones, opciones) {
         n.unidPorEmpaque = f;
         n.unidadesTotales = Math.abs(m.cantidad) * f;
       }
+    } else if (conversionDe.has(p.idProducto)) {
+      // «Caja de N»: lo registrado eran cajas; se guarda en unidades.
+      const f = conversionDe.get(p.idProducto);
+      n.cantidad = m.cantidad * f;
+      n.bonif = m.bonif * f;
+      n.costoUnit = dividirDinero(m.costoUnit, f);
+      n.precioUnit = dividirDinero(m.precioUnit, f);
+      n.margenUnit = dividirDinero(m.margenUnit, f);
+      n.empaqueMov = nombreUnidadV2(p, 'EMPAQUE');
+      n.cantEmpaques = Math.abs(m.cantidad);
+      n.unidPorEmpaque = f;
+      n.unidadesTotales = Math.abs(m.cantidad) * f;
     }
     log.push(n);
   });
@@ -221,8 +266,14 @@ function convertirAV3(datos, fusiones, opciones) {
     const esDestino = fusion && fusion.destino === p.idProducto;
     const f = factorDe.get(p.idProducto) || 1;
     const u = umbralDe(p);
-    n.unidadBase = String(p.presentacion || p.tipoEmpaque || 'unidad').toLowerCase();
+    n.unidadBase = nombreUnidadV2(p, modoDe.get(p.idProducto));
     n.umbralMin = u.min; n.umbralMax = u.max;
+    if (conversionDe.has(p.idProducto)) {
+      const c = conversionDe.get(p.idProducto);
+      n.costo = dividirDinero(p.costo, c);
+      n.precio = dividirDinero(p.precio, c);
+      n.umbralMin = Math.round(u.min * c); n.umbralMax = Math.round(u.max * c);
+    }
     n.categoria = ''; n.decimales = ''; n.fusionadoEn = null;
     if (fusion && !esDestino) {
       n.estado = ESTADOS.FUSIONADO;
@@ -259,6 +310,14 @@ function convertirAV3(datos, fusiones, opciones) {
     });
   });
 
+  // El empaque de los productos convertidos queda como empaque conocido.
+  conversionDe.forEach((c, id) => {
+    const p = porId.get(id);
+    const usos = log.filter(m => m.idProducto === id && m.unidPorEmpaque === c);
+    equivalencias.push({ idEquiv: ++idEquiv, nombre: nombreUnidadV2(p, 'EMPAQUE'), unidades: c, nivelInferior: nombreUnidadV2(p, 'PRESENTACION'),
+      idProducto: id, ultimoUso: usos.reduce((max, m) => (m.fecha > max ? m.fecha : max), '') });
+  });
+
   // ----- Histórico de precios, gastos, vehículos, combustible -----
   const historico = datos.LOG_HISTORICO_PRECIOS.map(h => {
     const n = Object.assign({}, h); delete n._fila;
@@ -267,6 +326,7 @@ function convertirAV3(datos, fusiones, opciones) {
       n.idProducto = destinoDe.get(p.idProducto) || p.idProducto;
       const fusion = fusionDe.get(p.idProducto);
       if (fusion && fusion.tipo === 'UNIDADES') n.detalle = `Precio por ${String(p.presentacion).toLowerCase()} de ${p.volumen} (antes de unificar)`;
+      if (conversionDe.has(p.idProducto)) n.detalle = `Precio por ${nombreUnidadV2(p, 'EMPAQUE')} de ${conversionDe.get(p.idProducto)} (antes de contar por ${nombreUnidadV2(p, 'PRESENTACION')})`;
     }
     return n;
   });
@@ -274,7 +334,7 @@ function convertirAV3(datos, fusiones, opciones) {
 
   const acciones = [{
     idAccion: 'AC-000001', timestamp: ahora, tipo: 'MIGRACION',
-    alcance: `Base v2 → v3 · ${log.length} movimientos · ${aceptadas.length} fusión(es)`,
+    alcance: `Base v2 → v3 · ${log.length} movimientos · ${aceptadas.length} fusión(es)${conversionDe.size ? ` · ${conversionDe.size} producto(s) pasados a unidades` : ''}`,
     foliosAnulados: '', foliosNuevos: '', estado: ESTADOS.ACCION_VIGENTE, timestampReversion: '', actor
   }];
 
@@ -285,7 +345,7 @@ function convertirAV3(datos, fusiones, opciones) {
       COSTOS_COMBUSTIBLE: copiar(datos.COSTOS_COMBUSTIBLE), EQUIVALENCIAS: equivalencias,
       PRESENTACIONES_VENTA: presentaciones, CLIENTES: [], LOG_ACCIONES: acciones
     },
-    destinoDe, factorDe, avisos
+    destinoDe, factorDe, conversionDe, avisos
   };
 }
 
@@ -350,11 +410,21 @@ function verificarMigracion(datos, resultado) {
   let valorAntes = 0, valorDespues = 0;
   datos.CATALOGO.forEach(p => {
     if (!p.idProducto || p.estado === ESTADOS.OBSOLETO || resultado.destinoDe.has(p.idProducto) || conDiferencia.has(p.idProducto)) return;
+    if (resultado.conversionDe && resultado.conversionDe.has(p.idProducto)) return; // se revisa aparte (abajo)
     valorAntes = sumarDinero(valorAntes, multiplicarDinero(p.costo, p.stockCache));
   });
   v3.CATALOGO.forEach(p => {
     if (!p.idProducto || p.estado !== ESTADOS.ACTIVO || resultado.destinoDe.has(p.idProducto) || conDiferencia.has(p.idProducto)) return;
+    if (resultado.conversionDe && resultado.conversionDe.has(p.idProducto)) return;
     valorDespues = sumarDinero(valorDespues, multiplicarDinero(p.costo, p.stockCache));
+  });
+  // Convertidos a unidades: mismo valor salvo fracciones de centavo por el costo ÷ N (5 decimales).
+  (resultado.conversionDe || new Map()).forEach((c, id) => {
+    if (conDiferencia.has(id)) return;
+    const viejo = datos.CATALOGO.find(x => x.idProducto === id), nuevo = v3.CATALOGO.find(x => x.idProducto === id);
+    if (!viejo || !nuevo || viejo.estado === ESTADOS.OBSOLETO) return;
+    const a = multiplicarDinero(viejo.costo, viejo.stockCache), b = multiplicarDinero(nuevo.costo, nuevo.stockCache);
+    if (Math.abs(redondearCentavo(a) - redondearCentavo(b)) > dinero(0.01)) errores.push(`Valor de bodega de «${nombreProductoV2(viejo)}» al pasarlo a unidades: antes ${formatearDinero(a)}, después ${formatearDinero(b)}.`);
   });
   if (redondearCentavo(valorAntes) !== redondearCentavo(valorDespues)) {
     errores.push(`Valor de bodega (productos sin fusionar): antes ${formatearDinero(valorAntes)}, después ${formatearDinero(valorDespues)}.`);
@@ -392,7 +462,7 @@ async function migrarBaseV2(idViejo, fusiones, alProgreso, opciones) {
   avisar(2, 'Preparando la estructura nueva…');
   let actor = '';
   try { actor = await Hoja.correoUsuario(); } catch (e) { /* sin correo: se deja vacío */ }
-  const resultado = convertirAV3(datos, fusiones, { actor });
+  const resultado = convertirAV3(datos, fusiones, { actor, unidades: (opciones && opciones.unidades) || {} });
   avisar(3, 'Comprobando que todo cuadre…');
   const verificacion = verificarMigracion(datos, resultado);
   if (!verificacion.ok) return { ok: false, etapa: 'verificacion', verificacion };

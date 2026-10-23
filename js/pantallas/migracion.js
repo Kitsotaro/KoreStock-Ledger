@@ -6,16 +6,18 @@
 //   2. Muestra las fusiones propuestas, cada una SIN marcar: el usuario
 //      confirma una por una (nunca en silencio). Para las de unidades puede
 //      corregir el nombre de la unidad (huevo, lata…).
-//   3. Migra, verifica y relee; si algo no cuadra, NO se activa y lo explica.
+//   3. Pregunta cómo se cuenta cada producto (Kitso, 2026-10-23): por su
+//      presentación, por su empaque o «empaque de N» (pasa a unidades).
+//   4. Migra, verifica y relee; si algo no cuadra, NO se activa y lo explica.
 //
 // Expone: (registra la pantalla 'migracion'), iniciarMigracion.
 // Depende de: shell.js, componentes.js, migracion.js (núcleo).
 // ============================================================
 
-let _migracion = { idViejo: null, propuestas: [], alTerminar: null };
+let _migracion = { idViejo: null, propuestas: [], alTerminar: null, unidades: {} };
 
 async function iniciarMigracion(idViejo, alTerminar) {
-  _migracion = { idViejo, propuestas: [], alTerminar, datos: null };
+  _migracion = { idViejo, propuestas: [], alTerminar, datos: null, unidades: {} };
   Shell.ir('migracion');
 }
 
@@ -27,6 +29,7 @@ registrarPantalla('migracion', {
     try {
       _migracion.datos = await leerBaseV2(_migracion.idViejo);
       _migracion.propuestas = proponerFusiones(_migracion.datos);
+      _migracion.unidades = unidadesPorDefecto(_migracion.datos);
     } catch (e) {
       el.innerHTML = html`<div class="vacio">${seguro(icono('peligro'))}<strong>No se pudo leer tu base</strong><p>${e.message}</p></div>`.texto;
       return;
@@ -65,10 +68,71 @@ function pintarAsistenteMigracion(el) {
             </div>`)}
         </div>
       </div>` : ''}
+      <div class="tarjeta columna" id="migracion-unidades">
+        <h3>¿Cómo cuentas cada producto?</h3>
+        <p class="t-pequeno t-secundario">Revisa con el costo y el precio de cada uno: si pagas $8.50 por una «botella» de 3 litros, en realidad la cuentas por caja. Con «Caja de N» el historial pasa a unidades y la caja queda lista para comprar y vender por caja.</p>
+        <div class="fila envolver">
+          <button type="button" class="boton boton-secundario boton-sm" data-accion="unidades-todos" data-modo="PRESENTACION">Todos por presentación</button>
+          <button type="button" class="boton boton-secundario boton-sm" data-accion="unidades-todos" data-modo="EMPAQUE">Todos por empaque</button>
+        </div>
+        <div id="migracion-lista-unidades"></div>
+      </div>
       <button type="button" class="boton boton-primario boton-grande boton-bloque" data-accion="migrar">${seguro(icono('actualizar'))}Actualizar mi base</button>
       <p class="t-mini t-tenue" style="text-align:center">Puede tardar un minuto. No cierres la app mientras termina.</p>
     </div>`.texto;
-  delegar(el, 'click', { migrar: (boton) => ejecutarMigracionUI(el, boton) });
+  delegar(el, 'click', {
+    migrar: (boton) => ejecutarMigracionUI(el, boton),
+    'unidades-todos': (b) => {
+      Object.values(_migracion.unidades).forEach(u => { u.modo = b.dataset.modo; });
+      pintarUnidadesMigracion(el);
+    },
+    'unidad-modo': (b) => {
+      const u = _migracion.unidades[b.dataset.id];
+      u.modo = b.dataset.modo;
+      if (u.modo === 'CONVERTIR' && !(u.unidades > 1)) u.unidades = '';
+      pintarUnidadesMigracion(el);
+      if (u.modo === 'CONVERTIR') setTimeout(() => { const i = $(`[data-unidades-de="${b.dataset.id}"]`, el); if (i) i.focus(); }, 30);
+    }
+  });
+  el.addEventListener('input', (e) => {
+    const i = e.target.closest('[data-unidades-de]');
+    if (!i) return;
+    const id = i.dataset.unidadesDe, n = Math.round(parsearNumero(i.value)) || '';
+    _migracion.unidades[id].unidades = n;
+    const ayuda = $(`[data-ayuda-de="${id}"]`, el);
+    if (ayuda) ayuda.textContent = textoConversionMigracion(_migracion.datos.CATALOGO.find(p => String(p.idProducto) === id), n);
+  });
+  pintarUnidadesMigracion(el);
+}
+
+function textoConversionMigracion(p, n) {
+  const pres = nombreUnidadV2(p, 'PRESENTACION'), emp = nombreUnidadV2(p, 'EMPAQUE');
+  if (!(n > 1)) return `Escribe cuántas ${pres}s trae una ${emp}.`;
+  return `${formatearNumero(p.stockCache)} ${emp}s pasan a ${formatearNumero(p.stockCache * n)} ${pres}s; el costo por ${pres} será ${formatearDinero(dividirDinero(p.costo, n), { detalle: true })}.`;
+}
+
+// Lista de productos con su unidad (con «Cargar más» para catálogos grandes).
+function pintarUnidadesMigracion(el) {
+  const enUnion = new Set(_migracion.propuestas.flatMap(p => p.productos));
+  const productos = _migracion.datos.CATALOGO.filter(p => p.idProducto);
+  pintarPaginado({
+    contenedor: $('#migracion-lista-unidades', el), items: productos, tope: 40,
+    pintarItem: (p) => {
+      const u = _migracion.unidades[p.idProducto];
+      const pres = nombreUnidadV2(p, 'PRESENTACION'), emp = nombreUnidadV2(p, 'EMPAQUE');
+      const mismo = pres === emp;
+      const opcion = (modo, texto) => html`<button type="button" role="radio" data-accion="unidad-modo" data-id="${p.idProducto}" data-modo="${modo}" aria-checked="${String(u.modo === modo)}">${texto}</button>`;
+      return html`<div class="fila-unidad">
+        <div class="crece"><div class="titulo">${nombreProductoV2(p)}${p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</div>
+          <div class="sub">Costo ${formatearDinero(p.costo, { detalle: true })} · precio ${formatearDinero(p.precio)} · stock ${formatearNumero(p.stockCache)}${enUnion.has(p.idProducto) ? ' · si lo unes arriba, se cuenta como diga la unión' : ''}</div></div>
+        <span class="segmentado segmentado-compra" role="radiogroup" aria-label="Cómo se cuenta ${nombreProductoV2(p)}">
+          ${opcion('PRESENTACION', `Por ${pres}`)}${mismo ? '' : opcion('EMPAQUE', `Por ${emp}`)}${mismo ? '' : opcion('CONVERTIR', `${capitalizar(emp)} de N`)}
+        </span>
+        ${u.modo === 'CONVERTIR' ? html`<div class="control control-n"><input inputmode="numeric" data-unidades-de="${p.idProducto}" value="${u.unidades || ''}" placeholder="N" aria-label="Cuántas ${pres} trae una ${emp}"><span class="sufijo">${pres}s por ${emp}</span></div>
+          <span class="ayuda-campo" data-ayuda-de="${p.idProducto}">${textoConversionMigracion(p, u.unidades)}</span>` : ''}
+      </div>`;
+    }
+  });
 }
 
 async function ejecutarMigracionUI(el, boton) {
@@ -78,9 +142,13 @@ async function ejecutarMigracionUI(el, boton) {
     return Object.assign({}, p, { aceptada: !!(marcada && marcada.checked), unidadBase: unidad ? (unidad.value.trim().toLowerCase() || p.unidadBase) : p.unidadBase });
   });
   const unidas = props.filter(p => p.aceptada).length;
+  const elegidas = Object.values(_migracion.unidades);
+  const faltaN = _migracion.datos.CATALOGO.find(p => { const u = _migracion.unidades[p.idProducto]; return u && u.modo === 'CONVERTIR' && !(Number.isInteger(u.unidades) && u.unidades > 1); });
+  if (faltaN) { mostrarDialogo({ titulo: 'Falta un dato', mensaje: `Escribe cuántas unidades trae el empaque de «${nombreProductoV2(faltaN)}» (un número entero mayor que 1).` }); return; }
+  const cuenta = (m) => elegidas.filter(u => u.modo === m).length;
   const ok = await confirmar({
     titulo: 'Actualizar tu base',
-    mensaje: `Se creará una base nueva con todos tus datos${unidas ? ` y ${unidas} unión(es) de productos` : ''}. Tu base actual queda como respaldo, sin cambios.`,
+    mensaje: `Se creará una base nueva con todos tus datos${unidas ? ` y ${unidas} unión(es) de productos` : ''}. Tu base actual queda como respaldo, sin cambios.\n\nProductos contados por presentación: ${cuenta('PRESENTACION')} · por empaque: ${cuenta('EMPAQUE')} · pasados a unidades: ${cuenta('CONVERTIR')}.`,
     textoConfirmar: 'Actualizar'
   });
   if (!ok) return;
@@ -91,7 +159,8 @@ async function ejecutarMigracionUI(el, boton) {
   boton.after(progreso);
   try {
     const alProgreso = (paso, texto) => { progreso.textContent = `Paso ${paso} de 6 · ${texto}`; };
-    let r = await migrarBaseV2(_migracion.idViejo, props, alProgreso);
+    const unidades = _migracion.unidades;
+    let r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { unidades });
     if (!r.ok && r.etapa === 'diferencias') {
       // El stock guardado no coincide con el historial: se avisa y, si acepta, se migra con el historial.
       const d = r.verificacion.diferencias;
@@ -102,7 +171,7 @@ async function ejecutarMigracionUI(el, boton) {
         textoConfirmar: 'Actualizar con el historial', textoCancelar: 'Ahora no'
       });
       if (!seguir) { boton.classList.remove('cargando'); progreso.remove(); return; }
-      r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { aceptarDiferencias: true });
+      r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { aceptarDiferencias: true, unidades });
     }
     if (!r.ok) {
       boton.classList.remove('cargando');

@@ -133,7 +133,7 @@ prueba('stock guardado distinto del historial: avisa y migra con el historial (a
 
 // Ronda de matemática (2026-10-23), caso de la base real de Kitso: dos productos
 // con el mismo SKU en el catálogo y movimientos con otro SKU y sin el sabor.
-prueba('SKU repetido y movimiento sin sabor: se enlaza por marca/producto/presentación y toma su código', async () => {
+function crearBaseV2Petit() {
   DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo);
   const encCat = ['SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'STOCK_ACTUAL', 'ESTADO_ITEM', 'ULTIMA_MODIF', 'TIPO_EMPAQUE', 'ID_PRODUCTO', 'FECHA_CREACION', 'MODIFICACION_ANTERIOR', 'STOCK_BONIFICADO'];
   const encLog = ['TRANS_ID', 'TIMESTAMP_LOG', 'FECHA_MOV', 'TIPO_MOV', 'SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'CANTIDAD', 'UNID_BONIF', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'TOTAL_INVERSION', 'MARGEN_UNIT', 'TOTAL_VENTA', 'UTILIDAD_NETA', 'TIPO_EMPAQUE', 'ESTADO_MOV'];
@@ -152,6 +152,11 @@ prueba('SKU repetido y movimiento sin sabor: se enlaza por marca/producto/presen
     VEHICULOS: [['PLACA', 'MARCA', 'MODELO', 'COLOR', 'TIPO_COMBUSTIBLE', 'ESTADO']],
     COSTOS_COMBUSTIBLE: [['ID_GASTO', 'TIMESTAMP_LOG', 'FECHA_MOV', 'PLACA', 'ODOMETRO', 'GALONES', 'MONTO_PAGADO', 'ESTADO']]
   });
+  return id;
+}
+
+prueba('SKU repetido y movimiento sin sabor: se enlaza por marca/producto/presentación y toma su código', async () => {
+  const id = crearBaseV2Petit();
   const r = await migrarBaseV2(id, []);
   verdadero(r.ok, JSON.stringify(r.verificacion));
   igual(r.verificacion.diferencias.length, 0, 'sin diferencias de stock');
@@ -162,4 +167,30 @@ prueba('SKU repetido y movimiento sin sabor: se enlaza por marca/producto/presen
   igual(tetra.stockCache, 4); igual(lata.stockCache, 2);
   verdadero(v3.LOG_TRANS.every(m => m.idProducto), 'ningún movimiento queda sin producto');
   igual(formatearDinero(calcularResumenPeriodo(v3.LOG_TRANS, null, null).ventas), '$22.00', '«5,5» con coma se lee bien');
+});
+
+// Unidad de conteo elegida en el asistente (Kitso, 2026-10-23).
+prueba('unidad por producto: «sixpack de 6» pasa a unidades y «por caja» deja todo igual', async () => {
+  const id = crearBaseV2Petit();
+  const unidades = { 5: { modo: 'CONVERTIR', unidades: 6 }, 6: { modo: 'EMPAQUE' } };
+  const r = await migrarBaseV2(id, [], null, { unidades });
+  verdadero(r.ok, JSON.stringify(r.verificacion));
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  const tetra = v3.CATALOGO.find(p => p.presentacion === 'Tetra'), lata = v3.CATALOGO.find(p => p.presentacion === 'Lata');
+  igual(tetra.unidadBase, 'tetra'); igual(tetra.stockCache, 24, '4 sixpacks × 6');
+  igual(dineroANumero(tetra.costo), 0.66667, '$4.00 ÷ 6 con 5 decimales');
+  igual(lata.unidadBase, 'caja'); igual(lata.stockCache, 2);
+  const eq = v3.EQUIVALENCIAS.find(e => e.idProducto === tetra.idProducto);
+  igual(eq.nombre, 'sixpack'); igual(eq.unidades, 6); igual(eq.nivelInferior, 'tetra');
+  const venta = v3.LOG_TRANS.find(m => m.folio === 'FAC-000001');
+  igual(venta.cantidad, -12); igual(venta.cantEmpaques, 2); igual(venta.unidPorEmpaque, 6);
+  const t = calcularResumenPeriodo(v3.LOG_TRANS, null, null);
+  igual(formatearDinero(t.ventas), '$22.00'); igual(formatearDinero(t.inversion), '$47.00'); igual(formatearDinero(t.utilidad), '$5.00');
+});
+
+prueba('«empaque de N» sin N no migra y lo dice', async () => {
+  const id = crearBaseV2Petit();
+  let error = '';
+  try { await migrarBaseV2(id, [], null, { unidades: { 5: { modo: 'CONVERTIR' } } }); } catch (e) { error = e.message; }
+  verdadero(/cuántas unidades trae el empaque/.test(error), error);
 });
