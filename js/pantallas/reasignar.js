@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // REASIGNAR.JS — «Repartir sabores» (T24, §16.2): reparte lo «sin
 // asignar» entre los sabores cuando el tendero quiera. Si se vendió sin

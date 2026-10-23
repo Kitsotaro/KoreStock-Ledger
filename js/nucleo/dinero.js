@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // DINERO.JS — toda la aritmética de dinero de la app pasa por aquí.
 //

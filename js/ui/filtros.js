@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // FILTROS.JS — la fila de filtros de abajo, justo encima de la barra
 // inferior (D25, D40, §17.1). Una fila de chips que se desliza; cada chip

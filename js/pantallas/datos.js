@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA DATOS (T19, T20) — «Exportar / Importar» del panel:
 //   - Respaldo automático: cuándo fue el último, los que hay (2) y

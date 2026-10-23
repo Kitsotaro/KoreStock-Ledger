@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SW.JS — Service Worker: guarda los ARCHIVOS DE LA APP para abrir sin
 // conexión (D27: offline solo lectura; los datos viven en IndexedDB).

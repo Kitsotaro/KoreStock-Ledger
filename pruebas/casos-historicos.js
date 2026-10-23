@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // Archivo histórico, períodos largos y carga (V3 §18.4, §21.2, §22.3 punto 1, §22.5).
 
 grupo('Archivo histórico y períodos largos');

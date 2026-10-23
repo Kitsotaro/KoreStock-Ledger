@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ARRANQUE.JS — se carga en <head> ANTES de pintar: tema, tamaño de texto y modo
 // guardados en este navegador (D23: comodidades locales). Sin tema guardado se
 // sigue al sistema. Debe ser mínimo y no depender de nada.

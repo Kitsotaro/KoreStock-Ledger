@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA ENTRADA (T13) — estructura aprobada en V3 §13, §3.3, §12.4:
 //   1. Mismo buscador que Venta; al final «+ Producto nuevo».

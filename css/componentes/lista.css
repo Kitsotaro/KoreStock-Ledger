@@ -1,4 +1,4 @@
-/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * LISTA — filas compactas con desplegable que no oculta información (§15.1), «Cargar más»
  * (D37), estados vacíos. */
 .lista { display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); overflow: hidden; }

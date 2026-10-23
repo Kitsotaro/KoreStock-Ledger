@@ -1,4 +1,4 @@
-/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * CONTROLES — segmentado (Resumen | Movimientos), semáforo (forma + color + texto, §24.2),
  * cinta deslizable de productos, autocompletado y esqueletos de carga. */
 .segmentado { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 3px; border-radius: var(--r-sm); background: var(--superficie-3); }

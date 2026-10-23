@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // GRAFICO-STOCK.JS — el único gráfico de Stock (D28, §20.1): pastel que
 // sirve de navegador y se convierte en barras. Heredado de graficos.js v2.

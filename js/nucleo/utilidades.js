@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // UTILIDADES.JS — texto, números leídos de Sheets y fechas LOCALES.
 // Heredado de la v2 (core.js/analitica.js) sin cambiar su comportamiento.

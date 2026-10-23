@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PRIMER-USO.JS — recorrido de la primera vez en este dispositivo (§25.1):
 //   1. Elegir modo (Bodega · Tienda · Pro), con una frase cada uno.

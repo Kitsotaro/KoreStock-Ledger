@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // OPERACIONES-LOTES.JS — acciones drásticas por lote, registradas en
 // LOG_ACCIONES y reversibles por 7 días (V3 §10.1, §9.4 punto 7, D19).

@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA MIGRACION — asistente para pasar una base v2 a la estructura
 // nueva (V3 §5). Con botón y aviso (§8 punto 5 / §31): nunca automático.

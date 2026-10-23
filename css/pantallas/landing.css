@@ -1,4 +1,4 @@
-/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * LANDING — página pública seria (D44, §25.2): jerarquía tipográfica clara, rejilla ordenada,
  * sin carrusel automático, enlaces legales visibles antes del login. La maqueta animada de la
  * portada se completa en F5. */
@@ -54,3 +54,10 @@
 .pagina-404 { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: var(--e-3); padding: var(--e-6) var(--e-4); text-align: center; max-width: 32rem; margin: 0 auto; }
 .pagina-404 h1 { font-size: var(--t-2xl, 1.75rem); }
 .pagina-404 p { color: var(--texto-2); }
+/* Frase prioritaria, nota de funciones y sección «¿Cómo usamos tu Google Drive?» (pedida por Google) */
+.portada-destacado { font-size: var(--t-lg); font-weight: var(--peso-fuerte); color: var(--primario); }
+.seccion-nota { margin-top: var(--e-4); color: var(--texto-2); font-weight: var(--peso-medio); text-align: center; }
+.seccion-drive { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-lg); padding: var(--e-6) var(--e-4); }
+.lista-drive { list-style: none; display: grid; gap: var(--e-3); margin: var(--e-4) 0; padding: 0; }
+.lista-drive li { display: flex; gap: var(--e-3); align-items: flex-start; }
+.lista-drive li > span:first-child { color: var(--primario); flex: none; }

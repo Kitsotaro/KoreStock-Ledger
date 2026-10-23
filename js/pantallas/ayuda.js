@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA AYUDA (F5) — «Ayuda y políticas» del panel lateral:
 //   - Guía rápida: qué se hace en cada pantalla, en lenguaje simple (D52).
@@ -74,7 +74,7 @@ function pintarAyuda(el) {
     <section class="tarjeta columna" aria-labelledby="ayuda-contacto">
       <div class="tarjeta-titulo"><h2 id="ayuda-contacto">${seguro(icono('comentario', 'icono-sm'))} Contacto</h2></div>
       <p class="t-pequeno">¿Dudas o algo no funciona? Escríbenos a <a href="mailto:${CORREO_CONTACTO}">${CORREO_CONTACTO}</a>.</p>
-      <p class="t-mini t-tenue">${NOMBRE_APP} · versión ${VERSION_APP} · © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro)</p>
+      <p class="t-mini t-tenue">© 2026 KoreStock Ledger — un proyecto de Kitsótaro · versión ${VERSION_APP}</p>
     </section>`.texto;
   pintarIconos(el);
 }

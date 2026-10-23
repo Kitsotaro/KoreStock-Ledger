@@ -55,4 +55,4 @@ directamente desde tu navegador con las APIs de Google.
 
 ## Autor
 
-Wilber Adonay Escobar Solórzano ("Kitsótaro")
+© 2026 KoreStock Ledger — un proyecto de Kitsótaro.

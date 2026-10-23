@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA CLIENTES (T17) — §23.3, §10.3: lista con buscador, alta rápida,
 // editar, desactivar y «último pedido hace X días» (para rutas). Lista con

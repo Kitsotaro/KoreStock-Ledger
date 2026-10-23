@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // HISTORICOS.JS — archivo histórico (rotación) y períodos que cruzan
 // bases (T20; V3 §18.3, §21, §22.1, D26, D31, D32).

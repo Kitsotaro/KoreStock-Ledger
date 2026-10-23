@@ -1,4 +1,4 @@
-# © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+# © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 # Herramienta de desarrollo (la app no la usa): arma assets/iconos.svg, un sprite con
 # todos los íconos como <symbol id="i-NOMBRE">. Los íconos base vienen del set de Zeghi
 # (assets/iconos/*.svg); los propios de KoreStock están en herramientas/iconos-nuevos.json.

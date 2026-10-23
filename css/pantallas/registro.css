@@ -1,4 +1,4 @@
-/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * REGISTRO — pantallas Venta (verde) y Entrada (azul), §12.2 y §13. */
 .registro { display: grid; gap: var(--e-3); }
 .registro .buscador .control { min-height: var(--alto-control); border-radius: var(--r-sm); }

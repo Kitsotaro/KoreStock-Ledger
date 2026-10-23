@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA STOCK (T14) — solo control (V3 §15.1, §15.2, §20.1, §24.1, D39):
 //   - Valor de bodega Bruto / Neto y unidades (heredado de la v2).

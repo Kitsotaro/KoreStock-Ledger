@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // LOTES.JS — interfaz de las acciones por lote dentro de Dashboard →
 // Movimientos (V3 §17.3): «Corregir precio» y «Anular lo filtrado» sobre la

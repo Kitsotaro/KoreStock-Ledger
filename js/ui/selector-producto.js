@@ -1,4 +1,4 @@
-// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SELECTOR-PRODUCTO.JS — el mismo buscador para Venta y Entrada (§13
 // punto 1): busca por nombre, marca o código; en Venta muestra debajo una
