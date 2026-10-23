@@ -83,10 +83,11 @@ function pintarListaGastos() {
   validos.forEach(g => { porCategoria[g.categoria] = sumarDinero(porCategoria[g.categoria] || 0, g.monto); });
   const categorias = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]);
   $('#gastos-cifras', gastosUI.el).innerHTML = validos.length ? html`
-    <div class="cifra-tarjeta"><div class="etiqueta">Gastos del período</div><div class="valor">${formatearDinero(total)}</div><div class="comparacion igual">${validos.length} ${pluralizar(validos.length, 'registro')}</div></div>
+    <div class="cifra-tarjeta"><div class="etiqueta">Gastos del período</div><div class="valor">${formatearDinero(total)}</div><div class="comparacion igual">${validos.length} ${pluralizar(validos.length, 'registro')}</div>
+      ${seguro(anilloGastosHTML(categorias, total))}</div>
     <div class="cifra-tarjeta por-categoria"><div class="etiqueta">Por categoría</div>
-      ${categorias.slice(0, 4).map(([c, m]) => { const pct = total ? m / total * 100 : 0; return html`<div class="cat-gasto"><div class="fila-separada"><span class="recortar">${c}</span><span class="cifra">${pct.toFixed(0)} %</span></div>
-        <div class="mini-barra"><span class="fondo-primario" style="width:${Math.max(2, pct).toFixed(0)}%"></span></div></div>`; })}
+      ${categorias.slice(0, 4).map(([c, m], i) => { const pct = total ? m / total * 100 : 0; return html`<div class="cat-gasto"><div class="fila-separada"><span class="recortar">${c}</span><span class="cifra">${pct.toFixed(0)} %</span></div>
+        <div class="mini-barra"><span style="width:${Math.max(2, pct).toFixed(0)}%;background:var(--grafico-${i + 1})"></span></div></div>`; })}
       ${categorias.length > 4 ? html`<div class="t-mini t-tenue">y ${categorias.length - 4} más</div>` : ''}</div>`.texto : '';
   // Lista por día (Hoy, Ayer, «lun 20 oct») con el total gastado ese día.
   const hoy = obtenerFechaLocal(), ayer = restarDias(hoy, 1);
@@ -106,6 +107,26 @@ function pintarListaGastos() {
     vacio: html`<div class="vacio">${seguro(icono('recibo', 'icono-xl'))}<strong>Sin gastos en el período</strong><p>Registra arriba tu primer gasto.</p></div>`,
     pintarItem: (g) => g.encabezado ? html`<div class="encabezado-dia"><span>${g.nombre}</span>${g.total ? html`<span class="cifra">Gastado ${formatearDinero(g.total)}</span>` : ''}</div>` : filaGastoHTML(g)
   });
+}
+
+// Anillo del reparto por categoría (SVG propio, sin cargar Chart.js): se recalcula
+// con el período elegido. Siete categorías con color y el resto como «Otras».
+function anilloGastosHTML(categorias, total) {
+  if (!total) return '';
+  const partes = categorias.slice(0, 7).map(([c, m], i) => ({ c, m, color: `var(--grafico-${i + 1})` }));
+  const resto = sumarDinero(categorias.slice(7).map(x => x[1]));
+  if (resto) partes.push({ c: 'Otras', m: resto, color: 'var(--grafico-8)' });
+  let acumulado = 0;
+  const arcos = partes.map(x => {
+    const pct = x.m / total * 100;
+    const arco = html`<circle r="15.9155" cx="18" cy="18" fill="none" stroke="${x.color}" stroke-width="4.2" stroke-dasharray="${pct.toFixed(3)} ${(100 - pct).toFixed(3)}" stroke-dashoffset="${(25 - acumulado).toFixed(3)}"><title>${x.c}: ${pct.toFixed(1)} % · ${formatearDinero(x.m)}</title></circle>`;
+    acumulado += pct;
+    return arco;
+  });
+  const mayor = partes[0];
+  return html`<div class="anillo-gastos" role="img" aria-label="Reparto del gasto por categoría">
+    <svg viewBox="0 0 36 36"><circle r="15.9155" cx="18" cy="18" fill="none" stroke="var(--superficie-3)" stroke-width="4.2"></circle>${arcos}</svg>
+    <div class="anillo-centro"><strong class="cifra">${(mayor.m / total * 100).toFixed(0)} %</strong><span class="recortar">${mayor.c}</span></div></div>`.texto;
 }
 
 function filaGastoHTML(g) {

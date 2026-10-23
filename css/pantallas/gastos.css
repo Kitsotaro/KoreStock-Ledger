@@ -3,6 +3,12 @@
 .cifra-tarjeta.por-categoria { display: grid; gap: var(--e-2); align-content: start; }
 .cat-gasto { display: grid; gap: 3px; font-size: var(--t-xs); }
 .cat-gasto .mini-barra { width: 100%; height: 4px; }
-.fondo-primario { background: var(--primario); }
 .icono-gasto { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border-radius: var(--r-md); background: var(--superficie-2); color: var(--texto-2); }
 [data-pantalla="gastos"] .encabezado-dia .cifra { color: var(--texto); }
+.anillo-gastos { position: relative; width: 7.5rem; aspect-ratio: 1; margin: var(--e-3) auto 0; }
+.anillo-gastos svg { width: 100%; height: 100%; display: block; }
+.anillo-gastos circle { transition: stroke-width var(--dur-media) var(--curva); }
+.anillo-gastos circle:hover { stroke-width: 5.2; }
+.anillo-centro { position: absolute; inset: 22%; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.anillo-centro strong { font-size: var(--t-lg); line-height: 1.1; }
+.anillo-centro span { font-size: 0.7rem; color: var(--texto-2); max-width: 4.2rem; }
