@@ -35,8 +35,8 @@ const ARCHIVOS_APP = [
   './js/pantallas/grafico-stock.js', './js/pantallas/stock.js', './js/pantallas/reasignar.js',
   './js/pantallas/dashboard.js', './js/pantallas/lotes.js', './js/pantallas/panorama.js', './js/pantallas/gastos.js',
   './js/pantallas/combustible.js', './js/pantallas/clientes.js', './js/pantallas/datos.js', './js/pantallas/ayuda.js', './PRIVACY.md', './TERMS.md', './LICENSE', './js/app.js',
-  './lib/chart.umd.min.js', './lib/xlsx.full.min.js', './lib/marked.umd.js', './lib/fuentes/PlusJakartaSans.ttf',
-  './lib/fuentes/GeistMono.ttf'
+  './lib/chart.umd.min.js', './lib/xlsx.full.min.js', './lib/marked.umd.js', './lib/fuentes/InterVariable.woff2',
+  './lib/fuentes/JetBrainsMono.ttf'
 ];
 
 self.addEventListener('install', (e) => {

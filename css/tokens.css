@@ -8,8 +8,8 @@
   font-size: calc(100% * var(--escala));
 
   /* Tipografía */
-  --fuente: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --fuente-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --fuente: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fuente-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --t-xs: 0.75rem;    /* 12: lo mínimo legible en una lista larga */
   --t-sm: 0.8125rem;  /* 13 */
   --t-md: 0.9375rem;  /* 15: cuerpo */

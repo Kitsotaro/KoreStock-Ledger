@@ -192,18 +192,33 @@
     <aside class="panel-lateral" id="panel-lateral" aria-label="Menú" aria-hidden="true">
       <div class="marca"><img src="assets/logo.png" alt=""><div><strong>KoreStock</strong><span class="t-mini t-tenue" id="panel-cuenta"></span></div></div>
       <nav>
-        <button type="button" class="opcion-panel" data-accion="elegir-modo"><span data-icono="modos"></span>Modo<span class="detalle" id="panel-modo"></span></button>
-        <div class="grupo-titulo">Tu negocio</div>
+        <!-- Tres grupos bien separados (fase UI): Modo · Tu negocio · Preferencias -->
+        <section class="grupo-panel" aria-labelledby="g-modo">
+          <div class="grupo-titulo" id="g-modo"><span data-icono="modos" data-icono-clase="icono-sm"></span>Modo de trabajo</div>
+          <div class="segmentado segmentado-modo" role="radiogroup" aria-labelledby="g-modo">
+            <button type="button" role="radio" data-accion="poner-modo" data-modo-valor="bodega" aria-checked="false">Bodega</button>
+            <button type="button" role="radio" data-accion="poner-modo" data-modo-valor="tienda" aria-checked="false">Tienda</button>
+            <button type="button" role="radio" data-accion="poner-modo" data-modo-valor="pro" aria-checked="false">Pro</button>
+          </div>
+          <p class="t-mini t-tenue detalle-modo" id="panel-modo"></p>
+        </section>
+        <section class="grupo-panel" aria-labelledby="g-negocio">
+        <div class="grupo-titulo" id="g-negocio"><span data-icono="tienda" data-icono-clase="icono-sm"></span>Tu negocio</div>
         <button type="button" class="opcion-panel" data-ir="clientes"><span data-icono="clientes"></span>Clientes</button>
         <button type="button" class="opcion-panel" data-ir="gastos"><span data-icono="recibo"></span>Gastos</button>
         <button type="button" class="opcion-panel" data-ir="combustible"><span data-icono="combustible"></span>Combustible</button>
         <button type="button" class="opcion-panel" data-ir="datos"><span data-icono="descargar"></span>Exportar / Importar<span class="detalle" id="panel-respaldo"></span></button>
-        <div class="grupo-titulo">Preferencias</div>
-        <button type="button" class="opcion-panel" data-ir="ayuda"><span data-icono="ayuda"></span>Ayuda y políticas</button>
-        <button type="button" class="opcion-panel" data-accion="cambiar-tema"><span data-icono="luna" id="panel-tema-icono"></span>Tema<span class="detalle" id="panel-tema"></span></button>
+        </section>
+        <section class="grupo-panel" aria-labelledby="g-preferencias">
+        <div class="grupo-titulo" id="g-preferencias"><span data-icono="ajustes" data-icono-clase="icono-sm"></span>Preferencias</div>
+        <label class="opcion-panel opcion-interruptor"><span data-icono="luna"></span><span class="crece">Tema oscuro</span>
+          <span class="interruptor"><input type="checkbox" id="panel-tema-oscuro" data-accion="cambiar-tema"><span class="riel"></span></span></label>
+        <label class="opcion-panel opcion-interruptor"><span data-icono="identificador"></span><span class="crece">Todos los decimales<span class="detalle-linea" id="panel-decimales"></span></span>
+          <span class="interruptor"><input type="checkbox" id="panel-todos-decimales" data-accion="todos-decimales"><span class="riel"></span></span></label>
         <button type="button" class="opcion-panel" data-accion="tamano-texto"><span data-icono="texto"></span>Tamaño de texto<span class="detalle" id="panel-texto"></span></button>
-        <button type="button" class="opcion-panel" data-accion="todos-decimales"><span data-icono="identificador"></span>Decimales<span class="detalle" id="panel-decimales"></span></button>
+        <button type="button" class="opcion-panel" data-ir="ayuda"><span data-icono="ayuda"></span>Ayuda y políticas</button>
         <button type="button" class="opcion-panel" data-accion="salir"><span data-icono="salir"></span>Salir</button>
+        </section>
       </nav>
       <p class="pie" id="panel-pie"></p>
     </aside>

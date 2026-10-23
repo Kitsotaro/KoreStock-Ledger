@@ -5,7 +5,8 @@
  * está en oscuro y no eligió nada.
  */
 :root[data-tema="oscuro"] {
-  /* Botón «+» de la isla: oscuro en claro, claro en oscuro */
+  /* Botón «+», elemento seleccionado y control activo: oscuro en claro, claro en oscuro */
+  --seleccion-fondo: #E8EAF0; --seleccion-texto: #12151C; --activo-fondo: #E8EAF0; --activo-texto: #12151C;
   --fab: #E8EAF0; --sobre-fab: #12151C;
 
   color-scheme: dark;

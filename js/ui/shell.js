@@ -46,9 +46,11 @@ const Shell = {
       'abrir-panel': () => this.abrirPanel(),
       'cinta-periodo': () => { const f = filtrosDePantalla.get(this.actual); if (f && f.usaPeriodo) f.abrirPeriodo(); },
       'elegir-modo': () => { this.cerrarPanel(); this.elegirModo(); },
-      'cambiar-tema': () => { this.cerrarPanel(); this.elegirTema(); },
+      // Tema: interruptor claro ⇄ oscuro (sin menú emergente).
+      'cambiar-tema': (b) => this.aplicarTema(b.checked ? 'oscuro' : 'claro'),
+      'poner-modo': (b) => this.cambiarModo(b.dataset.modoValor),
       'tamano-texto': () => { this.cerrarPanel(); this.elegirTamanoTexto(); },
-      'todos-decimales': () => this.cambiarTodosLosDecimales(!this.todosLosDecimales()),
+      'todos-decimales': (b) => this.cambiarTodosLosDecimales(b.type === 'checkbox' ? b.checked : !this.todosLosDecimales()),
       'salir': () => { this.cerrarPanel(); this.salir(); }
     });
     app.addEventListener('click', (e) => {
@@ -136,9 +138,11 @@ const Shell = {
   },
   actualizarPanel() {
     const modo = MODOS[this.modo];
-    const m = $('#panel-modo'); if (m) m.textContent = modo ? modo.nombre : '';
-    const t = $('#panel-tema'); if (t) t.textContent = { claro: 'Claro', oscuro: 'Oscuro' }[leerLocal(CLAVES_LOCALES.TEMA)] || 'Como el sistema';
-    const dc = $('#panel-decimales'); if (dc) dc.textContent = this.todosLosDecimales() ? 'Todos (5)' : '2';
+    $$('.segmentado-modo [data-modo-valor]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.modoValor === this.modo)));
+    const m = $('#panel-modo'); if (m) m.textContent = modo ? modo.frase : '';
+    const t = $('#panel-tema-oscuro'); if (t) t.checked = document.documentElement.dataset.tema === 'oscuro';
+    const dc = $('#panel-todos-decimales'); if (dc) dc.checked = this.todosLosDecimales();
+    const dl = $('#panel-decimales'); if (dl) dl.textContent = this.todosLosDecimales() ? 'Costos y CPP con 5 decimales' : 'Todo a 2 decimales';
     const tx = $('#panel-texto'); if (tx) tx.textContent = (TAMANOS_TEXTO.find(t => t[0] === (leerLocal(CLAVES_LOCALES.TAMANO_TEXTO) || 'normal')) || TAMANOS_TEXTO[1])[1];
     const c = $('#panel-cuenta'); if (c) c.textContent = Sesion.modoDemo ? 'Demostración' : (Sesion.correo || '');
     const r = $('#panel-respaldo'); if (r) r.textContent = this.textoRespaldo();

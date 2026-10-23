@@ -2,16 +2,17 @@
  * BASE.CSS — fuentes, reinicio, tipografía por rol y utilidades. Los componentes viven en
  * css/componentes/ (uno por archivo) y las pantallas en css/pantallas/ (R1).
  */
+/* Inter (textos) y JetBrains Mono (cifras de detalle), fase UI 2026-10-23. */
 @font-face {
-  font-family: 'Plus Jakarta Sans';
-  src: url('../lib/fuentes/PlusJakartaSans.ttf') format('truetype');
-  font-weight: 200 800;
+  font-family: 'Inter';
+  src: url('../lib/fuentes/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Geist Mono';
-  src: url('../lib/fuentes/GeistMono.ttf') format('truetype');
-  font-weight: 100 900;
+  font-family: 'JetBrains Mono';
+  src: url('../lib/fuentes/JetBrainsMono.ttf') format('truetype');
+  font-weight: 100 800;
   font-display: swap;
 }
 

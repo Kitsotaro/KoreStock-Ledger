@@ -20,9 +20,21 @@
   display: flex; align-items: center; gap: var(--e-3); width: 100%; min-height: 3rem; padding: 0 var(--e-3);
   border: 0; border-radius: var(--r-sm); background: transparent; color: var(--texto); text-align: left; font-weight: var(--peso-medio);
 }
-.opcion-panel:hover, .opcion-panel[aria-current="page"] { background: var(--superficie-2); }
+.opcion-panel { position: relative; cursor: pointer; }
+.opcion-panel:hover { background: var(--superficie-2); }
+/* Elemento seleccionado: fondo con contraste claro y barra indicadora a la izquierda */
+.opcion-panel[aria-current="page"] { background: var(--seleccion-fondo); color: var(--seleccion-texto); font-weight: var(--peso-fuerte); }
+.opcion-panel[aria-current="page"]::before { content: ''; position: absolute; left: 0; top: 0.6rem; bottom: 0.6rem; width: 3px; border-radius: 3px; background: currentColor; }
 .opcion-panel .detalle { margin-left: auto; font-size: var(--t-xs); color: var(--texto-3); }
-.panel-lateral .grupo-titulo { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-3); padding: var(--e-4) var(--e-3) var(--e-1); font-weight: var(--peso-fuerte); }
+.panel-lateral .grupo-titulo { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-2); padding: var(--e-1) var(--e-3) var(--e-2); font-weight: var(--peso-fuerte); }
+/* Grupos separados con su propia tarjeta suave */
+.panel-lateral .grupo-panel { display: flex; flex-direction: column; gap: 2px; padding: var(--e-3) var(--e-1); border-radius: var(--r-md); background: var(--superficie-2); margin-bottom: var(--e-3); }
+.panel-lateral .segmentado-modo { margin: 0 var(--e-2); }
+.panel-lateral .detalle-modo { padding: var(--e-2) var(--e-3) 0; }
+.opcion-interruptor .detalle-linea { display: block; font-size: var(--t-xs); color: var(--texto-3); font-weight: var(--peso-normal); }
+.segmentado-modo { display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; gap: 3px; border-radius: var(--r-pildora); background: var(--superficie-3); }
+.segmentado-modo button { border: 0; border-radius: var(--r-pildora); min-height: 2.25rem; background: transparent; color: var(--texto-2); font-weight: var(--peso-fuerte); font-size: var(--t-sm); cursor: pointer; transition: background-color var(--dur-media) var(--curva), color var(--dur-media) var(--curva); }
+.segmentado-modo button[aria-checked="true"] { background: var(--activo-fondo); color: var(--activo-texto); box-shadow: var(--sombra-1); }
 .panel-lateral .pie { margin-top: auto; padding: var(--e-4) var(--e-3) 0; font-size: var(--t-xs); color: var(--texto-3); }
 
 /* Hoja inferior (filtros, opciones) */
