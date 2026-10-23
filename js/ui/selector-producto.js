@@ -9,10 +9,18 @@
 // Depende de: componentes.js, almacen.js, operaciones-movimientos.js.
 // ============================================================
 
-function filaProductoHTML(p) {
+// Fila de resultado. Muestra hasta 2 sabores del producto y «…» si hay más,
+// primero el que coincide con lo buscado: así se entiende por qué aparece
+// «Tortillitas 30 g» al escribir «jalapeño» (el sabor es dato del movimiento, D24).
+function filaProductoHTML(p, q) {
   const e = Almacen.estado(p.idProducto);
+  const sabores = Almacen.variantesDe(p.idProducto);
+  const busca = q ? normalizarIdentidad(q) : '';
+  const orden = busca ? sabores.slice().sort((a, b) => (normalizarIdentidad(b).includes(busca) ? 1 : 0) - (normalizarIdentidad(a).includes(busca) ? 1 : 0)) : sabores;
+  const textoSabores = orden.length ? `${orden.slice(0, 2).join(', ')}${orden.length > 2 ? '…' : ''}` : '';
   return html`<div class="crece"><div class="recortar t-fuerte">${nombreProducto(p, { conVariante: false })}</div>
-    <div class="sub">${p.sku} · ${describirCantidad(p.idProducto, e.stock)}</div></div>
+    <div class="sub">${p.sku} · ${describirCantidad(p.idProducto, e.stock)}</div>
+    ${textoSabores ? html`<div class="sub">${seguro(icono('sabor', 'icono-sm'))} ${textoSabores}</div>` : ''}</div>
     <span class="cifra t-pequeno">${formatearDinero(p.precio)}</span>`;
 }
 
@@ -31,7 +39,7 @@ function crearSelectorProducto({ contenedor, conCinta = false, permitirNuevo = f
 
   crearBuscador({
     input,
-    obtener: (q) => Almacen.buscarProductos(q, { limite: 7 }).map(p => ({ valor: p, html: filaProductoHTML(p) })),
+    obtener: (q) => Almacen.buscarProductos(q, { limite: 7 }).map(p => ({ valor: p, html: filaProductoHTML(p, q) })),
     alElegir: (p) => { input.value = ''; marcar(p.idProducto); alElegir(p); },
     nuevo: permitirNuevo ? { html: (q) => html`${seguro(icono('mas', 'icono-sm'))}<span>Producto nuevo${q ? html`: «${q}»` : ''}</span>`, fn: (q) => { input.value = ''; marcar(null); alNuevo(q); } } : null
   });

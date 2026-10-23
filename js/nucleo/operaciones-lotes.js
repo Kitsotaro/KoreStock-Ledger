@@ -21,7 +21,7 @@
 // ============================================================
 
 const DIAS_REVERSION = 7;
-const TIPOS_REVERTIBLES = ['CORRECCION_PRECIO', 'ANULACION_TICKET', 'ANULACION_LOTE'];
+const TIPOS_REVERTIBLES = ['CORRECCION_PRECIO', 'ANULACION_TICKET', 'ANULACION_LOTE', 'ANULACION_LINEA'];
 
 // precio: dinero por `porUnidades` unidades base (1 = por unidad; 30 = por cartón).
 function prepararCorreccionPrecio({ idProducto, inicio, fin, precio, porUnidades = 1 }) {

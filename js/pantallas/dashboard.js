@@ -242,7 +242,7 @@ async function anularConConfirmacion(folios, accion) {
   });
   if (!ok) return;
   const r = await ejecutarOperacion(operacionAnular(folios, accion));
-  if (r) avisar(movs.length > 1 ? 'Ticket anulado. Puedes revertirlo en «Acciones recientes».' : 'Movimiento anulado.');
+  if (r) avisar(`${movs.length > 1 ? 'Ticket anulado' : 'Movimiento anulado'}. Puedes revertirlo en «Acciones recientes» (7 días).`);
 }
 
 const accionesDashboard = {
@@ -250,7 +250,8 @@ const accionesDashboard = {
   'ver-costo-promedio': (b) => { estadoDashboard.verCostoPromedio = b.checked; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarMovimientosDashboard(); },
   'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarMovimientosDashboard(); },
-  'anular-linea': (b) => anularConConfirmacion([b.dataset.folio]),
+  // Toda anulación queda registrada para poder revertirla (7 días), también una línea suelta.
+  'anular-linea': (b) => anularConConfirmacion([b.dataset.folio], { tipo: 'ANULACION_LINEA', alcance: b.dataset.folio }),
   'anular-ticket': (b) => {
     const folios = Almacen.movimientosDeTicket(b.dataset.ticket).filter(esMovValido).map(m => m.folio);
     anularConConfirmacion(folios, { tipo: 'ANULACION_TICKET', alcance: `Ticket ${b.dataset.ticket}` });

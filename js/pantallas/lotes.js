@@ -96,7 +96,7 @@ async function abrirAnulacionLote() {
 function pintarAccionesRecientes(contenedor) {
   const acciones = Almacen.hojas.LOG_ACCIONES.slice().sort((a, b) => (b.timestamp > a.timestamp ? 1 : -1)).slice(0, 10);
   if (!acciones.length) { contenedor.innerHTML = ''; return; }
-  const nombres = { CORRECCION_PRECIO: 'Corrección de precio', ANULACION_TICKET: 'Ticket anulado', ANULACION_LOTE: 'Anulación por lote', REVERSION: 'Reversión', MIGRACION: 'Actualización de la base', FUSION: 'Productos unidos' };
+  const nombres = { CORRECCION_PRECIO: 'Corrección de precio', ANULACION_TICKET: 'Ticket anulado', ANULACION_LINEA: 'Línea anulada', ANULACION_LOTE: 'Anulación por lote', REVERSION: 'Reversión', MIGRACION: 'Actualización de la base', FUSION: 'Productos unidos' };
   contenedor.innerHTML = html`<details class="tarjeta" ${acciones.some(a => estadoAccion(a) === ESTADOS.ACCION_VIGENTE) ? '' : ''}>
     <summary>${seguro(icono('reciente', 'icono-sm'))}<span class="crece">Acciones recientes</span>${seguro(icono('chevron-abajo', 'icono-sm icono-giro'))}</summary>
     <div class="lista">${acciones.map(a => {

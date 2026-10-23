@@ -101,3 +101,19 @@ prueba('Gatorade: 3 uva, 3 fresa, 4 piña; vender 5 sin sabor; vender 2 de uva; 
   igual(e.stock, 3, 'repartir no cambia el total'); igual(e.porVariante[''], 0); igual(e.porVariante.fresa, 0); igual(e.porVariante['piña'], 2);
   igual(formatearDinero(e.fondo), formatearDinero(Almacen.estado(g.idProducto).fondo));
 });
+
+prueba('una línea suelta anulada se puede revertir (auditoría 2026-10-22)', async () => {
+  if (!hayBasePrueba()) return;
+  await abrirBasePruebaV3(false);
+  const p = productoPor('Churritos');
+  const prep = prepararVenta({ lineas: [{ idProducto: p.idProducto, cantidad: 2, totalCobrado: dinero('0.80') }] });
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prep));
+  const stock = Almacen.stock(p.idProducto);
+  await ColaEscritura.ejecutar(operacionAnular([prep.filas[0].folio], { tipo: 'ANULACION_LINEA', alcance: prep.filas[0].folio }));
+  igual(Almacen.stock(p.idProducto), stock + 2);
+  const accion = Almacen.hojas.LOG_ACCIONES[Almacen.hojas.LOG_ACCIONES.length - 1];
+  igual(accion.tipo, 'ANULACION_LINEA');
+  await ColaEscritura.ejecutar(operacionRevertir(accion.idAccion));
+  igual(Almacen.stock(p.idProducto), stock, 'la venta vuelve a contar');
+  igual(Almacen.movimientoPorFolio(prep.filas[0].folio).estado, '', 'el folio original vuelve a ser válido');
+});
