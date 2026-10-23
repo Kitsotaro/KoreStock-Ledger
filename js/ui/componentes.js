@@ -331,7 +331,7 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' &
 // ---------- Lista con tope y «Cargar más» (D37) ----------
 // Los filtros y buscadores actúan sobre TODOS los datos; aquí solo se limita
 // cuántas filas se dibujan.
-function pintarPaginado({ contenedor, items, pintarItem, tope = 30, vacio = '' }) {
+function pintarPaginado({ contenedor, items, pintarItem, tope = 30, vacio = '', cuenta = null }) {
   let mostrados = 0;
   contenedor.innerHTML = '';
   if (!items.length) { contenedor.innerHTML = vacio && vacio.texto !== undefined ? vacio.texto : (vacio || ''); return; }
@@ -344,7 +344,8 @@ function pintarPaginado({ contenedor, items, pintarItem, tope = 30, vacio = '' }
     const siguiente = items.slice(mostrados, mostrados + tope);
     lista.insertAdjacentHTML('beforeend', siguiente.map(it => { const r = pintarItem(it); return r && r.texto !== undefined ? r.texto : r; }).join(''));
     mostrados += siguiente.length;
-    const quedan = items.length - mostrados;
+    const resto = items.slice(mostrados);
+    const quedan = cuenta ? resto.filter(cuenta).length : resto.length;
     pie.innerHTML = quedan > 0 ? html`<button type="button" class="boton boton-secundario">Cargar más (quedan ${formatearNumero(quedan)})</button>`.texto : '';
     const b = $('button', pie); if (b) b.addEventListener('click', mas);
   };

@@ -26,6 +26,7 @@ registrarPantalla('dashboard', {
     dashUI.el = el;
     el.innerHTML = html`
       <div class="columna">
+        <div id="dash-hoy"></div>
         <div class="segmentado" role="group" aria-label="Vista">
           <button type="button" data-accion="vista" data-valor="MOVIMIENTOS">Movimientos</button>
           <button type="button" data-accion="vista" data-valor="RESUMEN">Resumen</button>
@@ -44,7 +45,30 @@ registrarPantalla('dashboard', {
   mostrar() { dashUI.filtros.pintar(); pintarDashboard(); }
 });
 
+// Tarjeta «Hoy» (referencias de UI): lo vendido y ganado hoy, comparado con
+// ayer, y accesos rápidos. No depende del período ni de los filtros.
+function pintarHoyDashboard() {
+  const cont = $('#dash-hoy', dashUI.el); if (!cont) return;
+  const hoy = obtenerFechaLocal(), ayer = restarDias(hoy, 1);
+  const movs = Almacen.movimientosEfectivos();
+  const r = calcularResumenPeriodo(movs, hoy, hoy), ra = calcularResumenPeriodo(movs, ayer, ayer);
+  const pct = ra.ventas ? ((r.ventas - ra.ventas) / ra.ventas) * 100 : null;
+  cont.innerHTML = html`<section class="tarjeta-hoy" aria-label="Hoy">
+    <div class="tarjeta-hoy-cifras">
+      <div><span class="etiqueta-hoy">Vendido hoy</span><strong class="cifra-hoy">${formatearDinero(r.ventas)}</strong>
+        <span class="detalle-hoy">${pct === null ? (r.ventas ? 'Ayer no hubo ventas' : 'Aún sin ventas') : `${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)} % vs. ayer`} · ${r.nTickets} ${pluralizar(r.nTickets, 'ticket')}</span></div>
+      <div class="ganancia-hoy"><span class="etiqueta-hoy">Ganancia</span><strong>${formatearDinero(r.utilidad)}</strong></div>
+    </div>
+    <div class="accesos-hoy">
+      <button type="button" data-ir="venta">${seguro(icono('carrito'))}<span>Vender</span></button>
+      <button type="button" data-ir="entrada">${seguro(icono('entrada'))}<span>Comprar</span></button>
+      <button type="button" data-ir="gastos">${seguro(icono('recibo'))}<span>Gasto</span></button>
+      <button type="button" data-ir="stock">${seguro(icono('caja'))}<span>Stock</span></button>
+    </div></section>`.texto;
+}
+
 function pintarDashboard() {
+  pintarHoyDashboard();
   $$('[data-accion="vista"]', dashUI.el).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.valor === estadoDashboard.vista)));
   if (estadoDashboard.vista === 'RESUMEN') pintarResumenDashboard();
   else pintarMovimientosDashboard();
@@ -249,10 +273,29 @@ function pintarMovimientosDashboard() {
   pintarListaMovimientos(grupos);
 }
 
+// Encabezado por día (Hoy, Ayer, «lun 20 oct») con lo vendido ese día (referencias de UI).
+function conEncabezadosDia(grupos) {
+  const hoy = obtenerFechaLocal(), ayer = restarDias(hoy, 1);
+  const ventasDia = new Map();
+  grupos.forEach(g => { if (g.tipo === TIPOS_MOV.VENTA) ventasDia.set(g.fecha, sumarDinero(ventasDia.get(g.fecha) || 0, totalGrupo(g))); });
+  const salida = [];
+  let ultimo = '';
+  grupos.forEach(g => {
+    if (g.fecha !== ultimo) {
+      ultimo = g.fecha;
+      const nombre = g.fecha === hoy ? 'Hoy' : g.fecha === ayer ? 'Ayer' : textoAFecha(g.fecha).toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
+      salida.push({ encabezado: true, nombre, ventas: ventasDia.get(g.fecha) || 0 });
+    }
+    salida.push(g);
+  });
+  return salida;
+}
+
 function pintarListaMovimientos(grupos) {
-  const lista = grupos || gruposMovimientos();
+  const lista = conEncabezadosDia(grupos || gruposMovimientos());
   pintarPaginado({
-    contenedor: $('#dash-lista', dashUI.el), items: lista, tope: 30, pintarItem: filaGrupoHTML,
+    contenedor: $('#dash-lista', dashUI.el), items: lista, tope: 30, cuenta: (x) => !x.encabezado,
+    pintarItem: (x) => x.encabezado ? html`<div class="encabezado-dia"><span>${x.nombre}</span>${x.ventas ? html`<span class="cifra">Vendido ${formatearDinero(x.ventas)}</span>` : ''}</div>` : filaGrupoHTML(x),
     vacio: html`<div class="vacio">${seguro(icono('recibo', 'icono-xl'))}<strong>Sin movimientos</strong><p>Prueba con otro período o quita filtros.</p></div>`
   });
   pintarIconos($('#dash-lista', dashUI.el));
