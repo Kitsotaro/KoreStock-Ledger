@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>KoreStock Ledger — inventario, ventas y costos para tu negocio</title>
-  <meta name="description" content="Controla tu inventario, ventas y costos desde el teléfono. Sabe cuánto ganaste hoy y qué te queda en bodega. Tus datos viven en tu propio Google Drive.">
+  <meta name="description" content="Administra tu inventario y tus ventas con privacidad total. Tus datos, protegidos en tu propio Google Drive. Registras compras y ventas en segundos y la app calcula tu stock y tu ganancia.">
   <meta name="theme-color" content="#ECEEF2">
   <link rel="canonical" href="https://korestock.kitsotaro.com/">
   <meta name="robots" content="index, follow">
@@ -14,15 +14,15 @@
   <meta property="og:locale" content="es_419">
   <meta property="og:url" content="https://korestock.kitsotaro.com/">
   <meta property="og:title" content="KoreStock Ledger — inventario, ventas y costos para tu negocio">
-  <meta property="og:description" content="Sabe cuánto ganaste hoy y qué te queda en bodega. Registra compras y ventas desde el teléfono; tus datos viven en tu propio Google Drive.">
+  <meta property="og:description" content="Administra tu inventario y tus ventas con privacidad total. Tus datos, protegidos en tu propio Google Drive.">
   <meta property="og:image" content="https://korestock.kitsotaro.com/assets/og-imagen.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="KoreStock Ledger: sabe cuánto ganaste hoy y qué te queda en bodega.">
+  <meta property="og:image:alt" content="KoreStock Ledger: administra tu inventario y tus ventas con privacidad total.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://korestock.kitsotaro.com/assets/og-imagen.png">
   <meta name="twitter:title" content="KoreStock Ledger">
-  <meta name="twitter:description" content="Inventario, ventas y costos para tu negocio, desde el teléfono. Tus datos en tu Google Drive.">
+  <meta name="twitter:description" content="Administra tu inventario y tus ventas con privacidad total. Tus datos, protegidos en tu propio Google Drive.">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/favicon-48.png" sizes="48x48" type="image/png">
   <link rel="icon" href="assets/icono-192.png" sizes="192x192" type="image/png">
@@ -70,38 +70,31 @@
       <section class="portada">
         <div class="portada-texto">
           <p class="antetitulo">Inventario · Ventas · Costos</p>
-          <h1>Sabe cuánto ganaste hoy y qué te queda en bodega.</h1>
+          <h1>Administra tu inventario y tus ventas con privacidad total.</h1>
           <p class="portada-destacado">Tus datos, protegidos en tu propio Google Drive.</p>
-          <p class="portada-sub">KoreStock lleva el control de tu negocio desde el teléfono: registras compras y ventas en segundos y la app calcula tu stock, tu ganancia y lo que conviene reabastecer. Tus datos viven en tu propio Google Drive.</p>
+          <p class="portada-sub">KoreStock lleva el control de tu negocio desde donde quieras: registras compras y ventas en segundos y la app calcula tu stock, tu ganancia y en qué conviene invertir.</p>
           <div class="portada-acciones">
             <button type="button" class="boton boton-primario boton-grande" data-accion="entrar" id="boton-entrar">Iniciar sesión con Google</button>
             <p class="estado-entrada" id="estado-entrada" role="status" aria-live="polite"></p>
           </div>
           <p class="portada-legal">Al entrar aceptas los <a href="TERMS.md" data-documento="TERMS.md" data-titulo="Términos de servicio">Términos de servicio</a> y la <a href="PRIVACY.md" data-documento="PRIVACY.md" data-titulo="Política de privacidad">Política de privacidad</a>.</p>
         </div>
-        <!-- Maqueta animada de la app (decorativa, solo HTML y CSS): las ventas del día
-             van entrando y la tarjeta «Hoy» se actualiza. Quieta si se pide menos movimiento. -->
-        <div class="portada-maqueta" id="maqueta-portada" aria-hidden="true">
-          <div class="maqueta-telefono">
-            <div class="maqueta-barra"><span class="maqueta-menu"></span><strong>Dashboard</strong><span class="maqueta-pildora">Hoy</span></div>
-            <div class="maqueta-hoy">
-              <div class="maqueta-hoy-cifras">
-                <div><span class="maqueta-etiqueta">Vendido hoy</span>
-                  <span class="maqueta-cifra"><span class="paso-1">$84.60</span><span class="paso-2">$97.10</span><span class="paso-3">$128.40</span></span>
-                  <span class="maqueta-detalle">↑ 18 % vs. ayer</span></div>
-                <div class="maqueta-ganancia"><span class="maqueta-etiqueta">Ganancia</span><strong><span class="paso-1">$21.15</span><span class="paso-2">$24.30</span><span class="paso-3">$32.10</span></strong></div>
-              </div>
-              <div class="maqueta-accesos"><span>Vender</span><span>Comprar</span><span>Gasto</span><span>Stock</span></div>
-            </div>
-            <div class="maqueta-lista">
-              <div class="maqueta-dia"><span>HOY</span><span>Vendido $128.40</span></div>
-              <div class="maqueta-fila nueva-2"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Pepsi Lata 355 ml</b><i>2 cajas de 12 · TK-000214</i></span><b>$31.30</b></div>
-              <div class="maqueta-fila nueva-1"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Huevo Cartón 30</b><i>1 cartón · TK-000213</i></span><b>$12.50</b></div>
-              <div class="maqueta-fila"><span class="maqueta-insignia entrada">Entrada</span><span class="crece"><b>Agua Botella 600 ml</b><i>3 fardos de 24 · IN-000088</i></span><b>$43.20</b></div>
-              <div class="maqueta-fila"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Coca Cola Vidrio 1.5 L</b><i>6 botellas · TK-000212</i></span><b>$10.80</b></div>
-              <div class="maqueta-fila"><span class="maqueta-insignia venta">Venta</span><span class="crece"><b>Diana Tortillitas 30 g</b><i>10 bolsas · TK-000211</i></span><b>$4.00</b></div>
-            </div>
-            <div class="maqueta-isla"><span></span><span></span><span class="maqueta-mas">+</span><span></span><span></span></div>
+        <!-- Capturas de la app en un contenedor de tamaño fijo (presentacion.js). -->
+        <div class="portada-maqueta presentacion" id="maqueta-portada" aria-roledescription="presentación" aria-label="Capturas de KoreStock">
+          <div class="presentacion-marco">
+            <img class="diapositiva" src="assets/capturas/1-dashboard.jpg" alt="Lo vendido hoy y cada ticket del día" data-leyenda="Lo vendido hoy y cada ticket del día" width="375" height="812" loading="eager" decoding="async">
+            <img class="diapositiva" src="assets/capturas/2-resumen.jpg" alt="Ventas, ganancia y tendencia del período" data-leyenda="Ventas, ganancia y tendencia del período" width="375" height="812" loading="lazy" decoding="async">
+            <img class="diapositiva" src="assets/capturas/3-venta.jpg" alt="Vende en segundos, con la ganancia al instante" data-leyenda="Vende en segundos, con la ganancia al instante" width="375" height="812" loading="lazy" decoding="async">
+            <img class="diapositiva" src="assets/capturas/4-entrada.jpg" alt="Registra compras por caja o por unidad" data-leyenda="Registra compras por caja o por unidad" width="375" height="812" loading="lazy" decoding="async">
+            <img class="diapositiva" src="assets/capturas/5-stock.jpg" alt="Tu stock por marca, producto y sabor" data-leyenda="Tu stock por marca, producto y sabor" width="375" height="812" loading="lazy" decoding="async">
+            <img class="diapositiva" src="assets/capturas/6-panorama.jpg" alt="Retorno, equilibrio y lo que se agota" data-leyenda="Retorno, equilibrio y lo que se agota" width="375" height="812" loading="lazy" decoding="async">
+            <img class="diapositiva" src="assets/capturas/7-gastos.jpg" alt="Gastos del negocio por categoría" data-leyenda="Gastos del negocio por categoría" width="375" height="812" loading="lazy" decoding="async">
+          </div>
+          <p class="presentacion-leyenda" aria-live="polite"></p>
+          <div class="presentacion-controles">
+            <button type="button" class="boton boton-icono" data-paso-diapositiva="-1" aria-label="Captura anterior"><span data-icono="atras" data-icono-clase="icono-sm"></span></button>
+            <span class="presentacion-puntos"><button type="button" data-ir-diapositiva="0" aria-label="Captura 1"></button><button type="button" data-ir-diapositiva="1" aria-label="Captura 2"></button><button type="button" data-ir-diapositiva="2" aria-label="Captura 3"></button><button type="button" data-ir-diapositiva="3" aria-label="Captura 4"></button><button type="button" data-ir-diapositiva="4" aria-label="Captura 5"></button><button type="button" data-ir-diapositiva="5" aria-label="Captura 6"></button><button type="button" data-ir-diapositiva="6" aria-label="Captura 7"></button></span>
+            <button type="button" class="boton boton-icono" data-paso-diapositiva="1" aria-label="Captura siguiente"><span data-icono="adelante" data-icono-clase="icono-sm"></span></button>
           </div>
         </div>
       </section>
@@ -301,6 +294,7 @@
   <!-- Interfaz -->
   <script src="js/ui/componentes.js"></script>
   <script src="js/ui/selector-color.js"></script>
+  <script src="js/ui/presentacion.js"></script>
   <script src="js/ui/cargador.js"></script>
   <script src="js/ui/shell.js"></script>
   <script src="js/ui/selector-archivo.js"></script>

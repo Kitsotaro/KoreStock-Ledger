@@ -27,3 +27,6 @@ details.tarjeta > summary::-webkit-details-marker { display: none; }
 details.tarjeta > summary .icono { transition: transform var(--dur-media) var(--curva); }
 details.tarjeta[open] > summary .icono-giro { transform: rotate(180deg); }
 details.tarjeta[open] > summary { margin-bottom: var(--e-3); }
+/* Una etiqueta con botón (Stock: «bruto ▾») baja el botón a otra línea en vez de cortarse */
+.cifra-tarjeta .etiqueta:has(.boton-texto) { flex-wrap: wrap; white-space: normal; }
+.tarjeta-titulo .boton-texto { white-space: nowrap; }

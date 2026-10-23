@@ -20,3 +20,11 @@ details[data-tarjeta] > summary > .icono-giro { margin-top: 2px; flex: none; }
 .fila-roi .semaforo { font-size: var(--t-base); }
 .rejilla-panorama > .tarjeta { margin: 0; }
 .fila-roi .sub { font-size: var(--t-xs); color: var(--texto-2); }
+/* Títulos largos en pantallas angostas: bajan a una segunda línea (con ⓘ al final) */
+details[data-tarjeta] > summary > .crece { min-width: 0; }
+@media (max-width: 559px) {
+  .titulo-panorama { display: block; white-space: normal; line-height: 1.25; }
+  .titulo-panorama > .icono { display: inline-block; vertical-align: -3px; margin-right: 4px; }
+  .titulo-panorama .boton-info { display: inline-grid; vertical-align: middle; }
+  .rejilla-panorama > details:not([open]) { height: 9.5rem; }
+}

@@ -33,8 +33,7 @@ const GraficoStock = {
     contenedor.innerHTML = html`
       <div class="tarjeta">
         <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2>
-          <span class="fila"><button type="button" class="boton boton-icono" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos">${seguro(icono('paleta', 'icono-sm'))}</button>
-          <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></span></div>
+          <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></div>
         <div class="fila envolver" style="margin-bottom:var(--e-2)">
           <div class="segmentado" role="group" aria-label="Medida">
             <button type="button" data-grafico="medida" data-valor="UNIDADES">Unidades</button>
@@ -42,6 +41,7 @@ const GraficoStock = {
           </div>
           <label class="control" style="min-height:var(--alto-control-sm)" data-grafico-recorte><span class="solo-lector">Cuántas barras</span>
             <select data-grafico="recorte"><option value="TODO">Todas</option><option value="10">5 mayores y 5 menores</option><option value="TOP5">3 mayores y 2 menores</option></select></label>
+          <button type="button" class="boton boton-icono" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos" style="margin-left:auto">${seguro(icono('paleta', 'icono-sm'))}</button>
         </div>
         <nav class="migas" aria-label="Nivel del gráfico"></nav>
         <div class="contenedor-grafico"><canvas aria-label="Gráfico de distribución del stock" role="img"></canvas></div>
@@ -133,7 +133,7 @@ const GraficoStock = {
     if (!this.contenedor) return;
     const c = this.contenedor;
     const { nivel, grupos, sinAsignar } = this.datosNivel();
-    $('[data-grafico="tipo"]', c).textContent = this.tipo === 'PASTEL' ? 'Ver en barras' : 'Ver en pastel';
+    $('[data-grafico="tipo"]', c).textContent = this.tipo === 'PASTEL' ? 'Ver barras' : 'Ver pastel';
     $$('[data-grafico="medida"]', c).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.valor === this.medida)));
     $('[data-grafico-recorte]', c).hidden = this.tipo !== 'BARRAS';
     $('.migas', c).innerHTML = [html`<button type="button" data-nivel="0">Todo</button>`]
