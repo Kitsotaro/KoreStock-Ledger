@@ -39,7 +39,7 @@ licencia comercial, escríbenos. Detalles en [`LICENSE`](./LICENSE).
 - Tema claro/oscuro, instalable como app (PWA) y pensada primero para
   el teléfono.
 
-## 🧱 Cómo está hecha
+## 🧱  Stack técnico
 
 JavaScript, HTML y CSS puros, sin frameworks ni compilación. Tu "base
 de datos" es una hoja de Google Sheets que la app lee y escribe
@@ -53,4 +53,4 @@ directamente desde tu navegador con las APIs de Google.
 
 ## Autor
 
-Wilber Adonay Escobar Solorzano ("Kitsótaro")
+Wilber Adonay Escobar Solórzano ("Kitsótaro")
