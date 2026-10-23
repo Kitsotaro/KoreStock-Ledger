@@ -38,3 +38,6 @@
 @keyframes girar { to { transform: rotate(360deg); } }
 .grupo-botones { display: flex; gap: var(--e-2); flex-wrap: wrap; }
 .grupo-botones > .boton { flex: 1 1 auto; }
+/* ⓘ junto a una cifra */
+.boton-info { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--texto-3); cursor: pointer; vertical-align: middle; }
+.boton-info:hover { color: var(--primario); background: var(--superficie-2); }

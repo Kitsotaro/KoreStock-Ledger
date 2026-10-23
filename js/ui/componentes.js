@@ -18,7 +18,7 @@
 //
 // Expone: icono, html, seguro, mostrarDialogo, cerrarDialogo, confirmar,
 //   confirmarFuerte, mostrarResumen, abrirHoja, avisar, crearBuscador,
-//   pintarPaginado, delegar, activarSugerencias, $, $$.
+//   pintarPaginado, delegar, activarSugerencias, botonInfo, $, $$.
 // Depende de: utilidades.js (escaparHTML).
 // ============================================================
 
@@ -235,6 +235,18 @@ function crearBuscador({ input, obtener, alElegir, nuevo = null, maximo = 8, alE
     else if (e.key === 'Escape') cerrar();
   });
   return { cerrar, refrescar: pintar };
+}
+
+// ---------- ⓘ explicativos (heredado de la v2: toggleInfoTip) ----------
+// Botón pequeño junto a una cifra; al tocarlo explica de dónde sale.
+function botonInfo(titulo, texto) {
+  return html`<button type="button" class="boton-info" data-info-titulo="${titulo}" data-info="${texto}" aria-label="Qué es ${titulo}">${seguro(icono('info', 'icono-sm'))}</button>`;
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-info]');
+    if (b) { e.preventDefault(); e.stopPropagation(); mostrarDialogo({ titulo: b.dataset.infoTitulo, mensaje: b.dataset.info }); }
+  }, true);
 }
 
 // ---------- Sugerencias en campos de texto libre ----------
