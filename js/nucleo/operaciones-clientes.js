@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // OPERACIONES-CLIENTES.JS — clientes mínimos de la v3 (D20, §10.3).
 //   - Solo nombre y estado; el cliente es OPCIONAL al vender.

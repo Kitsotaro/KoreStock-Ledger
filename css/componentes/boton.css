@@ -1,4 +1,4 @@
-/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
  * BOTON — acción principal, secundaria, de texto y de ícono. Alto táctil ≥ 44 px. */
 .boton {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--e-2);

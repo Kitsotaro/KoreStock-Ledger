@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // Ejecuta las pruebas en Node (solo desarrollo; la app no necesita Node).
 // Uso:  node pruebas/ejecutar.js [ruta-base-prueba.xlsx]
 const fs = require('fs');

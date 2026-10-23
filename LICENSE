@@ -1,44 +1,55 @@
 KoreStock Ledger
-Copyright (c) 2026 Kitsótaro (Wilber Adonay Escobar Solorzano)
+Copyright (c) 2026 Wilber Adonay Escobar Solórzano.
 Todos los derechos reservados.
 
-CÓDIGO DISPONIBLE (SOURCE AVAILABLE), NO CÓDIGO ABIERTO
+LICENCIA DE CÓDIGO DISPONIBLE (SOURCE AVAILABLE). NO ES UNA LICENCIA DE
+CÓDIGO ABIERTO.
 
-KoreStock es código disponible: puedes leer cómo funciona para confiar en
-lo que hace con tus datos, pero el código y la marca pertenecen a su autor,
-con todos los derechos reservados. Que el código se pueda ver NO te da
-permiso para copiarlo ni para usarlo fuera de lo que dice este documento.
+1. OBJETO
 
-Esta licencia cubre el código fuente. Para el manejo de tus datos, ver
-PRIVACY.md; para los términos de uso de la aplicación, ver TERMS.md.
+Esta licencia regula el acceso al código fuente de KoreStock Ledger (en
+adelante, «el Software»). El tratamiento de datos de la aplicación se rige
+por PRIVACY.md y su uso por los usuarios finales, por TERMS.md.
 
-LO QUE SÍ PUEDES HACER
+2. PUBLICACIÓN DEL CÓDIGO
 
-  - Leer y revisar el código para entender qué hace la aplicación con tus
-    datos.
-  - Usar la aplicación publicada por el autor, según sus términos de uso.
+El código fuente del Software se publica con el único propósito de que
+cualquier persona pueda revisarlo y verificar qué hace la aplicación con
+los datos de sus usuarios. La publicación del código no otorga licencia,
+cesión ni autorización alguna distinta de la expresamente indicada en esta
+licencia.
 
-LO QUE NO PUEDES HACER sin un permiso previo y por escrito del autor
+3. USOS PERMITIDOS
 
-  - Copiar el código, en todo o en parte, ni ejecutar tu propia copia.
-  - Redistribuirlo, publicarlo o compartirlo, modificado o sin modificar,
-    por cualquier medio o formato.
-  - Usarlo para ofrecer otro servicio o como base de un programa propio
-    (copiar su estructura, su lógica o una parte sustancial de él).
-  - Venderlo, alquilarlo o cobrar por su uso.
-  - Presentarlo como propio, o quitar o alterar este aviso de derechos.
+  a) Leer y revisar el código fuente.
+  b) Usar la aplicación publicada por el titular, conforme a sus términos
+     de uso.
 
-¿Quieres una licencia comercial o usarlo de otra forma? Escríbenos: la
-conversación es bienvenida. Esta licencia protege contra la copia y el uso
-comercial sin acuerdo, no contra pedir permiso.
+4. USOS PROHIBIDOS
 
-SIN GARANTÍA
+Salvo autorización previa y por escrito del titular, queda prohibido:
 
-ESTE SOFTWARE SE PROPORCIONA "TAL CUAL" ("AS IS"), SIN GARANTÍA DE NINGÚN
-TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE
-COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR O EXACTITUD DE LOS
-CÁLCULOS QUE REALIZA. EN NINGÚN CASO EL AUTOR SERÁ RESPONSABLE POR
-RECLAMOS, DAÑOS U OTRAS RESPONSABILIDADES QUE SURJAN DEL USO DE ESTE
-SOFTWARE, INCLUYENDO, SIN LIMITARSE A ELLO, PÉRDIDA DE DATOS, ERRORES DE
-CÁLCULO O DECISIONES DE NEGOCIO TOMADAS A PARTIR DE LA INFORMACIÓN QUE
-MUESTRA.
+  a) Copiar el Software, en todo o en parte, o ejecutar copias propias.
+  b) Distribuir, publicar, sublicenciar o compartir el Software, con o sin
+     modificaciones, por cualquier medio o formato.
+  c) Utilizar el Software, su estructura, su lógica o cualquier parte
+     sustancial de él como base de otro programa o servicio.
+  d) Vender, arrendar o explotar comercialmente el Software.
+  e) Atribuirse la autoría del Software o eliminar o alterar este aviso de
+     derechos.
+
+5. LICENCIAS COMERCIALES
+
+Las solicitudes de licencia comercial o de cualquier uso distinto de los
+permitidos deben dirigirse al titular en kitsotaro@gmail.com.
+
+6. AUSENCIA DE GARANTÍA
+
+EL SOFTWARE SE PROPORCIONA «TAL CUAL» («AS IS»), SIN GARANTÍA DE NINGÚN
+TIPO, EXPRESA O IMPLÍCITA, INCLUIDAS, SIN LIMITACIÓN, LAS GARANTÍAS DE
+COMERCIABILIDAD, IDONEIDAD PARA UN FIN DETERMINADO Y EXACTITUD DE LOS
+CÁLCULOS QUE REALIZA. EN NINGÚN CASO EL TITULAR SERÁ RESPONSABLE POR
+RECLAMACIONES, DAÑOS U OTRAS RESPONSABILIDADES DERIVADAS DEL USO DEL
+SOFTWARE, INCLUIDAS, SIN LIMITACIÓN, LA PÉRDIDA DE DATOS, LOS ERRORES DE
+CÁLCULO O LAS DECISIONES DE NEGOCIO ADOPTADAS CON BASE EN LA INFORMACIÓN
+QUE MUESTRA.

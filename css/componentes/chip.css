@@ -1,4 +1,4 @@
-/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
  * CHIP e INSIGNIA — filtros deslizables y etiquetas pequeñas de estado. */
 .fila-chips { display: flex; gap: var(--e-2); overflow-x: auto; scrollbar-width: none; padding: var(--e-1) 0; -webkit-overflow-scrolling: touch; }
 .fila-chips::-webkit-scrollbar { display: none; }

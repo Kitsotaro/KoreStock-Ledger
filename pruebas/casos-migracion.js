@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // Migración v2 → v3 con la base de prueba (V3 §5, §16.4, §22.4). Requiere la
 // base privada; si no está disponible (navegador), estos casos se saltan.
 

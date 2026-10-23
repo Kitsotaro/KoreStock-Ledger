@@ -1,4 +1,4 @@
-/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
  * PANORAMA — tarjetas con un número grande y detalle desplegable (§24.3). */
 .cifra-grande { display: block; font-family: var(--fuente-mono); font-size: var(--t-2xl); font-weight: var(--peso-fuerte); line-height: 1.2; margin: 2px 0; }
 input.umbral { width: 3.5rem; min-height: 2rem; padding: 0 var(--e-2); text-align: center; border: 1.5px solid var(--borde-fuerte); border-radius: var(--r-xs); background: var(--superficie); }

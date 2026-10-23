@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // Copia local y sincronización incremental (V3 §15.4, §22.3, §22.6).
 
 grupo('Copia local y sincronización');

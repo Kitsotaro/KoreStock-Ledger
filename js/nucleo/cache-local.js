@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // CACHE-LOCAL.JS — copia de tus datos en este dispositivo (IndexedDB).
 //

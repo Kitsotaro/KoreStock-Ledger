@@ -65,7 +65,7 @@
       <section class="seccion" id="funciones" aria-labelledby="titulo-funciones">
         <h2 id="titulo-funciones">Cómo funciona</h2>
         <ol class="pasos">
-          <li><span class="paso-icono" data-icono="entrada"></span><h3>Registra tus compras</h3><p>Escríbelas como las compraste: «12 cartones de 30 huevos». La app suma las unidades y calcula el costo de cada una.</p></li>
+          <li><span class="paso-icono" data-icono="entrada"></span><h3>Registra tus compras</h3><p>Escríbelas como las compraste: «3 cajas de 12 latas». La app suma las unidades y calcula el costo de cada una.</p></li>
           <li><span class="paso-icono" data-icono="carrito"></span><h3>Vende en segundos</h3><p>Busca el producto, escribe la cantidad y cobra. Ves al instante cuánto cobraste y cuánto ganaste.</p></li>
           <li><span class="paso-icono" data-icono="tendencia"></span><h3>Decide con datos</h3><p>Tu stock, tus ventas y tu utilidad se calculan solos. Sabes qué se acaba primero y qué conviene comprar.</p></li>
         </ol>
@@ -85,7 +85,7 @@
         <h2 id="titulo-seguridad">Tus datos son tuyos</h2>
         <div class="confianza">
           <div><span data-icono="carpeta"></span><h3>Viven en tu Google Drive</h3><p>La app crea su propia carpeta <strong>KoreStock</strong> y solo puede ver los archivos que ella crea o que tú eliges. No tiene acceso al resto de tu Drive.</p></div>
-          <div><span data-icono="escudo"></span><h3>Sin servidor propio</h3><p>No guardamos tu información en otro lugar. Tu teléfono guarda una copia para abrir rápido y consultar sin internet.</p></div>
+          <div><span data-icono="escudo"></span><h3>Sin servidor propio</h3><p>No guardamos tu información en otro lugar. Tu dispositivo guarda una copia para abrir rápido y consultar sin internet, y se borra sola si pasan 3 días sin actualizarla.</p></div>
           <div><span data-icono="documento"></span><h3>Código disponible</h3><p>Puedes leer cómo funciona para confiar en lo que hace con tus datos. El código y la marca tienen todos los derechos reservados.</p></div>
         </div>
       </section>
@@ -94,18 +94,21 @@
         <h2 id="titulo-preguntas">Preguntas frecuentes</h2>
         <div class="preguntas">
           <details><summary>¿Por qué pide acceso a Google Drive?</summary><p>Porque ahí vive tu información: en archivos que la app crea dentro de tu carpeta KoreStock. Solo puede ver esos archivos o los que tú elijas.</p></details>
-          <details><summary>¿Funciona sin internet?</summary><p>Puedes abrirla y consultar tus datos sin conexión. Para guardar ventas o entradas necesita internet, así nunca se pierde ni se duplica un registro.</p></details>
-          <details><summary>¿Qué pasa si borro mi archivo por error?</summary><p>La app guarda un respaldo diario dentro de tu carpeta KoreStock y puedes descargar una copia completa cuando quieras desde el menú «Exportar / Importar».</p></details>
+          <details><summary>¿Funciona sin internet?</summary><p>Puedes abrirla y consultar lo último que se guardó en tu dispositivo hasta por 3 días. Para registrar ventas o compras necesitas internet: así nunca se pierde ni se duplica un registro.</p></details>
+          <details><summary>¿Qué pasa si borro mi archivo por error?</summary><p>Cada día la app guarda un respaldo dentro de tu carpeta KoreStock (se conservan los dos más recientes). Además, desde «Exportar / Importar» puedes descargar una copia completa en Excel y guardarla fuera de tu cuenta de Google; esa copia se puede restaurar.</p></details>
+          <details><summary>¿Qué pasa con mis datos guardados en el teléfono?</summary><p>Tu dispositivo guarda una copia para abrir rápido. Si pasan 3 días sin que la actualices con internet, se borra sola, y también al cerrar sesión. Proteger el teléfono (bloqueo de pantalla, no prestarlo con la sesión abierta) queda en tus manos.</p></details>
+          <details><summary>¿Qué pasa cuando mi negocio tiene mucho historial?</summary><p>Cada 6 meses la app te propone archivar lo antiguo para seguir rápida. No se borra nada: tus reportes de meses o años anteriores siguen incluyendo lo archivado.</p></details>
           <details><summary>¿Puedo usarla en varios dispositivos?</summary><p>Sí, con la misma cuenta de Google. Está pensada para usarse en un dispositivo a la vez por negocio.</p></details>
           <details><summary>¿Puedo vender por unidad si compro por caja?</summary><p>Sí. Registras la compra como la hiciste («3 cajas de 24») y vendes por unidad; la app lleva la cuenta.</p></details>
           <details><summary>¿Tiene costo?</summary><p>Hoy está en fase de prueba. Para conocer los planes, escríbenos a <a href="mailto:kitsotaro@gmail.com">kitsotaro@gmail.com</a>.</p></details>
+          <details><summary>¿Qué significa «código disponible»?</summary><p>KoreStock es código disponible (Source Available). Puedes leer cómo funciona para confiar en lo que hace con tus datos, pero el código y la marca pertenecen a su autor, con todos los derechos reservados. No se permite copiarlo, redistribuirlo ni usarlo para ofrecer otro servicio. Si quieres una licencia comercial, escríbenos.</p></details>
           <details><summary>¿Es seguro usarla en una red Wi-Fi pública?</summary><p>La conexión con Google va cifrada, pero las redes públicas pueden ser falsas o pedirte aceptar avisos de seguridad. Te recomendamos usar tu propia red o tus datos móviles.</p></details>
         </div>
       </section>
     </main>
 
     <footer class="landing-pie">
-      <p>© 2026 KoreStock Ledger · Código disponible, todos los derechos reservados.</p>
+      <p>© 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados.</p>
       <nav aria-label="Legal"><a href="PRIVACY.md" data-documento="PRIVACY.md" data-titulo="Política de privacidad">Privacidad</a><a href="TERMS.md" data-documento="TERMS.md" data-titulo="Términos de servicio">Términos</a><a href="mailto:kitsotaro@gmail.com">Contacto</a></nav>
     </footer>
   </div>

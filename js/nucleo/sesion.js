@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SESION.JS — inicio de sesión con Google, verificación de licencia y
 // renovación del token. Heredado del bloque de auth de la v2 (core.js),

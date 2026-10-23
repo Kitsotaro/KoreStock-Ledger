@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // OPERACIONES-CATALOGO.JS — escribir productos, precios, presentaciones de
 // venta, equivalencias de empaque y umbrales.

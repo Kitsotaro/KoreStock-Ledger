@@ -1,4 +1,4 @@
-/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
  * CAMPO — etiqueta + entrada, con prefijo ($) o sufijo (unidad), ayuda y error.
  * Los <label> siempre enlazan su campo (for=) para lectores de pantalla. */
 .campo { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }

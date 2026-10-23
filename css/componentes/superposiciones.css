@@ -1,4 +1,4 @@
-/* © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+/* © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
  * SUPERPOSICIONES — panel lateral (sándwich), hoja inferior, diálogo y avisos. */
 .velo { position: fixed; inset: 0; background: var(--velo); opacity: 0; transition: opacity var(--dur-media); pointer-events: none; z-index: var(--z-panel); }
 .velo.visible { opacity: 1; pointer-events: auto; }

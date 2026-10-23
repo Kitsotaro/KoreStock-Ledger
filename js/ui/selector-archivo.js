@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SELECTOR-ARCHIVO.JS — el selector de Google (Picker) para elegir una base
 // que la app aún no conoce (heredado de abrirSelectorArchivo de la v2).

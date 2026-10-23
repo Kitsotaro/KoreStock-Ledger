@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA GASTOS (T17) — misma estructura que Venta y Entrada (§23.2):
 // formulario compacto arriba (categoría con autocompletado, monto,

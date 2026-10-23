@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // OPERACIONES-GASTOS.JS — gastos fijos (GO-), vehículos y cargas de
 // combustible (CB-). Heredado de costos.js y combustible.js de la v2:

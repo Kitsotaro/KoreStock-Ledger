@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SHELL.JS — el marco de la app: barra superior, barra inferior con el
 // interruptor Entrada ⇄ Venta, panel lateral, modos, tema, tamaño de texto,

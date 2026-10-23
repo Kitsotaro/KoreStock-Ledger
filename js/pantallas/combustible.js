@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // PANTALLA COMBUSTIBLE (T17 + T28) — §23.2 y D50:
 //   - Formulario compacto: vehículo (buscador con «Agregar vehículo»),

@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // Stock derivado (D36), CPP como fondo exacto y APERTURA (V3 §18.3, §21.2).
 
 grupo('Stock derivado y costo promedio');

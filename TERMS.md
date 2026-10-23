@@ -1,43 +1,45 @@
 # Términos de Uso
 
-Estos términos son específicos de **usar la aplicación** como usuario
-final. Para los derechos sobre el código fuente, ver `LICENSE`; para el
-manejo de tus datos, ver `PRIVACY.md`.
+**KoreStock Ledger** · Última actualización: octubre de 2026
 
-## Depende de Google
+Estos términos regulan el uso de la aplicación KoreStock Ledger (en adelante, «la Aplicación») por parte de sus usuarios. El titular de la Aplicación es Wilber Adonay Escobar Solórzano (en adelante, «el Autor»). Al usar la Aplicación, el usuario acepta estos términos. El tratamiento de datos se describe en `PRIVACY.md` y los derechos sobre el código, en `LICENSE`.
 
-Esta app no es un producto de Google ni tiene afiliación con Google —
-es una herramienta independiente que se conecta a tu cuenta a través de
-la API pública de Google Sheets y Drive. Como consecuencia:
+## 1. Objeto
 
-- Necesita conexión a internet y una cuenta de Google activa para
-  funcionar.
-- Si Google cambia, limita o interrumpe ese servicio (la API, cuotas de
-  uso, disponibilidad), la app puede dejar de funcionar correctamente
-  hasta que se actualice — algo fuera del control del autor.
+La Aplicación es una herramienta de apoyo para registrar compras, ventas, inventario y costos de un negocio y obtener cálculos e informes a partir de esos registros. No constituye un servicio de contabilidad, auditoría ni asesoría financiera, fiscal o legal, y no sustituye el criterio del usuario ni el de un profesional.
 
-## La información es tuya, y la responsabilidad también
+## 2. Acceso
 
-Tú decides qué datos cargar y qué hacer con los resultados que la app
-calcula (ROI, punto de equilibrio, proyecciones, etc.). Esta app es una
-herramienta de apoyo, no un servicio de contabilidad ni de asesoría
-financiera profesional — para decisiones importantes de negocio, no
-sustituye tu propio criterio ni el de un profesional.
+El uso de la Aplicación requiere una cuenta de Google y la autorización del Autor. El Autor podrá conceder, suspender o retirar dicha autorización.
 
-Si compartes el acceso a tu cuenta de Google con otra persona (por
-ejemplo, un empleado o socio), la seguridad de esa cuenta y las
-consecuencias de compartirla son responsabilidad tuya — la app no
-ofrece gestión de múltiples usuarios ni roles distintos dentro de una
-misma cuenta.
+## 3. Dependencia de servicios de Google
 
-## Sin soporte garantizado
+La Aplicación no es un producto de Google ni está afiliada a Google. Funciona mediante las APIs públicas de Google Drive y Google Sheets. Si Google modifica, limita o interrumpe dichos servicios, sus cuotas o su disponibilidad, la Aplicación podrá dejar de funcionar total o parcialmente sin que ello genere responsabilidad para el Autor.
 
-Este es un proyecto personal, no un producto comercial con soporte
-contratado. Puedes escribirle al autor con dudas o errores, pero no hay
-garantía de tiempo de respuesta ni de que un problema se resuelva.
+## 4. Conexión y uso sin conexión
 
-## Responsabilidad
+Registrar o modificar información requiere conexión a internet. Sin conexión, la Aplicación permite únicamente consultar la copia guardada en el dispositivo, durante un máximo de tres (3) días desde su última actualización; transcurrido ese plazo, la copia se elimina y es necesario volver a iniciar sesión con conexión.
 
-Igual que en `LICENSE`: el autor no se hace responsable por pérdida de
-datos, errores de cálculo, interrupciones del servicio de Google, ni
-decisiones de negocio tomadas a partir de esta aplicación.
+## 5. Obligaciones del usuario
+
+- Registrar información veraz y revisar los resultados antes de tomar decisiones.
+- Custodiar su cuenta de Google y su dispositivo, y no compartir su sesión. Si el usuario permite que otra persona use su cuenta o su dispositivo, asume las consecuencias de ese uso; la Aplicación no ofrece gestión de usuarios ni de permisos internos.
+- Evitar redes Wi-Fi públicas o desconocidas y mantener su dispositivo protegido.
+- Conservar copias de respaldo de su información fuera de la cuenta de Google.
+- No intentar eludir los controles de acceso de la Aplicación ni usarla para fines ilícitos.
+
+## 6. Propiedad intelectual
+
+El código, el diseño, el nombre y la marca de la Aplicación pertenecen al Autor, con todos los derechos reservados. El código se publica como **código disponible (Source Available)**: puede consultarse para verificar su funcionamiento, pero no copiarse, redistribuirse ni utilizarse para ofrecer otro servicio sin autorización previa y por escrito del Autor, conforme a `LICENSE`. La información registrada por el usuario es de su exclusiva propiedad.
+
+## 7. Soporte
+
+El Autor podrá atender consultas y reportes de errores en kitsotaro@gmail.com, sin compromiso de plazos de respuesta ni de resolución.
+
+## 8. Limitación de responsabilidad
+
+La Aplicación se proporciona «tal cual», sin garantías de ningún tipo. En la máxima medida permitida por la ley, el Autor no será responsable por pérdida o corrupción de datos, errores de cálculo, interrupciones de los servicios de Google, accesos no autorizados derivados de la falta de protección del dispositivo o de la cuenta del usuario, ni por decisiones de negocio tomadas con base en la información que muestra la Aplicación.
+
+## 9. Modificaciones
+
+El Autor podrá modificar estos términos. La versión vigente estará siempre disponible en la Aplicación y en su repositorio público, con la fecha de su última actualización. El uso continuado de la Aplicación implica la aceptación de la versión vigente.

@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // IMPORTAR-EXCEL.JS — carga masiva de compras y ventas desde Excel
 // (heredado de la v2, §13: «se queda para volúmenes grandes»).

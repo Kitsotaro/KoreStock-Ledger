@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="Logo de KoreStock Ledger" width="96"></p>
+
 # KoreStock Ledger
 
 Sistema para gestionar tu negocio: controla el abastecimiento de

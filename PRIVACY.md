@@ -1,121 +1,64 @@
-# Aviso de Privacidad y Manejo de Datos
+# Aviso de Privacidad
 
-Esta nota describe, sin tecnicismos legales, cómo maneja tus datos la
-aplicación **KoreStock Ledger** (PWA).
+**KoreStock Ledger** · Última actualización: octubre de 2026
 
-## No hay servidor propio
+Este aviso describe qué datos trata la aplicación KoreStock Ledger (en adelante, «la Aplicación»), con qué finalidad, dónde se almacenan y cómo puede el usuario ejercer control sobre ellos. El responsable de la Aplicación es Wilber Adonay Escobar Solórzano (en adelante, «el Autor»). Contacto: kitsotaro@gmail.com.
 
-Esta aplicación es 100% del lado del cliente (client-side): no existe
-ningún servidor del autor que reciba, procese, almacene o pase por en
-medio de tus datos. Todo corre directamente en tu navegador y se conecta
-de forma directa a tu propia cuenta de Google.
+## 1. Arquitectura: la Aplicación no tiene servidor propio
 
-## 1. Datos a los que accedemos
+La Aplicación se ejecuta íntegramente en el navegador del usuario y se conecta de forma directa con la cuenta de Google del propio usuario. El Autor no opera ningún servidor ni base de datos que reciba, procese o almacene la información de negocio de los usuarios. La única excepción es la verificación de acceso descrita en la sección 4.
 
-Usamos **Google OAuth 2.0** para autenticarte y acceder a los servicios
-de Google API. Solicitamos un único permiso (scope):
+## 2. Datos a los que accede la Aplicación
 
-- [`auth/drive.file`](https://developers.google.com/identity/protocols/oauth2/scopes#drive):
-  permiso diseñado específicamente para que una aplicación **solo
-  pueda crear y administrar los archivos que ella misma genera**, sin
-  ninguna capacidad técnica de listar, leer o acceder al resto de tu
-  Google Drive.
-- Con ese mismo permiso, también leemos tu **dirección de correo de
-  Google** (vía la función `about` de la API de Drive) para iniciar tu
-  sesión y verificar que tu cuenta está autorizada a usar la app — no
-  se solicita ningún permiso adicional para esto.
+La Aplicación utiliza Google OAuth 2.0 y solicita un único permiso: [`drive.file`](https://developers.google.com/identity/protocols/oauth2/scopes#drive). Este permiso solo permite crear y administrar los archivos que la propia Aplicación genera o que el usuario elige expresamente; no permite listar, leer ni modificar ningún otro archivo de su Google Drive.
 
-En la práctica, esto significa que la app:
+Con ese permiso, la Aplicación trata:
 
-- **Sí puede**: crear y leer/escribir la hoja de cálculo (Google Sheet)
-  que ella misma genera para guardar tu inventario, ventas y costos.
-- **No puede**: ver, listar ni tocar ningún otro archivo, carpeta,
-  documento o dato de tu Google Drive — no por una promesa, sino porque
-  el permiso que la app solicita no lo permite técnicamente.
+- **Dirección de correo de la cuenta de Google**, obtenida mediante la API de Drive, para iniciar la sesión y verificar la autorización de uso.
+- **Información de negocio** que el usuario registra: productos, compras, ventas, gastos, combustible, vehículos, clientes y precios.
+- **Correo del usuario como autor de ciertas acciones** (cambios de precio, correcciones y anulaciones registradas), que se guarda dentro de la propia hoja de cálculo del usuario para dejar constancia de quién las realizó.
 
-## 2. Cómo usamos esos datos
+## 3. Finalidad del tratamiento
 
-- Tu correo se usa **únicamente** para confirmar que estás autorizado a
-  entrar (lista blanca) y para identificar tu sesión mientras usas la
-  app.
-- Los datos de tu hoja de cálculo (inventario, ventas, costos) se usan
-  **exclusivamente** para calcular y mostrarte reportes dentro de la
-  propia app, en tu navegador.
-- No usamos tus datos para publicidad, perfiles de comportamiento, ni
-  los vendemos ni los compartimos con fines comerciales de ningún tipo.
-- **Cumplimiento de Uso Limitado (Limited Use):** el uso y la
-  transferencia de información obtenida a través de las APIs de Google
-  por parte de KoreStock Ledger se adhieren a la
-  [Política de Datos de Usuario de los Servicios API de Google](https://developers.google.com/terms/api-services-user-data-policy),
-  incluidos los requisitos de Uso Limitado. Garantizamos que no
-  transferimos, vendemos ni compartimos datos de usuarios de Google
-  con terceros o plataformas de anuncios, y que no usamos estos datos
-  para entrenar modelos de inteligencia artificial ni de aprendizaje
-  automático.
+- El correo se usa únicamente para verificar que la cuenta está autorizada a usar la Aplicación y para identificar la sesión.
+- La información de negocio se usa exclusivamente para mostrar al usuario sus registros, cálculos e informes dentro de la Aplicación.
+- La Aplicación no utiliza los datos con fines publicitarios, no crea perfiles de comportamiento, no los vende, no los cede con fines comerciales y no los usa para entrenar modelos de inteligencia artificial o de aprendizaje automático.
+- **Uso Limitado (Limited Use):** el uso y la transferencia de información obtenida a través de las APIs de Google se ajustan a la [Política de Datos de Usuario de los Servicios API de Google](https://developers.google.com/terms/api-services-user-data-policy), incluidos sus requisitos de Uso Limitado.
 
-## 3. Con quién compartimos tus datos
+## 4. Verificación de acceso
 
-- No compartimos, vendemos ni transferimos tus datos de Google con
-  terceros.
-- **Única verificación técnica interna:** al iniciar sesión, tu
-  dirección de correo se valida exclusivamente mediante una función
-  interna ejecutada en Google Apps Script — infraestructura alojada y
-  protegida por Google, operada por el propio autor de la app, no un
-  tercero externo — para confirmar si tu cuenta está en la lista de
-  correos autorizados. Esta función responde únicamente con un estado
-  de confirmación (sí/no) y no almacena, comparte ni expone tus datos
-  a ningún servicio o servidor externo de terceros.
+Al iniciar sesión, la Aplicación envía a una función de Google Apps Script operada por el Autor la dirección de correo del usuario y el token de acceso temporal emitido por Google. La función usa el token exclusivamente para confirmar ante Google la identidad de la cuenta y responde si esa cuenta está autorizada. La función no almacena la información de negocio del usuario, no conserva el token y no comparte ningún dato con terceros. Esta comprobación se ejecuta sobre la infraestructura de Google.
 
-## 4. Almacenamiento y protección de tus datos
+## 5. Dónde se almacenan los datos
 
-- Los datos de tu negocio (inventario, ventas, costos) se guardan
-  **únicamente en tu propio Google Drive**, en un archivo llamado
-  `StockCentral_DB` que tú controlas por completo desde tu propia
-  cuenta.
-- La app no tiene servidor ni base de datos propia del autor — es
-  100% client-side, corre en tu navegador, y no existe ninguna copia de
-  tus datos en ningún otro lugar.
-- La protección de esos datos depende directamente de la seguridad de
-  tu propia cuenta de Google (recomendamos activar verificación en dos
-  pasos en tu cuenta si aún no la tienes).
+- **En el Google Drive del usuario.** La Aplicación crea una carpeta llamada `KoreStock` que contiene la hoja de cálculo principal (`KoreStock_DB`), hasta dos copias de respaldo automáticas y, cuando corresponda, los archivos históricos de periodos anteriores. Todos estos archivos pertenecen al usuario y están bajo su control.
+- **En el dispositivo del usuario.** Para abrir rápidamente y permitir la consulta sin conexión, la Aplicación guarda en el navegador una copia de lectura de la información y el token temporal de la sesión. Esta copia **no se cifra** y se **elimina automáticamente** si transcurren tres (3) días sin actualizarse con conexión a internet. También se elimina al cerrar la sesión desde la Aplicación.
+- **Copias descargadas.** Si el usuario descarga una copia en Excel, ese archivo queda bajo su exclusiva custodia.
 
-## 5. Retención y borrado de tus datos
+El Autor no conserva copia alguna de la información de los usuarios.
 
-Tus datos permanecen en tu Google Drive el tiempo que tú decidas — no
-hay un plazo de retención ni borrado automático de nuestra parte,
-porque nunca tenemos una copia que borrar.
+## 6. Seguridad del dispositivo y de la cuenta
 
-**Cómo eliminar tus datos y revocar el acceso**, en dos pasos simples:
+La protección de la información depende de la seguridad de la cuenta de Google del usuario y del dispositivo en el que usa la Aplicación. Corresponde al usuario proteger su dispositivo con bloqueo de pantalla, mantener actualizado el sistema y el navegador, no compartir su sesión y evitar redes Wi-Fi públicas o desconocidas. Se recomienda activar la verificación en dos pasos de la cuenta de Google.
 
-1. **Eliminar los datos almacenados:** entra a tu Google Drive, busca
-   el archivo `StockCentral_DB` (la hoja de cálculo generada por la
-   app) y muévela a la papelera o elimínala — igual que con cualquier
-   otro archivo tuyo.
-2. **Revocar el acceso de la app:** retira el permiso de KoreStock
-   Ledger a tu cuenta de Google desde tus
-   [permisos de cuenta de Google](https://myaccount.google.com/permissions),
-   seleccionando la app y dando clic en "Quitar acceso".
+## 7. Conservación y eliminación
 
-- **Recomendación importante:** como tus datos viven únicamente en tu
-  Google Drive y nosotros no guardamos ninguna copia, te recomendamos
-  hacer respaldos manuales periódicos del archivo (por ejemplo,
-  descargando una copia desde Google Sheets). Si el archivo se borra,
-  se corrompe, o se pierde por cualquier motivo — incluyendo un posible
-  fallo en el código de la app — no tenemos forma de recuperar tus
-  registros, ya que no existe ninguna copia fuera de tu propio Drive.
+Los datos permanecen en el Google Drive del usuario mientras él lo decida; el Autor no aplica plazos de conservación porque no posee copia de ellos. Para eliminarlos y retirar el acceso:
 
-## Quién ve tus datos
+1. **Eliminar los datos:** en Google Drive, eliminar la carpeta `KoreStock` y su contenido (incluidos respaldos e históricos) y cualquier copia descargada.
+2. **Eliminar la copia local:** cerrar la sesión desde la Aplicación o borrar los datos del sitio en el navegador.
+3. **Retirar el acceso:** en los [permisos de la cuenta de Google](https://myaccount.google.com/permissions), seleccionar KoreStock Ledger y elegir «Quitar acceso».
 
-Nadie más que tú. Cada persona que usa esta app se conecta con su
-propia cuenta de Google, y su información vive únicamente en su propio
-Drive. El autor de la app no recibe copia, no tiene acceso remoto y no
-puede ver bajo ninguna circunstancia lo que cualquier usuario guarda en
-su hoja de cálculo — incluyendo al propio autor, que tampoco tiene una
-puerta trasera para ver datos de otras cuentas.
+Dado que el Autor no conserva copias, no puede recuperar información eliminada o perdida. Se recomienda descargar periódicamente una copia desde la sección «Exportar / Importar» y guardarla fuera de la cuenta de Google.
 
-## Responsabilidad
+## 8. Acceso de terceros
 
-El autor no se hace responsable por pérdida de datos, errores de
-cálculo, ni decisiones de negocio tomadas a partir de la información que
-esta aplicación muestra. Ver `LICENSE` para los términos completos de
-uso del código, y `TERMS.md` para los términos de uso de la aplicación.
+Ninguna persona distinta del usuario tiene acceso a su información a través de la Aplicación. El Autor no dispone de acceso remoto ni de mecanismos para consultar los datos de las cuentas de los usuarios.
+
+## 9. Cambios a este aviso
+
+El Autor podrá actualizar este aviso. La versión vigente estará siempre disponible en la Aplicación y en su repositorio público, con la fecha de su última actualización.
+
+## 10. Limitación de responsabilidad
+
+El Autor no será responsable por pérdida de datos, errores de cálculo ni decisiones de negocio tomadas con base en la información que muestra la Aplicación. Los términos de uso de la Aplicación se encuentran en `TERMS.md` y los derechos sobre el código, en `LICENSE`.

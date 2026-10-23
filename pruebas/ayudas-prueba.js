@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // Ayudas para las pruebas: carga la base de prueba (xlsx) en el Drive de demostración.
 // Expone: cargarBasePruebaEnDemo, hayBasePrueba.
 

@@ -1,4 +1,4 @@
-// © 2026 Kitsótaro · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
+// © 2026 Wilber Adonay Escobar Solórzano (Kitsótaro) · KoreStock Ledger · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // MARCO.JS — mini marco de pruebas (navegador y Node, sin dependencias).
 // Expone: prueba, grupo, igual, igualProfundo, verdadero, lanza, ejecutarPruebas.
