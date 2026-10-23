@@ -28,7 +28,7 @@ const ARCHIVOS_APP = [
   './js/nucleo/sincronizacion.js', './js/nucleo/sesion.js', './js/nucleo/cola-escritura.js', './js/nucleo/sku.js',
   './js/nucleo/operaciones-catalogo.js', './js/nucleo/operaciones-movimientos.js',
   './js/nucleo/operaciones-clientes.js', './js/nucleo/operaciones-gastos.js', './js/nucleo/operaciones-lotes.js',
-  './js/nucleo/respaldos.js', './js/nucleo/historicos.js', './js/ui/componentes.js', './js/ui/cargador.js',
+  './js/nucleo/respaldos.js', './js/nucleo/historicos.js', './js/ui/componentes.js', './js/ui/selector-color.js', './js/ui/cargador.js',
   './js/ui/shell.js', './js/ui/selector-archivo.js', './js/ui/campos.js', './js/ui/selector-producto.js',
   './js/ui/filtros.js', './js/demo/modo-demo.js', './js/pantallas/migracion.js', './js/pantallas/primer-uso.js',
   './js/pantallas/venta.js', './js/pantallas/importar-excel.js', './js/pantallas/entrada.js',

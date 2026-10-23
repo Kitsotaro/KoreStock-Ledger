@@ -78,8 +78,9 @@ async function leerHojas(id, nombres) {
 
 // Repara una base v3 incompleta: agrega pestañas que falten y escribe los
 // encabezados (por ejemplo, si una versión futura suma una hoja nueva).
-// Una sola revisión por base y sesión (se reutiliza la promesa). Si falla (sin
-// internet), se puede volver a intentar.
+// Una sola revisión por base y sesión (se reutiliza la promesa), y solo cuando
+// el usuario guarda algo en una hoja nueva (nunca en segundo plano: cuota).
+// Si falla (sin internet), se puede volver a intentar.
 const revisionesHojas = new Map();
 function asegurarHojasUnaVez(id) {
   if (!revisionesHojas.has(id)) revisionesHojas.set(id, asegurarHojasV3(id).catch((e) => { revisionesHojas.delete(id); throw e; }));

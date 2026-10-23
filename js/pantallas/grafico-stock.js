@@ -9,21 +9,14 @@
 //     (Todo · 10 = 5 mayores + 5 menores · Top 5 = 3 + 2).
 //   - Unidades o valor en $ (el stock mezcla unidades distintas: huevos,
 //     latas…; el valor permite comparar parejo).
-//   - Leyenda propia, accesible y tocable; colores del tema o el elegido
-//     tocando el cuadrito (hoja COLORES, con fecha: queda registrado).
+//   - Leyenda propia, accesible y tocable. Colores: modo automático
+//     (Sobrio, Pastel, Vívido, Monocromo) o uno elegido tocando el cuadrito;
+//     todo en la hoja COLORES, con fecha (queda registrado).
 //
 // Expone: GraficoStock.
-// Depende de: cargador.js (cargarChart), almacen.js, dinero.js, componentes.js, shell.js.
+// Depende de: cargador.js (cargarChart), almacen.js, dinero.js, componentes.js, shell.js,
+//   selector-color.js, operaciones-catalogo.js (operacionGuardarColor).
 // ============================================================
-
-// <input type="color"> solo acepta #RRGGBB.
-function aHex(color) {
-  const c = String(color || '').trim();
-  if (/^#[0-9a-f]{6}$/i.test(c)) return c;
-  if (/^#[0-9a-f]{3}$/i.test(c)) return '#' + c.slice(1).split('').map(x => x + x).join('');
-  const m = c.match(/\d+/g);
-  return m && m.length >= 3 ? '#' + m.slice(0, 3).map(n => Number(n).toString(16).padStart(2, '0')).join('') : '#888888';
-}
 
 const NIVELES_GRAFICO = [
   { campo: 'marca', nombre: 'Marcas' },
@@ -40,7 +33,8 @@ const GraficoStock = {
     contenedor.innerHTML = html`
       <div class="tarjeta">
         <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2>
-          <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></div>
+          <span class="fila"><button type="button" class="boton boton-icono" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos">${seguro(icono('paleta', 'icono-sm'))}</button>
+          <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></span></div>
         <div class="fila envolver" style="margin-bottom:var(--e-2)">
           <div class="segmentado" role="group" aria-label="Medida">
             <button type="button" data-grafico="medida" data-valor="UNIDADES">Unidades</button>
@@ -58,19 +52,18 @@ const GraficoStock = {
       const b = e.target.closest('[data-grafico]');
       if (b && b.dataset.grafico === 'tipo') { this.tipo = this.tipo === 'PASTEL' ? 'BARRAS' : 'PASTEL'; this.pintar(); }
       if (b && b.dataset.grafico === 'medida') { this.medida = b.dataset.valor; this.pintar(); }
+      if (b && b.dataset.grafico === 'modo-color') {
+        abrirSelectorModoColor(b, { actual: leerModoColor('STOCK'), alElegir: (m) => this.guardarColor('_MODO', 'STOCK', textoModoColor(m)) });
+      }
+      const muestra = e.target.closest('[data-color]');
+      if (muestra) this.elegirColor(muestra);
       const miga = e.target.closest('[data-nivel]');
       if (miga) { this.camino = this.camino.slice(0, Number(miga.dataset.nivel)); this.pintar(); }
       const item = e.target.closest('[data-bajar]');
       if (item) this.bajar(item.dataset.bajar);
     });
     $('select', contenedor).addEventListener('change', (e) => { this.recorte = e.target.value; this.pintar(); });
-    // El selector de color avisa al cerrarse («change»): se guarda una sola vez.
-    contenedor.addEventListener('change', async (e) => {
-      const i = e.target.closest('input[data-color]');
-      if (!i) return;
-      const r = await ejecutarOperacion(operacionGuardarColor(this.nivelColor(), i.dataset.color, i.value));
-      if (r !== null) { avisar('Color guardado.', { accion: 'Automático', alAccion: () => ejecutarOperacion(operacionGuardarColor(this.nivelColor(), i.dataset.color, '')).then(() => this.pintar()) }); this.pintar(); }
-    });
+
     Shell.alCambiarTema(() => { if (Shell.actual === 'stock') this.pintar(); });
   },
 
@@ -98,6 +91,22 @@ const GraficoStock = {
       });
     }
     return { nivel, grupos, sinAsignar };
+  },
+
+  // Selector propio: sugerencias del modo, variaciones, usados antes y «Automático».
+  elegirColor(muestra) {
+    const nombre = muestra.dataset.color, nivel = this.nivelColor();
+    const propio = Almacen.colorGrafico(nivel, nombre);
+    const recientes = [...new Set((Almacen.hojas.COLORES || []).filter(f => /^#/.test(f.color)).map(f => aHex(f.color)).reverse())];
+    abrirSelectorColor(muestra, {
+      titulo: `Color de ${nombre.split(' › ').pop()}`, actual: muestra.dataset.actual, personalizado: !!propio,
+      delModo: paletaAutomatica(leerModoColor('STOCK'), 8), recientes,
+      alElegir: (color) => this.guardarColor(nivel, nombre, color)
+    });
+  },
+  async guardarColor(nivel, nombre, valor) {
+    const r = await ejecutarOperacion(operacionGuardarColor(nivel, nombre, valor));
+    if (r !== null) this.pintar();
   },
 
   // Clave del color: el nivel y el camino («Pepsi › Lata 355 ml»), para que el
@@ -138,8 +147,8 @@ const GraficoStock = {
       if (this.recorte === 'TOP5' && n > 5) items = items.slice(0, 3).concat(items.slice(-2));
     }
     const estilo = getComputedStyle(document.documentElement);
-    const paleta = Array.from({ length: 8 }, (_, i) => estilo.getPropertyValue(`--grafico-${i + 1}`).trim());
-    const colores = items.map((it, i) => Almacen.colorGrafico(this.nivelColor(), this.nombreColor(it.etiqueta)) || paleta[i % 8]);
+    const paleta = paletaAutomatica(leerModoColor('STOCK'), items.length);
+    const colores = items.map((it, i) => Almacen.colorGrafico(this.nivelColor(), this.nombreColor(it.etiqueta)) || paleta[i]);
     const fmt = (v) => this.medida === 'VALOR' ? formatearDinero(dinero(v)) : formatearNumero(v);
     const nota = $('.nota-grafico', c);
     nota.textContent = nivel.campo === 'sabor'
@@ -147,7 +156,7 @@ const GraficoStock = {
       : (this.medida === 'UNIDADES' ? 'Unidades en bodega (cada producto en su propia unidad).' : 'Valor en bodega a último costo.');
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
     $('.leyenda', c).innerHTML = items.length ? items.map((it, i) => html`<div class="leyenda-fila">
-        <label class="muestra-color" style="background:${colores[i]}" title="Cambiar color"><input type="color" data-color="${this.nombreColor(it.etiqueta)}" value="${aHex(colores[i])}" aria-label="Color de ${it.etiqueta}"></label>
+        <button type="button" class="muestra-color" style="background:${colores[i]}" data-color="${this.nombreColor(it.etiqueta)}" data-actual="${aHex(colores[i])}" aria-label="Cambiar el color de ${it.etiqueta}" title="Cambiar color"></button>
         <button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}><span class="recortar">${it.etiqueta}</span>
         <span class="valor">${fmt(it.valor)} · ${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></button></div>`.texto).join('')
       : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto;

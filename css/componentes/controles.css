@@ -63,9 +63,25 @@
 /* «Precios por presentación» oculto por ahora (auditoría 2026-10-23: confunde; se busca mejor solución).
    Las presentaciones ya guardadas se siguen usando al vender. */
 [data-accion="editar-presentaciones"], [data-accion="presentaciones-entrada"], #ed-presentaciones { display: none !important; }
-/* Leyenda con color editable: el cuadrito abre el selector de color */
+/* Leyenda con color editable: el cuadrito abre el selector de color de la app */
 .leyenda-fila { display: flex; align-items: center; gap: var(--e-1); }
 .leyenda-fila .leyenda-item { flex: 1; min-width: 0; }
-.muestra-color { position: relative; width: 1.1rem; height: 1.1rem; flex: none; border-radius: 4px; cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--texto) 15%, transparent); }
-.muestra-color:hover { outline: 2px solid var(--borde-fuerte); outline-offset: 2px; }
-.muestra-color input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.muestra-color { width: 1.1rem; height: 1.1rem; flex: none; padding: 0; border: 0; border-radius: 4px; cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--texto) 15%, transparent); }
+.muestra-color:hover, .muestra-color:focus-visible { outline: 2px solid var(--borde-fuerte); outline-offset: 2px; }
+
+/* Ventana flotante anclada (selector de color, modos de color) */
+.flotante { position: fixed; z-index: var(--z-dialogo); width: min(17.5rem, calc(100vw - 24px)); padding: var(--e-3); border-radius: var(--r-lg); border: 1px solid var(--borde); background: var(--superficie-elevada); color: var(--texto); box-shadow: var(--sombra-3); display: grid; gap: var(--e-3); opacity: 0; transform: translateY(-4px); transition: opacity var(--dur-rapida) var(--curva), transform var(--dur-rapida) var(--curva); }
+.flotante.visible { opacity: 1; transform: none; }
+.flotante-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); font-size: var(--t-sm); }
+.flotante-cuerpo { display: grid; gap: var(--e-3); }
+.grupo-muestras { display: grid; gap: var(--e-1); }
+.muestras { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.muestra-opcion { aspect-ratio: 1; width: 100%; padding: 0; border: 0; border-radius: 6px; cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--texto) 12%, transparent); }
+.muestra-opcion:hover { transform: scale(1.08); }
+.muestra-opcion[aria-pressed="true"] { outline: 2px solid var(--texto); outline-offset: 2px; }
+.acciones-color .boton { position: relative; white-space: nowrap; }
+.opcion-modo-color { display: flex; align-items: center; text-align: left; gap: var(--e-2); width: 100%; min-height: 2.5rem; padding: 0 var(--e-2); border: 1px solid var(--borde); border-radius: var(--r-sm); background: transparent; color: var(--texto); font-weight: var(--peso-medio); cursor: pointer; }
+.opcion-modo-color + .opcion-modo-color { margin-top: -6px; }
+.opcion-modo-color[aria-pressed="true"] { border-color: var(--texto); background: var(--superficie-2); font-weight: var(--peso-fuerte); }
+.tira-colores { display: flex; }
+.tira-colores span { width: 0.9rem; height: 0.9rem; border-radius: 50%; margin-left: -3px; box-shadow: 0 0 0 1.5px var(--superficie-elevada); }

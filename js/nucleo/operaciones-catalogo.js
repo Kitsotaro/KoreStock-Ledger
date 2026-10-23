@@ -161,7 +161,8 @@ function operacionGuardarPresentaciones(idProducto, lista) {
 
 // Color de la leyenda: nunca se reescribe una fila, se agrega otra (queda el historial).
 function operacionGuardarColor(nivel, nombre, color) {
-  const limpio = /^#[0-9a-f]{6}$/i.test(color || '') ? color.toUpperCase() : '';
+  const valido = nivel === '_MODO' ? /^(SOBRIO|PASTEL|VIVIDO|MONOCROMO( #[0-9a-f]{6})?)$/i : /^#[0-9a-f]{6}$/i;
+  const limpio = valido.test(color || '') ? color.toUpperCase() : '';
   const obj = { nivel, nombre, color: limpio, timestamp: obtenerTimestampLocal() };
   return crearOperacion('Guardar color', [{
     nombre: 'color',
