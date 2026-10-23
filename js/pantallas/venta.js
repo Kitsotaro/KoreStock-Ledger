@@ -20,7 +20,7 @@
 const venta = {
   el: null, selector: null,
   producto: null, cantidad: 0, total: 0, totalEditado: false, variante: '', etiqueta: '',
-  carrito: [], idCliente: null, fecha: '',
+  carrito: [], idCliente: null, fecha: '', empaqueVenta: null,
 };
 
 registrarPantalla('venta', {
@@ -80,9 +80,16 @@ function refrescarVenta() {
   folio.textContent = `Folio ${Almacen.verFolioSiguiente('FAC-')}`;
 }
 
+// Unidad de venta (Kitso 2026-10-23): Bodega y Pro asumen el empaque
+// registrado (caja); Tienda, la unidad suelta. Siempre se puede cambiar.
+function factorVenta() { const o = venta.empaqueVenta; return o ? (o.conNivel ? o.unidades * o.porSub : o.unidades) : 1; }
+function nombreVenta() { return venta.empaqueVenta ? venta.empaqueVenta.empaque : venta.producto.unidadBase; }
+
 function elegirProductoVenta(p) {
   venta.producto = p;
-  venta.cantidad = 1;
+  venta.cantidad = 0;
+  const empaques = empaquesRegistrados(p).filter(o => o.clave !== 'u');
+  venta.empaqueVenta = Shell.modo !== 'tienda' && empaques.length ? empaques[0] : null;
   venta.variante = '';
   venta.etiqueta = '';
   venta.totalEditado = false;
@@ -107,17 +114,28 @@ function enCarrito(idProducto) {
 }
 
 // El cliente se pide solo cuando ya hay algo que vender (auditoría 2026-10-23).
+// Antes de redibujar, el campo Cliente vuelve a su lugar (si no, se borraría con el contenido).
+function rescatarClienteVenta() {
+  const cli = $('#venta-cliente', venta.el), casa = $('.registro', venta.el);
+  if (cli && casa && cli.parentElement !== casa) casa.appendChild(cli);
+}
+
 function actualizarClienteVenta() {
   const cli = $('#venta-cliente', venta.el);
-  if (cli) cli.hidden = !(venta.producto || venta.carrito.length);
+  if (!cli) return;
+  cli.hidden = !(venta.producto || venta.carrito.length);
+  // El cliente va justo antes del botón «Cobrar» (se mueve el mismo elemento, no se copia).
+  const cobrar = $('#venta-cobrar-carrito', venta.el) || $('#venta-producto [data-accion="cobrar"]', venta.el);
+  if (cobrar && cobrar.previousElementSibling !== cli) cobrar.before(cli);
 }
 
 function pintarProductoVenta() {
   const cont = $('#venta-producto', venta.el);
   const p = venta.producto;
-  actualizarClienteVenta();
+  rescatarClienteVenta();
   if (!p) {
     cont.innerHTML = venta.carrito.length ? '' : html`<div class="vacio">${seguro(icono('carrito', 'icono-xl'))}<strong>¿Qué vendiste?</strong><p>Busca el producto o toca uno de los más vendidos.</p></div>`.texto;
+    actualizarClienteVenta();
     return;
   }
   const e = Almacen.estado(p.idProducto);
@@ -127,13 +145,19 @@ function pintarProductoVenta() {
   const ganancia = gananciaVenta();
   const sugerido = sugerirPrecioTotal(p.idProducto, venta.cantidad);
   const excede = venta.cantidad > disponible;
+  const empaquesVenta = empaquesRegistrados(p).filter(o => o.clave !== 'u');
+  const factorEmp = empaquesVenta.length ? (empaquesVenta[0].conNivel ? empaquesVenta[0].unidades * empaquesVenta[0].porSub : empaquesVenta[0].unidades) : 1;
+  const nombreEmpaqueVenta = empaquesVenta.length ? empaquesVenta[0].empaque : '';
+  const factor = factorVenta();
+  const cantVista = factor > 1 ? redondearCantidad(venta.cantidad / factor) : venta.cantidad;
   cont.innerHTML = html`
     <div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
-      <div class="dato"><span>Precio por ${p.unidadBase}</span><span><strong class="cifra">${formatearDinero(p.precio)}</strong>
+      <div class="dato"><span>En stock</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
+      <div class="dato"><span>Precio por ${p.unidadBase}${factorEmp > 1 ? ` · por ${nombreEmpaqueVenta}` : ''}</span><span><strong class="cifra">${formatearDinero(p.precio)}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}` : ''}</strong>
         <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span></div>
+      <div class="dato"><span>Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
         ${presentaciones.map(x => html`<button type="button" class="chip" data-accion="usar-presentacion" data-cantidad="${x.cantidad}" data-precio="${x.precio}" data-etiqueta="${x.etiqueta}">${x.etiqueta} · ${formatearDinero(x.precio)}</button>`)}
       </div>` : ''}
@@ -141,8 +165,13 @@ function pintarProductoVenta() {
     </div>
     <div class="tarjeta columna">
       <div class="campo">
-        <label for="venta-cantidad">Cantidad</label>
-        <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(venta.cantidad).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(p.unidadBase, venta.cantidad)}</span></div>
+        <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>
+          ${empaquesVenta.length ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">
+            <button type="button" role="radio" data-accion="venta-por" data-clave="u" aria-checked="${String(!venta.empaqueVenta)}">${pluralUnidad(p.unidadBase, 2)}</button>
+            ${empaquesVenta.map(o => html`<button type="button" role="radio" data-accion="venta-por" data-clave="${o.clave}" aria-checked="${String(!!venta.empaqueVenta && venta.empaqueVenta.clave === o.clave)}">${pluralUnidad(o.empaque, 2)} de ${formatearNumero(o.conNivel ? o.unidades * o.porSub : o.unidades)}</button>`)}
+          </span>` : ''}</div>
+        <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>
+        ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
       </div>
       <div class="campo">
@@ -168,11 +197,12 @@ function pintarProductoVenta() {
     </div>
     ${venta.carrito.length ? '' : html`<button type="button" class="boton boton-venta boton-grande boton-bloque" data-accion="cobrar" ${excede || !venta.cantidad ? 'disabled' : ''}>${seguro(icono('billete'))}Cobrar ${formatearDinero(venta.total)}</button>`}`.texto;
   pintarIconos(cont);
+  actualizarClienteVenta();
 
   const inCantidad = $('#venta-cantidad', cont);
   prepararCampoNumerico(inCantidad, { decimales: p.decimales ? 3 : 0 });
   inCantidad.addEventListener('input', () => {
-    venta.cantidad = leerCantidad(inCantidad);
+    venta.cantidad = redondearCantidad(leerCantidad(inCantidad) * factorVenta());
     venta.etiqueta = '';
     recalcularTotalVenta();
     actualizarCifrasVenta();
@@ -196,7 +226,9 @@ function actualizarCifrasVenta() {
   const ganancia = gananciaVenta();
   const linea = $('.total-cobrado', cont).parentElement.querySelector('.fila-separada span');
   if (linea) { linea.className = ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'; linea.textContent = `${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}`; }
-  const sufijo = $('.sufijo', cont); if (sufijo) sufijo.textContent = pluralUnidad(p.unidadBase, venta.cantidad);
+  const cantVista = factorVenta() > 1 ? redondearCantidad(venta.cantidad / factorVenta()) : venta.cantidad;
+  const sufijo = $('.sufijo', cont); if (sufijo) sufijo.textContent = pluralUnidad(nombreVenta(), cantVista);
+  const equivale = $('.venta-equivale', cont); if (equivale) equivale.textContent = `= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}`;
   const disponible = redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto));
   const valido = venta.cantidad > 0 && venta.cantidad <= disponible;
   $$('[data-accion="cobrar"], [data-accion="agregar-carrito"]', cont).forEach(b => { b.disabled = !valido; });
@@ -219,8 +251,8 @@ function totalTicketVenta() {
 
 function pintarCarritoVenta() {
   const cont = $('#venta-carrito', venta.el);
-  actualizarClienteVenta();
-  if (!venta.carrito.length) { cont.innerHTML = ''; return; }
+  rescatarClienteVenta();
+  if (!venta.carrito.length) { cont.innerHTML = ''; actualizarClienteVenta(); return; }
   const total = totalTicketVenta();
   cont.innerHTML = html`
     <div class="tarjeta">
@@ -235,6 +267,7 @@ function pintarCarritoVenta() {
       </ul>
     </div>
     <button type="button" class="boton boton-venta boton-grande boton-bloque" id="venta-cobrar-carrito" data-accion="cobrar">${seguro(icono('billete'))}<span>Cobrar ${formatearDinero(total)}</span></button>`.texto;
+  actualizarClienteVenta();
 }
 
 function pintarClienteVenta() {
@@ -253,6 +286,13 @@ async function crearClienteDesdeVenta(nombre) {
 
 const accionesVenta = {
   'quitar-producto': () => { venta.producto = null; venta.selector.marcar(null); pintarProductoVenta(); },
+  'venta-por': (b) => {
+    const unidadesAntes = venta.cantidad, factorAntes = factorVenta();
+    venta.empaqueVenta = b.dataset.clave === 'u' ? null : empaquesRegistrados(venta.producto).find(o => o.clave === b.dataset.clave) || null;
+    // Se conserva la cantidad escrita en la nueva unidad (2 latas → 2 cajas).
+    venta.cantidad = redondearCantidad((factorAntes > 1 ? unidadesAntes / factorAntes : unidadesAntes) * factorVenta());
+    venta.totalEditado = false; recalcularTotalVenta(); pintarProductoVenta();
+  },
   'usar-presentacion': (b) => {
     venta.cantidad = Number(b.dataset.cantidad);
     venta.totalEditado = false;

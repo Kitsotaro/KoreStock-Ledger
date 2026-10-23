@@ -14,3 +14,16 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .nivel-extra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
 .encabezado-registro { display: flex; align-items: center; gap: var(--e-2); font-weight: var(--peso-fuerte); }
 .encabezado-registro.venta { color: var(--venta); } .encabezado-registro.entrada { color: var(--entrada); }
+/* Entrada (fase UI): unidad de compra y resumen de solo lectura antes de «Guardar» */
+.segmentado-compra { display: inline-grid; grid-auto-flow: column; padding: 3px; gap: 3px; border-radius: var(--r-pildora); background: var(--superficie-3); align-self: flex-start; }
+.segmentado-compra button { border: 0; border-radius: var(--r-pildora); min-height: 2.25rem; padding: 0 var(--e-3); background: transparent; color: var(--texto-2); font-weight: var(--peso-fuerte); font-size: var(--t-sm); cursor: pointer; }
+.segmentado-compra button::first-letter { text-transform: uppercase; }
+.segmentado-compra button[aria-checked="true"] { background: var(--activo-fondo); color: var(--activo-texto); }
+.resumen-compra { display: grid; gap: var(--e-1); }
+.fila-resumen { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); color: var(--texto-2); padding: var(--e-1) 0; }
+.fila-resumen + .fila-resumen { border-top: 1px dashed var(--borde); }
+.fila-resumen strong { color: var(--texto); font-variant-numeric: tabular-nums; }
+.fila-resumen strong.t-exito { color: var(--exito); } .fila-resumen strong.t-peligro { color: var(--peligro); }
+.registro .dato { display: flex; justify-content: space-between; align-items: baseline; gap: var(--e-3); color: var(--texto-2); font-size: var(--t-sm); }
+.registro .dato strong { color: var(--texto); }
+.registro .dato strong.t-exito { color: var(--exito); } .registro .dato strong.t-peligro { color: var(--peligro); }

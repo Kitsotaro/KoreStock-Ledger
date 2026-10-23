@@ -31,7 +31,7 @@ const entrada = {
   producto: null, nuevo: null,
   cantEmp: 1, empaque: '', unidades: 1, conNivel: false, subEmpaque: '', porSub: 1,
   costoEmp: 0, costoEditado: false, total: 0, totalEditado: false, bonif: 0, precioNuevo: null, variante: '',
-  editor: false, costoCambio: false,
+  editor: false, costoCambio: false, porUnidad: false, masDatos: false,
   carrito: [], fecha: ''
 };
 
@@ -90,6 +90,8 @@ function reiniciarCantidades(unidadBase) {
   entrada.cantEmp = 0; entrada.empaque = unidadBase || ''; entrada.unidades = 1; entrada.conNivel = false;
   entrada.subEmpaque = ''; entrada.porSub = 1; entrada.costoEmp = 0; entrada.costoEditado = false; entrada.total = 0; entrada.totalEditado = false;
   entrada.bonif = 0; entrada.precioNuevo = null; entrada.variante = ''; entrada.editor = false; entrada.costoCambio = false;
+  // Modos (Kitso 2026-10-23): Tienda asume compra por unidad; Bodega y Pro, por empaque. Siempre se puede cambiar.
+  entrada.porUnidad = Shell.modo === 'tienda';
 }
 
 function elegirProductoEntrada(p) {
@@ -121,11 +123,17 @@ function factorEntrada() {
   if (normalizarTexto(entrada.empaque) === normalizarTexto(unidadBaseEntrada()) || !entrada.empaque.trim()) return 1;
   return entrada.conNivel ? redondearCantidad(entrada.unidades * entrada.porSub) : entrada.unidades;
 }
-function unidadesTotalesEntrada() { return redondearCantidad(entrada.cantEmp * factorEntrada()); }
-// Costo de UN empaque: lo escrito, o el último costo por unidad × unidades del empaque.
+// Unidad de compra: el empaque (caja de 12) o la unidad suelta (lata). El
+// empaque se registra siempre aunque se compren unidades sueltas, para
+// llevar el control de mayoreo sin datos extra.
+function compraPorUnidad() { return entrada.porUnidad || factorEntrada() === 1; }
+function factorCompra() { return compraPorUnidad() ? 1 : factorEntrada(); }
+function nombreCompra() { return compraPorUnidad() ? unidadBaseEntrada() : (entrada.empaque.trim() || unidadBaseEntrada()); }
+function unidadesTotalesEntrada() { return redondearCantidad(entrada.cantEmp * factorCompra()); }
+// Costo de UNA unidad de compra: lo escrito, o el último costo por unidad × su tamaño.
 function costoEmpaqueEntrada() {
   if (entrada.costoEditado || !entrada.producto) return entrada.costoEmp;
-  return multiplicarDinero(entrada.producto.costo, factorEntrada());
+  return multiplicarDinero(entrada.producto.costo, factorCompra());
 }
 // El total pagado es el dato: lo escrito, o costo del empaque × cuántos.
 function totalPagadoEntrada() {
@@ -179,7 +187,8 @@ function validarEmpaqueEntrada() {
   const unidad = unidadBaseEntrada();
   const factor = factorEntrada();
   const nombre = entrada.empaque.trim();
-  const esUnidad = !nombre || normalizarTexto(nombre) === normalizarTexto(unidad);
+  if (!nombre) return 'Elige el tipo de empaque (caja, fardo, bolsa…) o la unidad.';
+  const esUnidad = normalizarTexto(nombre) === normalizarTexto(unidad);
   if (esUnidad) return entrada.conNivel ? 'Escribe el nombre del empaque mayor.' : '';
   if (entrada.conNivel) {
     if (!entrada.subEmpaque.trim()) return 'Escribe qué empaque viene adentro.';
@@ -194,7 +203,7 @@ function validarEmpaqueEntrada() {
     const c = entrada.conNivel ? (choque(nombre, entrada.unidades, entrada.subEmpaque) || choque(entrada.subEmpaque, entrada.porSub, unidad)) : choque(nombre, factor, unidad);
     if (c) return `Este producto ya tiene «${c.nombre}» de ${formatearNumero(c.unidades)} ${pluralUnidad(c.nivelInferior, c.unidades)}. Para otro tamaño usa otro nombre (por ejemplo «${c.nombre} ${formatearNumero(entrada.conNivel ? entrada.unidades : factor)}»).`;
     // Un empaque nuevo se registra con su precio exacto.
-    if (!empaqueRegistradoEntrada() && !(entrada.totalEditado && entrada.total > 0)) return 'Es un empaque nuevo para este producto: escribe el total exacto que pagaste en «Total pagado».';
+    if (!empaqueRegistradoEntrada() && !(entrada.costoEditado && entrada.costoEmp > 0)) return `Es un empaque nuevo para este producto: escribe cuánto te costó cada ${nombreCompra()}.`;
   }
   return '';
 }
@@ -283,15 +292,17 @@ function pintarProductoEntradaSinFoco() {
     return;
   }
   const unidad = unidadBaseEntrada();
-  const factor = factorEntrada();
+  const factor = factorEntrada();               // unidades que trae el empaque
+  const fc = factorCompra();                     // unidades por unidad de compra
+  const compra = nombreCompra();
   const unidades = unidadesTotalesEntrada();
   const total = totalPagadoEntrada();
-  const costoUnidad = unidades > 0 ? precioUnitario(total, unidades) : 0;
-  const precio = precioVentaEntrada();
+  const costoUnidad = unidades > 0 ? precioUnitario(total, unidades) : (entrada.producto && !entrada.costoEditado ? entrada.producto.costo : dividirDinero(entrada.costoEmp, fc));
+  const precio = precioVentaEntrada();           // siempre por unidad base
   const ganUnidad = restarDinero(precio, costoUnidad);
   const margen = margenSobreCosto(ganUnidad, costoUnidad);
   const editor = entrada.editor || !!n;
-  const empaqueEsUnidad = factor === 1 && (normalizarTexto(entrada.empaque) === normalizarTexto(unidad) || !entrada.empaque.trim());
+  const empaqueEsUnidad = factor === 1 && normalizarTexto(entrada.empaque) === normalizarTexto(unidad);
   const nombreEmp = entrada.empaque.trim() || unidad;
   const cambiaPrecio = p && entrada.precioNuevo !== null && entrada.precioNuevo !== p.precio;
   const variantes = p ? Almacen.variantesDe(p.idProducto) : [];
@@ -300,71 +311,63 @@ function pintarProductoEntradaSinFoco() {
   const listaEmpaques = [unidad].concat(Almacen.hojas.EQUIVALENCIAS.map(e => e.nombre), Almacen.productosVisibles().map(x => x.tipoEmpaque)).filter((v, i, a) => v && a.findIndex(x => normalizarTexto(x) === normalizarTexto(v)) === i);
   const error = validarEmpaqueEntrada();
   const empaqueNuevo = !!p && !empaqueRegistradoEntrada();
-
-  // Frase libre (modo editor o producto nuevo).
   const nota = (texto) => html`<span class="nota-campo">${texto}</span>`;
-  const fraseLibre = html`
-      <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Cantidad comprada">
-        <span class="frase-palabra">Compré</span>
-        <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Unidades')}</span>
-        ${html`<span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${nombreEmp}" list="lista-empaques-entrada" aria-label="Tipo de empaque" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
-            ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
-              ${entrada.conNivel
-                ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
-                  <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>${nota('Empaque de adentro')}</span>
-                  <span class="frase-palabra">de</span><span class="frase-campo"><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>${nota(pluralUnidad(unidad, 2))}</span>`
-                : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}`}
+
+  // 1. El empaque: cómo viene el producto (se registra aunque se compren unidades sueltas).
+  const filaEmpaque = html`
+      <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Empaque">
+        <span class="frase-palabra">Empaque</span>
+        <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${entrada.empaque}" list="lista-empaques-entrada" aria-label="Tipo de empaque" placeholder="caja, fardo…" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
+        ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
+          ${entrada.conNivel
+            ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
+              <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>${nota('Empaque de adentro')}</span>
+              <span class="frase-palabra">de</span><span class="frase-campo"><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>${nota(pluralUnidad(unidad, 2))}</span>`
+            : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}
         ${datalist('lista-empaques-entrada', listaEmpaques)}
       </div>
-      ${!empaqueEsUnidad ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Quitar el empaque de adentro` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
+      ${opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaques registrados">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : ''}
+      ${!empaqueEsUnidad && entrada.empaque.trim() ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? 'Quitar el empaque de adentro' : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
 
-  // Empaques ya registrados del producto: accesos rápidos bajo la frase.
-  const accesosEmpaque = opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaques registrados">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : '';
+  // 2. Cuánto compraste y en qué unidad (empaque o unidad suelta).
+  const filaCompra = html`
+      <div class="frase frase-notas" aria-label="Cantidad comprada">
+        <span class="frase-palabra">Compré</span>
+        <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Cantidad')}</span>
+        ${factor > 1 ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Unidad de compra">
+            <button type="button" role="radio" data-accion="compra-por" data-por="empaque" aria-checked="${String(!entrada.porUnidad)}">${pluralUnidad(nombreEmp, 2)}</button>
+            <button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>
+          </span>` : html`<span class="frase-palabra t-fuerte">${pluralUnidad(unidad, entrada.cantEmp)}</span>`}
+      </div>
+      <p class="t-pequeno t-secundario entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreEmp, entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}</p>`;
 
-  // Costo: texto en modo rápido (último costo), campos en modo editor o si cambió.
-  // Un empaque nuevo exige escribir el total exacto: el campo se muestra solo.
+  // 3. Costo: un solo campo, por la unidad de compra (el total se calcula).
   const costoEditable = editor || entrada.costoCambio || empaqueNuevo;
   const bloqueCosto = costoEditable ? html`
-      <div class="rejilla-campos">
-        <div class="campo"><label for="entrada-costo">Costo por ${nombreEmp}</label>
-          <div class="control"><span class="prefijo">$</span><input id="entrada-costo" value="${valorCampoDinero(costoEmpaqueEntrada(), 5)}"></div></div>
-        <div class="campo"><label for="entrada-total">Total pagado</label>
-          <div class="control total-pagado"><span class="prefijo">$</span><input id="entrada-total" value="${entrada.totalEditado || !p ? valorCampoDinero(total) : ''}" placeholder="${valorCampoDinero(total)}"></div></div>
-      </div>` : html`
-      <div class="dato"><span>Costo (último)</span><strong class="cifra">${formatearDinero(costoEmpaqueEntrada(), { detalle: true })} por ${nombreEmp} · total ${formatearDinero(total)}</strong></div>`;
+      <div class="campo"><label for="entrada-costo">Costo por ${compra}</label>
+        <div class="control"><span class="prefijo">$</span><input id="entrada-costo" value="${entrada.costoEditado || !p ? valorCampoDinero(costoEmpaqueEntrada(), 5) : ''}" placeholder="${valorCampoDinero(costoEmpaqueEntrada(), 2)}"></div></div>` : html`
+      <div class="dato"><span>Costo por ${compra} (último)</span><strong>${formatearDinero(costoEmpaqueEntrada(), { detalle: true })}</strong></div>`;
 
   cont.innerHTML = html`
     ${p ? html`<div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
       <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
-      <div class="dato"><span>Último costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })} por ${p.unidadBase}</strong></div>
-      <div class="dato"><span>Precio de venta</span><strong class="cifra">${formatearDinero(p.precio)} por ${p.unidadBase}</strong></div>
-      <label class="casilla t-pequeno"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: empaque nuevo, costo o precio de venta</label>
+      <label class="casilla t-pequeno"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
     </div>` : seguro(formularioNuevo().texto)}
 
     <div class="tarjeta columna">
-      ${fraseLibre}
-      ${accesosEmpaque}
-      <p class="t-grande t-fuerte entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}</p>
-      ${empaqueNuevo ? html`<span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Empaque nuevo para este producto: al guardar queda registrado con este tamaño.</span>` : ''}
+      ${filaEmpaque}
+      ${filaCompra}
+      ${empaqueNuevo && !error ? html`<span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Empaque nuevo para este producto: al guardar queda registrado con este tamaño.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
-
       ${bloqueCosto}
       ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
-      <div class="calculo" id="entrada-calculo">
-        <span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
-        ${precio > 0 ? html`<span>Ganancia por ${unidad}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong class="${claseSigno(ganUnidad)}">${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
-      </div>
-
-      ${editor ? html`<div class="columna">
-          <div class="campo"><label for="entrada-precio">Precio de venta por ${unidad}</label>
-            <div class="control ${cambiaPrecio ? 'precio-cambiado' : ''}"><span class="prefijo">$</span><input id="entrada-precio" value="${valorCampoDinero(precio)}"></div>
-            ${cambiaPrecio ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Cambiará el precio de venta de ${formatearDinero(p.precio)} a ${formatearDinero(entrada.precioNuevo)}. Aplica a ventas nuevas.</span>` : ''}</div>
-          ${p ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="presentaciones-entrada" data-solo-modo="tienda pro" style="justify-self:start">${seguro(icono('precio', 'icono-sm'))}Precios por presentación (${pluralUnidad(unidad, 2)} juntos)</button>` : ''}
-        </div>` : ''}
+      ${editor ? html`<div class="campo"><label for="entrada-precio">Precio de venta al consumidor por ${compra}</label>
+          <div class="control ${cambiaPrecio ? 'precio-cambiado' : ''}"><span class="prefijo">$</span><input id="entrada-precio" value="${valorCampoDinero(multiplicarDinero(precio, fc))}"></div>
+          ${cambiaPrecio ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Cambiará el precio de venta de ${formatearDinero(p.precio)} a ${formatearDinero(entrada.precioNuevo)} por ${unidad}. Aplica a ventas nuevas.</span>` : ''}</div>` : ''}
       <details class="desplegable" ${entrada.bonif ? 'open' : ''}>
-        <summary class="fila t-pequeno">${seguro(icono('estrella', 'icono-sm'))}<span class="crece">Bonificadas (gratis)</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
+        <summary class="fila t-pequeno">${seguro(icono('caja', 'icono-sm'))}<span class="crece">Bonificadas (gratis)</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
         <div class="campo" style="padding-top:var(--e-2)"><label for="entrada-bonif">Unidades gratis</label>
           <div class="control"><input id="entrada-bonif" value="${entrada.bonif || ''}" placeholder="0"><span class="sufijo">${pluralUnidad(unidad, 2)}</span></div>
           <span class="ayuda-campo">Suman al stock pero no al costo: bajan el costo promedio.</span></div>
@@ -377,6 +380,7 @@ function pintarProductoEntradaSinFoco() {
         </div></details>` : ''}
       <button type="button" class="boton boton-secundario" data-accion="agregar-entrada">${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>
     </div>
+    <div id="entrada-resumen">${seguro(resumenEntradaHTML())}</div>
     ${entrada.carrito.length ? '' : html`<button type="button" class="boton boton-entrada boton-grande boton-bloque ${cambioImportanteEntrada() ? 'boton-aviso' : ''}" data-accion="guardar-entrada">${seguro(icono('entrada'))}<span>Guardar entrada · ${formatearDinero(total)}</span></button>`}`.texto;
   pintarIconos(cont);
   conectarCamposEntrada(cont);
@@ -389,14 +393,9 @@ function conectarCamposEntrada(cont) {
   num('#entrada-por', 0, (i) => { entrada.unidades = leerCantidad(i) || 1; });
   num('#entrada-por-sub', 0, (i) => { entrada.unidades = leerCantidad(i) || 1; });
   num('#entrada-por-unidad', 0, (i) => { entrada.porSub = leerCantidad(i) || 1; });
-  num('#entrada-costo', 5, (i) => { entrada.costoEmp = leerDineroCampo(i); entrada.costoEditado = true; entrada.totalEditado = false; });
-  num('#entrada-total', 2, (i) => {
-    const v = i.value.trim();
-    entrada.totalEditado = v !== '';
-    entrada.total = entrada.totalEditado ? leerDineroCampo(i) : 0;
-    if (entrada.totalEditado && entrada.cantEmp > 0) { entrada.costoEmp = dividirDinero(entrada.total, entrada.cantEmp); entrada.costoEditado = true; }
-  });
-  num('#entrada-precio', 2, (i) => { entrada.precioNuevo = leerDineroCampo(i); if (entrada.nuevo) entrada.nuevo.precio = entrada.precioNuevo; });
+  num('#entrada-costo', 5, (i) => { const v = i.value.trim(); entrada.costoEditado = v !== ''; entrada.costoEmp = v ? leerDineroCampo(i) : 0; entrada.totalEditado = false; });
+  // El precio se escribe por la unidad de compra (caja o lata) y se guarda por unidad base.
+  num('#entrada-precio', 2, (i) => { entrada.precioNuevo = dividirDinero(leerDineroCampo(i), factorCompra()); if (entrada.nuevo) entrada.nuevo.precio = entrada.precioNuevo; });
   num('#entrada-bonif', decCant, (i) => { entrada.bonif = leerCantidad(i); });
   const texto = (id, fn, repintar) => { const i = $(id, cont); if (!i) return; i.addEventListener('input', () => fn(i.value)); i.addEventListener('change', () => { fn(i.value); if (repintar) repintarEntradaDespues(); }); };
   texto('#entrada-empaque', (v) => {
@@ -426,23 +425,46 @@ function conectarCamposEntrada(cont) {
   }
 }
 
-// Actualiza los cálculos sin redibujar (para no perder el foco).
+// Resumen de solo lectura (fase UI): unidades, total, costos, precios,
+// ganancias por unidad, por empaque y de toda la compra, y margen.
+function resumenEntradaHTML() {
+  if (!entrada.producto && !entrada.nuevo) return '';
+  const unidad = unidadBaseEntrada(), factor = factorEntrada(), fc = factorCompra();
+  const nombreEmp = entrada.empaque.trim() || unidad;
+  const unidades = unidadesTotalesEntrada();
+  if (!(unidades > 0) && !(entrada.bonif > 0)) return '';
+  const total = totalPagadoEntrada();
+  const costoUnidad = unidades > 0 ? precioUnitario(total, unidades) : dividirDinero(costoEmpaqueEntrada(), fc);
+  const precio = precioVentaEntrada();
+  const ganUnidad = restarDinero(precio, costoUnidad);
+  const margen = margenSobreCosto(ganUnidad, costoUnidad);
+  const fila = (ic, etiqueta, valor, clase) => html`<div class="fila-resumen">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span><strong class="${clase || ''}">${valor}</strong></div>`;
+  return html`<div class="tarjeta resumen-compra" aria-label="Resumen de la compra">
+      <div class="tarjeta-titulo"><h2>${seguro(icono('factura', 'icono-sm'))} Resumen de la compra</h2></div>
+      ${fila('caja', 'Entran a bodega', `${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${entrada.bonif ? ` + ${formatearNumero(entrada.bonif)} gratis` : ''}`)}
+      ${fila('billete', 'Total a pagar', formatearDinero(total))}
+      ${fila('precio', `Costo por ${unidad}`, formatearDinero(costoUnidad, { detalle: true }))}
+      ${factor > 1 ? fila('precio', `Costo por ${nombreEmp}`, formatearDinero(multiplicarDinero(costoUnidad, factor))) : ''}
+      ${precio > 0 ? html`
+        ${fila('etiqueta', `Precio de venta por ${unidad}`, formatearDinero(precio))}
+        ${factor > 1 ? fila('etiqueta', `Precio de venta por ${nombreEmp}`, formatearDinero(multiplicarDinero(precio, factor))) : ''}
+        ${fila('tendencia', `Ganancia por ${unidad}`, formatearDinero(ganUnidad, { detalle: true }), claseSigno(ganUnidad))}
+        ${factor > 1 ? fila('tendencia', `Ganancia por ${nombreEmp}`, formatearDinero(multiplicarDinero(ganUnidad, factor)), claseSigno(ganUnidad)) : ''}
+        ${fila('tendencia', 'Ganancia de toda la compra', formatearDinero(multiplicarDinero(ganUnidad, unidades)), claseSigno(ganUnidad))}
+        ${fila('panorama', 'Margen sobre costo', `${margen.toFixed(1)} %`, claseSigno(ganUnidad))}` : html`<p class="t-pequeno t-tenue">Pon un precio de venta para ver la ganancia.</p>`}
+    </div>`.texto;
+}
+
+// Actualiza los cálculos sin redibujar el formulario (para no perder el foco).
 function actualizarCalculoEntrada() {
   const cont = $('#entrada-producto', entrada.el);
   const unidad = unidadBaseEntrada();
   const unidades = unidadesTotalesEntrada();
-  const total = totalPagadoEntrada();
-  const costoUnidad = unidades > 0 ? precioUnitario(total, unidades) : 0;
-  const precio = precioVentaEntrada();
-  const ganUnidad = restarDinero(precio, costoUnidad);
-  const factor = factorEntrada();
-  const t = $('.entrada-total-unidades', cont); if (t) t.textContent = `= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}`;
-  const inTotal = $('#entrada-total', cont); if (inTotal && document.activeElement !== inTotal) { if (entrada.totalEditado) inTotal.value = valorCampoDinero(total); else inTotal.placeholder = valorCampoDinero(total); }
-  const inCosto = $('#entrada-costo', cont); if (inCosto && document.activeElement !== inCosto) inCosto.value = valorCampoDinero(costoEmpaqueEntrada(), 5);
-  const calc = $('#entrada-calculo', cont);
-  if (calc) calc.innerHTML = html`<span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
-    ${precio > 0 ? html`<span>Ganancia por ${unidad}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por empaque: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong class="${claseSigno(ganUnidad)}">${margenSobreCosto(ganUnidad, costoUnidad).toFixed(1)}%</strong></span>` : ''}`.texto;
-  const b = $('[data-accion="guardar-entrada"]', cont); if (b) b.lastChild.textContent = `Guardar entrada · ${formatearDinero(total)}`;
+  const fc = factorCompra();
+  const t = $('.entrada-total-unidades', cont); if (t) t.textContent = `= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(entrada.empaque || unidad, entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}`;
+  const r = $('#entrada-resumen', cont); if (r) r.innerHTML = resumenEntradaHTML();
+  pintarIconos(r || cont);
+  const b = $('[data-accion="guardar-entrada"]', cont); if (b) b.lastChild.textContent = `Guardar entrada · ${formatearDinero(totalPagadoEntrada())}`;
 }
 
 // Valor nuevo en un campo delicado: se pide confirmar; si no, se borra para corregirlo.
@@ -484,8 +506,9 @@ function lineaActualEntrada() {
       niveles.push({ nombre: entrada.subEmpaque || 'empaque', unidades: entrada.porSub, nivelInferior: unidad });
     } else niveles.push({ nombre: entrada.empaque, unidades: factor, nivelInferior: unidad });
   }
+  const fc = factorCompra();
   const linea = {
-    cantEmpaques: entrada.cantEmp, nombreEmpaque: factor > 1 ? entrada.empaque : unidad, unidPorEmpaque: factor, niveles,
+    cantEmpaques: entrada.cantEmp, nombreEmpaque: fc > 1 ? entrada.empaque : unidad, unidPorEmpaque: fc, niveles,
     totalPagado: totalPagadoEntrada(), bonif: entrada.bonif, variante: entrada.variante,
     nuevoPrecio: entrada.precioNuevo !== null ? entrada.precioNuevo : undefined
   };
@@ -496,7 +519,7 @@ function lineaActualEntrada() {
       categoria: n.categoria, umbralMin: n.umbralMin, umbralMax: n.umbralMax, decimales: n.decimales, precio: n.precio || 0 };
   }
   linea._importante = cambioImportanteEntrada();
-  linea._descripcion = `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(factor > 1 ? entrada.empaque : unidad, entrada.cantEmp)}${factor > 1 ? ` de ${formatearNumero(factor)}` : ''} = ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}`;
+  linea._descripcion = `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreCompra(), entrada.cantEmp)}${fc > 1 ? ` de ${formatearNumero(fc)}` : ''} = ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}`;
   linea._nombre = entrada.producto ? nombreProducto(entrada.producto, { conVariante: false }) : [entrada.nuevo.marca, entrada.nuevo.linea, entrada.nuevo.presentacion, entrada.nuevo.volumen].filter(Boolean).join(' ');
   return linea;
 }
@@ -543,12 +566,13 @@ const accionesEntrada = {
     pintarProductoEntrada();
     setTimeout(() => { const c = $('#entrada-empaque', entrada.el); if (c && entrada.conNivel) c.focus(); }, 50);
   },
+  'compra-por': (b) => { entrada.porUnidad = b.dataset.por === 'unidad'; entrada.costoEditado = false; pintarProductoEntrada(); },
   'elegir-empaque': (b) => {
     const o = empaquesRegistrados(entrada.producto).find(x => x.clave === b.dataset.clave);
     if (o) { aplicarEmpaque(o); pintarProductoEntrada(); }
   },
   'modo-editor': (b) => { entrada.editor = b.checked; if (!b.checked) { const ops = empaquesRegistrados(entrada.producto); if (!ops.some(o => o.clave === claveEmpaqueEntrada())) aplicarEmpaque(ops[0]); entrada.precioNuevo = null; } pintarProductoEntrada(); },
-  'costo-cambio': (b) => { entrada.costoCambio = b.checked; if (!b.checked) { entrada.totalEditado = false; entrada.costoEditado = false; } pintarProductoEntrada(); if (b.checked) setTimeout(() => { const t = $('#entrada-total', entrada.el); if (t) t.focus(); }, 50); },
+  'costo-cambio': (b) => { entrada.costoCambio = b.checked; if (!b.checked) { entrada.totalEditado = false; entrada.costoEditado = false; } pintarProductoEntrada(); if (b.checked) setTimeout(() => { const t = $('#entrada-costo', entrada.el); if (t) t.focus(); }, 50); },
   'sabor-entrada': (b) => { entrada.variante = normalizarIdentidad(entrada.variante) === normalizarIdentidad(b.dataset.sabor) ? '' : b.dataset.sabor; pintarProductoEntrada(); },
   'presentaciones-entrada': () => editarPresentaciones(entrada.producto, () => pintarProductoEntrada()),
   'agregar-entrada': () => {
