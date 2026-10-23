@@ -28,7 +28,7 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .registro .dato strong { color: var(--texto); }
 .registro .dato strong.t-exito { color: var(--exito); } .registro .dato strong.t-peligro { color: var(--peligro); }
 /* Mismo espacio entre todas las tarjetas del registro (también Cliente, resumen y botones) */
-#venta-producto, #venta-carrito, #entrada-producto, #entrada-carrito { display: grid; gap: var(--e-3); }
+#venta-producto, #venta-carrito, #entrada-producto, #entrada-carrito { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-3); }
 #venta-producto:empty, #venta-carrito:empty, #entrada-carrito:empty, #entrada-resumen:empty { display: none; }
 .registro .tarjeta + .tarjeta { margin-top: 0; }
 #venta-cliente { margin: 0; }
