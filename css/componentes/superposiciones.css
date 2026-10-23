@@ -9,8 +9,9 @@
   width: min(20rem, 86vw); display: flex; flex-direction: column;
   background: var(--fondo); box-shadow: var(--sombra-3);
   padding: calc(env(safe-area-inset-top) + var(--e-3)) var(--e-3) calc(env(safe-area-inset-bottom) + var(--e-3));
-  transform: translateX(-105%); transition: transform var(--dur-lenta) var(--curva); overflow-y: auto;
+  transform: translateX(-105%); transition: transform var(--dur-lenta) var(--curva); overflow-y: auto; scrollbar-width: none;
 }
+.panel-lateral::-webkit-scrollbar { display: none; }
 .panel-lateral.abierto { transform: translateX(0); }
 .panel-lateral .marca { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-2) var(--e-4); }
 .panel-lateral .marca img { width: 2.25rem; height: 2.25rem; border-radius: var(--r-xs); }
@@ -89,8 +90,8 @@
 
 /* Transición al cambiar de modo (Bodega / Tienda / Pro) */
 .transicion-modo {
-  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; pointer-events: none;
-  background: color-mix(in srgb, var(--fondo) 90%, transparent); opacity: 0; transition: opacity var(--dur-media) var(--curva);
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; pointer-events: auto; cursor: wait;
+  background: color-mix(in srgb, var(--fondo) 97%, transparent); opacity: 0; transition: opacity var(--dur-media) var(--curva);
 }
 .transicion-modo.visible { opacity: 1; }
 .transicion-modo .contenido-transicion { display: grid; justify-items: center; gap: var(--e-2); text-align: center; color: var(--primario); transform: translateY(8px) scale(0.96); transition: transform var(--dur-lenta) var(--curva); }
@@ -137,7 +138,7 @@ body.cambiando-modo .contenido { opacity: 0.35; }
 
 /* Selector de 3 posiciones (tema Día / Noche / Auto) */
 .selector-tres { position: relative; display: grid; grid-template-columns: repeat(3, 1.75rem); height: 1.75rem; padding: 2px; border-radius: var(--r-pildora); background: var(--superficie-3); border: 1px solid var(--borde); flex: none; }
-.selector-tres .ranura { position: relative; z-index: 1; display: grid; place-items: center; padding-left: 3px; color: var(--texto-3); font-size: var(--t-xs); font-weight: var(--peso-titulo); transition: color var(--dur-media) var(--curva); }
+.selector-tres .ranura { position: relative; z-index: 1; display: grid; place-items: center; color: var(--texto-3); font-size: var(--t-xs); font-weight: var(--peso-titulo); transition: color var(--dur-media) var(--curva); }
 .selector-tres .perilla { position: absolute; top: 2px; left: 2px; width: 1.75rem; height: calc(100% - 4px); border-radius: var(--r-pildora); background: var(--activo-fondo); box-shadow: var(--sombra-1); transition: transform var(--dur-media) var(--curva); }
 [data-posicion="oscuro"] .selector-tres .perilla { transform: translateX(1.75rem); }
 [data-posicion="sistema"] .selector-tres .perilla { transform: translateX(3.5rem); }
@@ -147,3 +148,4 @@ body.cambiando-modo .contenido { opacity: 0.35; }
 html { scrollbar-gutter: stable; }
 html.sin-desplazar { overflow: hidden; }
 .separador-panel { border: 0; border-top: 1px solid var(--borde); margin: var(--e-1) var(--e-3); }
+.selector-tres .ranura:nth-child(1), .selector-tres .ranura:nth-child(2) { padding-left: 6px; }

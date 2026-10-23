@@ -117,7 +117,7 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
       const campos = () => dos
         ? html`<div class="rejilla-campos"><div class="campo"><label for="f-inicio">Desde</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div>
             <div class="campo"><label for="f-fin">Hasta</label><div class="control"><input type="date" id="f-fin" value="${estado.fin}"></div></div></div>`
-        : html`<div class="campo"><label for="f-inicio">Fecha</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div>`;
+        : html`<div class="rejilla-campos"><div class="campo"><label for="f-inicio">Fecha</label><div class="control"><input type="date" id="f-inicio" value="${estado.inicio}"></div></div><div></div></div>`;
       const control = abrirHoja({
         titulo: 'Período',
         contenido: html`<div class="fila-chips envolver" style="flex-wrap:wrap">${PRESETS_PERIODO.filter(p => p.valor !== 'PERSONALIZADO').map(p => html`<button type="button" class="chip" data-preset="${p.valor}" aria-pressed="${String(p.valor === estado.preset)}">${p.etiqueta}</button>`)}</div>

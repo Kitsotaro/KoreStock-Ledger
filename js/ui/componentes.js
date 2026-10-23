@@ -68,7 +68,7 @@ function teclaDialogo(e) {
 }
 
 function mostrarDialogo({ titulo = 'Aviso', mensaje = '', contenido = null, textoConfirmar = 'Entendido', textoCancelar = null,
-  onConfirmar = null, onCancelar = null, peligro = false, clase = '', alMontar = null }) {
+  onConfirmar = null, onCancelar = null, peligro = false, aviso = false, clase = '', alMontar = null }) {
   cerrarDialogo();
   const fondo = document.createElement('div');
   fondo.className = 'dialogo-fondo';
@@ -78,7 +78,7 @@ function mostrarDialogo({ titulo = 'Aviso', mensaje = '', contenido = null, text
       <div class="dialogo-contenido">${contenido ? seguro(contenido.texto || contenido) : ''}</div>
       <div class="acciones">
         ${textoCancelar ? html`<button type="button" class="boton boton-secundario" data-rol="cancelar">${textoCancelar}</button>` : ''}
-        <button type="button" class="boton ${peligro ? 'boton-peligro' : 'boton-primario'}" data-rol="confirmar">${textoConfirmar}</button>
+        <button type="button" class="boton ${peligro ? 'boton-peligro' : aviso ? 'boton-aviso' : 'boton-primario'}" data-rol="confirmar">${textoConfirmar}</button>
       </div></div>`.texto;
   document.body.appendChild(fondo);
   dialogoActual = fondo;

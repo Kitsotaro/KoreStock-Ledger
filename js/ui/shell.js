@@ -188,10 +188,10 @@ const Shell = {
     document.body.classList.add('cambiando-modo');
     document.documentElement.classList.add('sin-desplazar'); // la capa tapa todo, también la barra de desplazamiento
     requestAnimationFrame(() => capa.classList.add('visible'));
-    // 3 s en pantalla para poder leer qué incluye el modo (Kitso, 2026-10-23).
+    // 2 s en pantalla para leer qué incluye el modo; bloquea toques mientras cambia (Kitso, 2026-10-23).
     setTimeout(aplicar, 220);
-    setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 3000);
-    setTimeout(() => { capa.remove(); document.documentElement.classList.remove('sin-desplazar'); }, 3400);
+    setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 2000);
+    setTimeout(() => { capa.remove(); document.documentElement.classList.remove('sin-desplazar'); }, 2350);
   },
   elegirModo(alElegir) {
     const actual = this.modo;

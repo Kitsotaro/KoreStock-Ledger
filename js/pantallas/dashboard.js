@@ -45,7 +45,6 @@ registrarPantalla('dashboard', {
 });
 
 function pintarDashboard() {
-  if (Shell.modo === 'bodega' && estadoDashboard.vista === 'RESUMEN') { /* Bodega: cifras sin tendencia ni rankings */ }
   $$('[data-accion="vista"]', dashUI.el).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.valor === estadoDashboard.vista)));
   if (estadoDashboard.vista === 'RESUMEN') pintarResumenDashboard();
   else pintarMovimientosDashboard();
@@ -72,7 +71,7 @@ function pintarResumenDashboard() {
   // Ganancia: por defecto la guardada (último costo); el chip «Costo promedio» la cambia.
   const ganancia = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, est.inicio, est.fin, filtro).utilidad : r.utilidad;
   const gananciaAnt = est.verCostoPromedio ? calcularUtilidadCostoPromedio(movs, ant.inicio, ant.fin, filtro).utilidad : ra.utilidad;
-  const bodega = Shell.modo === 'bodega';
+  const bodega = false; // Antes Bodega ocultaba tendencia y rankings; ahora se ve todo en los tres modos (2026-10-23).
   const ranking = (claveDe, nombreDe, conUltimo) => rankingProductos(movs, est.inicio, est.fin, claveDe, filtro).slice(0, 5)
     .map(x => html`<li class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreDe(x.clave)}</div>
       <div class="sub">${formatearNumero(x.unidades)} ${pluralizar(x.unidades, 'unidad', 'unidades')}${conUltimo ? html` · último pedido ${x.ultimo === obtenerFechaLocal() ? 'hoy' : `hace ${diasEntre(x.ultimo, obtenerFechaLocal())} ${pluralizar(diasEntre(x.ultimo, obtenerFechaLocal()), 'día')}`}` : ''}</div></div>

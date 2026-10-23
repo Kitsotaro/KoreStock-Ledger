@@ -77,7 +77,6 @@ registrarPantalla('entrada', {
 // Desde Stock («Agregar», «+ Entrada»): abre Entrada con el producto elegido (§12.1).
 function abrirEntradaCon(idProducto) { Shell.ir('entrada', { idProducto }); }
 
-const enModoBodega = () => Shell.modo === 'bodega';
 
 function refrescarEntrada() {
   if (!entrada.el) return;
@@ -88,7 +87,7 @@ function refrescarEntrada() {
 }
 
 function reiniciarCantidades(unidadBase) {
-  entrada.cantEmp = 1; entrada.empaque = unidadBase || ''; entrada.unidades = 1; entrada.conNivel = false;
+  entrada.cantEmp = 0; entrada.empaque = unidadBase || ''; entrada.unidades = 1; entrada.conNivel = false;
   entrada.subEmpaque = ''; entrada.porSub = 1; entrada.costoEmp = 0; entrada.costoEditado = false; entrada.total = 0; entrada.totalEditado = false;
   entrada.bonif = 0; entrada.precioNuevo = null; entrada.variante = ''; entrada.editor = false; entrada.costoCambio = false;
 }
@@ -97,7 +96,7 @@ function elegirProductoEntrada(p) {
   entrada.producto = p; entrada.nuevo = null;
   reiniciarCantidades(p.unidadBase);
   // Sugerencia: el empaque registrado usado más recientemente con este producto.
-  const ops = enModoBodega() ? [] : empaquesRegistrados(p);
+  const ops = empaquesRegistrados(p);
   if (ops.length > 1) aplicarEmpaque(ops[1]);
   pintarProductoEntrada();
   setTimeout(() => { const c = $('#entrada-cant', entrada.el); if (c) { c.focus(); c.select(); } }, 50);
@@ -119,7 +118,6 @@ function unidadBaseEntrada() {
   return (entrada.nuevo && entrada.nuevo.unidadBase.trim().toLowerCase()) || 'unidad';
 }
 function factorEntrada() {
-  if (enModoBodega()) return 1;
   if (normalizarTexto(entrada.empaque) === normalizarTexto(unidadBaseEntrada()) || !entrada.empaque.trim()) return 1;
   return entrada.conNivel ? redondearCantidad(entrada.unidades * entrada.porSub) : entrada.unidades;
 }
@@ -133,6 +131,11 @@ function costoEmpaqueEntrada() {
 function totalPagadoEntrada() {
   if (entrada.totalEditado) return redondearCentavo(entrada.total);
   return redondearCentavo(multiplicarDinero(costoEmpaqueEntrada(), entrada.cantEmp));
+}
+// Cambio importante (botón «Guardar» en naranja): producto nuevo, costo distinto o empaque nuevo.
+function cambioImportanteEntrada() {
+  const actual = !!entrada.nuevo || entrada.costoCambio || (!!entrada.producto && !empaqueRegistradoEntrada()) || (entrada.precioNuevo !== null && entrada.producto && entrada.precioNuevo !== entrada.producto.precio);
+  return actual || entrada.carrito.some(l => l._importante);
 }
 // Verde si gana, rojo si pierde (solo la cifra, no el texto).
 const claseSigno = (v) => (v > 0 ? 't-exito' : v < 0 ? 't-peligro' : '');
@@ -173,7 +176,6 @@ function empaqueRegistradoEntrada() {
 
 // Reglas del empaque escrito (modo editor y producto nuevo). Devuelve un texto de error o ''.
 function validarEmpaqueEntrada() {
-  if (enModoBodega()) return '';
   const unidad = unidadBaseEntrada();
   const factor = factorEntrada();
   const nombre = entrada.empaque.trim();
@@ -210,6 +212,13 @@ const valoresUnicos = (campo, filtro) => {
   Almacen.productosVisibles().filter(filtro || (() => true)).forEach(p => { if (p[campo]) m.set(normalizarIdentidad(p[campo]), p[campo]); });
   return [...m.values()].sort((a, b) => a.localeCompare(b, 'es'));
 };
+// Contenidos: orden alfabético natural («30 g» antes que «355 ml»); los que son
+// solo un número (sin magnitud) van al final para premiar escribir la unidad.
+const ordenarContenidos = (lista) => lista.slice().sort((a, b) => {
+  const na = /^\s*[\d.,]+\s*$/.test(a), nb = /^\s*[\d.,]+\s*$/.test(b);
+  if (na !== nb) return na ? 1 : -1;
+  return a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+});
 const esValorNuevo = (campo, valor) => valor && !valoresUnicos(campo).some(v => normalizarIdentidad(v) === normalizarIdentidad(valor));
 
 function formularioNuevo() {
@@ -253,7 +262,7 @@ function formularioNuevo() {
       ${datalist('lista-unidades', valoresUnicos('unidadBase'))}
       ${datalist('lista-categorias', Almacen.categorias())}
       ${datalist('lista-empaques', valoresUnicos('tipoEmpaque'))}
-      ${datalist('lista-volumenes', valoresUnicos('volumen'))}
+      ${datalist('lista-volumenes', ordenarContenidos(valoresUnicos('volumen')))}
     </div>`;
 }
 
@@ -286,10 +295,11 @@ function pintarProductoEntradaSinFoco() {
   const nombreEmp = entrada.empaque.trim() || unidad;
   const cambiaPrecio = p && entrada.precioNuevo !== null && entrada.precioNuevo !== p.precio;
   const variantes = p ? Almacen.variantesDe(p.idProducto) : [];
-  const opciones = p && !enModoBodega() ? empaquesRegistrados(p) : [];
+  const opciones = p ? empaquesRegistrados(p) : [];
   const claveActual = claveEmpaqueEntrada();
   const listaEmpaques = [unidad].concat(Almacen.hojas.EQUIVALENCIAS.map(e => e.nombre), Almacen.productosVisibles().map(x => x.tipoEmpaque)).filter((v, i, a) => v && a.findIndex(x => normalizarTexto(x) === normalizarTexto(v)) === i);
-  const error = editor ? validarEmpaqueEntrada() : '';
+  const error = validarEmpaqueEntrada();
+  const empaqueNuevo = !!p && !empaqueRegistradoEntrada();
 
   // Frase libre (modo editor o producto nuevo).
   const nota = (texto) => html`<span class="nota-campo">${texto}</span>`;
@@ -297,9 +307,7 @@ function pintarProductoEntradaSinFoco() {
       <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Cantidad comprada">
         <span class="frase-palabra">Compré</span>
         <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Unidades')}</span>
-        ${enModoBodega()
-          ? html`<span class="frase-palabra t-fuerte">${pluralUnidad(unidad, entrada.cantEmp)}</span>`
-          : html`<span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${nombreEmp}" list="lista-empaques-entrada" aria-label="Tipo de empaque" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
+        ${html`<span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${nombreEmp}" list="lista-empaques-entrada" aria-label="Tipo de empaque" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
             ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
               ${entrada.conNivel
                 ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
@@ -308,20 +316,14 @@ function pintarProductoEntradaSinFoco() {
                 : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}`}
         ${datalist('lista-empaques-entrada', listaEmpaques)}
       </div>
-      ${!enModoBodega() && !empaqueEsUnidad ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Quitar el empaque de adentro` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
+      ${!empaqueEsUnidad ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Quitar el empaque de adentro` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
 
-  // Modo rápido: solo los empaques registrados.
-  const fraseRapida = html`
-      <div class="frase" aria-label="Cantidad comprada">
-        <span>Compré</span>
-        <span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>
-        <span class="t-fuerte">${opciones.length <= 1 || claveActual === 'u' ? pluralUnidad(unidad, entrada.cantEmp) : pluralUnidad(nombreEmp, entrada.cantEmp)}</span>
-      </div>
-      ${opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaque">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : ''}
-      ${opciones.length <= 1 && !enModoBodega() ? html`<p class="t-pequeno t-secundario">Este producto aún no tiene empaques registrados. Para comprar por caja, fardo u otro empaque, activa «Modo editor».</p>` : ''}`;
+  // Empaques ya registrados del producto: accesos rápidos bajo la frase.
+  const accesosEmpaque = opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaques registrados">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : '';
 
   // Costo: texto en modo rápido (último costo), campos en modo editor o si cambió.
-  const costoEditable = editor || entrada.costoCambio;
+  // Un empaque nuevo exige escribir el total exacto: el campo se muestra solo.
+  const costoEditable = editor || entrada.costoCambio || empaqueNuevo;
   const bloqueCosto = costoEditable ? html`
       <div class="rejilla-campos">
         <div class="campo"><label for="entrada-costo">Costo por ${nombreEmp}</label>
@@ -342,13 +344,14 @@ function pintarProductoEntradaSinFoco() {
     </div>` : seguro(formularioNuevo().texto)}
 
     <div class="tarjeta columna">
-      ${editor ? fraseLibre : fraseRapida}
+      ${fraseLibre}
+      ${accesosEmpaque}
       <p class="t-grande t-fuerte entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}</p>
-      ${p && editor && !enModoBodega() && !empaqueRegistradoEntrada() ? html`<span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Empaque nuevo para este producto: al guardar queda registrado con este tamaño.</span>` : ''}
+      ${empaqueNuevo ? html`<span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Empaque nuevo para este producto: al guardar queda registrado con este tamaño.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
 
       ${bloqueCosto}
-      ${p && !editor ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
+      ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
       <div class="calculo" id="entrada-calculo">
         <span>≈ <strong>${formatearDinero(costoUnidad, { detalle: true })}</strong> por ${unidad}</span>
         ${precio > 0 ? html`<span>Ganancia por ${unidad}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(ganUnidad, { detalle: true })}</strong>${factor > 1 ? html` · por ${nombreEmp}: <strong class="${claseSigno(ganUnidad)}">${formatearDinero(multiplicarDinero(ganUnidad, factor))}</strong>` : ''} · Margen sobre costo <strong class="${claseSigno(ganUnidad)}">${margen.toFixed(1)}%</strong></span>` : html`<span class="t-tenue">Pon un precio de venta para ver la ganancia.</span>`}
@@ -374,7 +377,7 @@ function pintarProductoEntradaSinFoco() {
         </div></details>` : ''}
       <button type="button" class="boton boton-secundario" data-accion="agregar-entrada">${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>
     </div>
-    ${entrada.carrito.length ? '' : html`<button type="button" class="boton boton-entrada boton-grande boton-bloque" data-accion="guardar-entrada">${seguro(icono('entrada'))}<span>Guardar entrada · ${formatearDinero(total)}</span></button>`}`.texto;
+    ${entrada.carrito.length ? '' : html`<button type="button" class="boton boton-entrada boton-grande boton-bloque ${cambioImportanteEntrada() ? 'boton-aviso' : ''}" data-accion="guardar-entrada">${seguro(icono('entrada'))}<span>Guardar entrada · ${formatearDinero(total)}</span></button>`}`.texto;
   pintarIconos(cont);
   conectarCamposEntrada(cont);
 }
@@ -396,7 +399,11 @@ function conectarCamposEntrada(cont) {
   num('#entrada-precio', 2, (i) => { entrada.precioNuevo = leerDineroCampo(i); if (entrada.nuevo) entrada.nuevo.precio = entrada.precioNuevo; });
   num('#entrada-bonif', decCant, (i) => { entrada.bonif = leerCantidad(i); });
   const texto = (id, fn, repintar) => { const i = $(id, cont); if (!i) return; i.addEventListener('input', () => fn(i.value)); i.addEventListener('change', () => { fn(i.value); if (repintar) repintarEntradaDespues(); }); };
-  texto('#entrada-empaque', (v) => { entrada.empaque = v.trim(); }, true);
+  texto('#entrada-empaque', (v) => {
+    entrada.empaque = v.trim();
+    const o = entrada.producto && empaquesRegistrados(entrada.producto).find(x => x.clave !== 'u' && normalizarTexto(x.empaque) === normalizarTexto(v));
+    if (o && entrada.empaque) aplicarEmpaque(o);
+  }, true);
   texto('#entrada-sub', (v) => { entrada.subEmpaque = v.trim(); });
   texto('#entrada-sabor', (v) => { entrada.variante = v.trim(); });
   if (entrada.nuevo) {
@@ -488,13 +495,14 @@ function lineaActualEntrada() {
     linea.nuevo = { marca: n.marca, linea: n.linea, presentacion: n.presentacion, volumen: n.volumen, unidadBase: unidad, tipoEmpaque: n.tipoEmpaque,
       categoria: n.categoria, umbralMin: n.umbralMin, umbralMax: n.umbralMax, decimales: n.decimales, precio: n.precio || 0 };
   }
+  linea._importante = cambioImportanteEntrada();
   linea._descripcion = `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(factor > 1 ? entrada.empaque : unidad, entrada.cantEmp)}${factor > 1 ? ` de ${formatearNumero(factor)}` : ''} = ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}`;
   linea._nombre = entrada.producto ? nombreProducto(entrada.producto, { conVariante: false }) : [entrada.nuevo.marca, entrada.nuevo.linea, entrada.nuevo.presentacion, entrada.nuevo.volumen].filter(Boolean).join(' ');
   return linea;
 }
 
 function validarNuevo() {
-  if (entrada.producto || entrada.nuevo) { const e = validarEmpaqueEntrada(); if (e && (entrada.editor || entrada.nuevo)) return e; }
+  if (entrada.producto || entrada.nuevo) { const e = validarEmpaqueEntrada(); if (e) return e; }
   const n = entrada.nuevo;
   if (!n) return '';
   if (!n.marca || !n.linea) return 'Escribe la marca y el producto.';
@@ -518,7 +526,7 @@ function pintarCarritoEntrada() {
           <span class="monto">${formatearDinero(l.totalPagado)}</span>
           <button type="button" class="boton boton-icono" data-accion="quitar-linea-entrada" data-i="${i}" aria-label="Quitar">${seguro(icono('cerrar', 'icono-sm'))}</button></li>`)}</ul>
     </div>
-    <button type="button" class="boton boton-entrada boton-grande boton-bloque" data-accion="guardar-entrada">${seguro(icono('entrada'))}<span>Guardar entrada · ${formatearDinero(total)}</span></button>`.texto;
+    <button type="button" class="boton boton-entrada boton-grande boton-bloque ${cambioImportanteEntrada() ? 'boton-aviso' : ''}" data-accion="guardar-entrada">${seguro(icono('entrada'))}<span>Guardar entrada · ${formatearDinero(total)}</span></button>`.texto;
 }
 
 const accionesEntrada = {
@@ -564,13 +572,19 @@ async function guardarEntradaUI(boton) {
   const lineas = entrada.carrito.concat(actual ? [actual] : []);
   if (!lineas.length) { avisar('Indica cuánto compraste.'); return; }
   // Con varios productos (o algún costo $0) se confirma antes: el botón se puede tocar por error.
-  const enCero = lineas.filter(l => !(l.totalPagado > 0));
-  if (lineas.length > 1 || enCero.length) {
+  // Dos casos que merecen confirmación: solo bonificadas (sin compra) o compra con costo $0.
+  const soloBonif = lineas.filter(l => !(l.cantEmpaques * l.unidPorEmpaque > 0) && l.bonif > 0);
+  const enCero = lineas.filter(l => l.cantEmpaques * l.unidPorEmpaque > 0 && !(l.totalPagado > 0));
+  const importante = lineas.some(l => l._importante);
+  if (lineas.length > 1 || enCero.length || soloBonif.length || importante) {
     const totalTodo = sumarDinero(lineas.map(l => l.totalPagado));
+    let nota = '';
+    if (soloBonif.length) nota += `\n\nSolo estás ingresando unidades bonificadas (gratis) de ${soloBonif.map(l => l._nombre).join(', ')}, sin compra. Si es correcto, guarda; si también compraste, escribe la cantidad comprada antes de guardar.`;
+    if (enCero.length) nota += `\n\nOjo: ${enCero.length === 1 ? 'un producto va' : `${enCero.length} productos van`} con costo $0.00. Si fue regalo, usa «Bonificadas»; si no, revisa el total pagado.`;
     const ok = await confirmar({
       titulo: lineas.length > 1 ? `¿Guardar la entrada de ${lineas.length} productos?` : '¿Guardar esta entrada?',
-      mensaje: `${lineas.map(l => `${l._nombre}: ${l._descripcion} · ${formatearDinero(l.totalPagado)}`).join('\n')}\n\nTotal: ${formatearDinero(totalTodo)}${enCero.length ? `\n\nOjo: ${enCero.length === 1 ? 'un producto va' : `${enCero.length} productos van`} con costo $0.00. Si fue regalo, usa «Bonificadas»; si no, revisa el total pagado.` : ''}`,
-      textoConfirmar: 'Guardar', peligro: enCero.length > 0
+      mensaje: `${lineas.map(l => `${l._nombre}: ${l._descripcion}${l.bonif ? ` + ${formatearNumero(l.bonif)} gratis` : ''} · ${formatearDinero(l.totalPagado)}`).join('\n')}\n\nTotal: ${formatearDinero(totalTodo)}${nota}`,
+      textoConfirmar: 'Guardar', peligro: enCero.length > 0, aviso: !enCero.length && (soloBonif.length > 0 || importante)
     });
     if (!ok) return;
   }
