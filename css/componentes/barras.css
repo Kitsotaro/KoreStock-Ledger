@@ -36,27 +36,25 @@
 
 /* Espacio para que el contenido no quede debajo de la barra inferior */
 .contenido { padding: var(--e-4) var(--e-4) calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-6) + 2rem); max-width: var(--ancho-max); margin: 0 auto; }
-body[data-pantalla="dashboard"] .contenido, body[data-pantalla="panorama"] .contenido, body[data-pantalla="gastos"] .contenido, body[data-pantalla="combustible"] .contenido { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 7rem); }
 
-/* Filtros abajo, justo encima de la barra (D25, D40) */
-.filtros-abajo {
-  position: fixed; left: 0; right: 0; z-index: calc(var(--z-barra) - 1);
-  /* Encima de la isla y del «+» que sobresale */
-  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-2) + 1.9rem);
-  padding: var(--e-2) var(--e-3); background: color-mix(in srgb, var(--fondo) 92%, transparent);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--borde);
-}
-.filtros-abajo .fila-chips { max-width: var(--ancho-max); margin: 0 auto; }
+/* Filtros: botón flotante en la esquina inferior derecha, sobre la isla (fase UI) */
+.filtros-flotantes { position: fixed; right: var(--e-4); z-index: calc(var(--z-barra) + 1); bottom: calc(var(--e-2) + env(safe-area-inset-bottom) + var(--alto-barra-inferior) + var(--e-3)); }
+.boton-filtros { position: relative; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--borde); background: var(--superficie-elevada); color: var(--texto); box-shadow: var(--sombra-2); cursor: pointer; }
+.filtros-flotantes.abierto .boton-filtros { background: var(--activo-fondo); color: var(--activo-texto); border-color: transparent; }
+.contador-filtros { position: absolute; top: -4px; right: -4px; min-width: 1.15rem; height: 1.15rem; padding: 0 4px; border-radius: var(--r-pildora); background: var(--aviso); color: #fff; font-size: 0.6875rem; font-weight: var(--peso-titulo); display: grid; place-items: center; }
+.panel-filtros { position: absolute; right: 0; bottom: calc(100% + var(--e-2)); width: min(20rem, calc(100vw - 2 * var(--e-4))); padding: var(--e-3); border-radius: var(--r-lg); border: 1px solid var(--borde); background: var(--superficie-elevada); box-shadow: var(--sombra-3); }
+.panel-filtros-cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--e-2); }
+.panel-filtros .fila-chips { flex-wrap: wrap; overflow: visible; }
 
 @media (min-width: 900px) {
   .barra-inferior { left: 50%; right: auto; transform: translateX(-50%); width: min(40rem, 100%); bottom: var(--e-3); border-radius: var(--r-xl); border: 1px solid var(--borde); height: var(--alto-barra-inferior); padding-bottom: var(--e-1); }
-  .filtros-abajo { bottom: calc(var(--alto-barra-inferior) + var(--e-3) + 1.9rem); background: transparent; border: 0; backdrop-filter: none; }
+  .filtros-flotantes { right: calc(50% - 18rem - 3.5rem); bottom: var(--e-3); }
 }
 
 /* Con 4 pestañas (modo Pro) se compacta para que las etiquetas no choquen. */
 .pestana { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Durante la migración no hay a dónde navegar. */
-body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"] .fab-registro { display: none; }
+body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"] .fab-registro, body[data-pantalla="migracion"] .base-isla { display: none; }
 /* Cinta del período en la barra superior: siempre visible donde hay filtro de fechas */
 .cinta-periodo {
   display: inline-flex; align-items: center; gap: var(--e-1); flex: none; max-width: 52%;
@@ -74,13 +72,16 @@ body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"]
 .barra-inferior.isla {
   left: var(--e-3); right: var(--e-3); bottom: calc(var(--e-2) + env(safe-area-inset-bottom));
   height: var(--alto-barra-inferior); padding: 0 var(--e-2);
-  border: 0; border-radius: var(--r-xl); box-shadow: var(--sombra-2);
+  border: 0; border-radius: var(--r-xl); box-shadow: none;
   background: transparent; isolation: isolate;
+  /* La sombra sigue la forma recortada (con muesca), no el rectángulo */
+  filter: drop-shadow(0 2px 3px rgb(16 24 40 / 0.08)) drop-shadow(0 8px 18px rgb(16 24 40 / 0.10));
 }
 .barra-inferior.isla::before {
   content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--superficie-elevada);
-  -webkit-mask: radial-gradient(circle 2.25rem at 50% -0.35rem, transparent 98%, #000 100%);
-          mask: radial-gradient(circle 2.25rem at 50% -0.35rem, transparent 98%, #000 100%);
+  /* Muesca: círculo un poco mayor que el «+» (deja un aire que lo separa) */
+  -webkit-mask: radial-gradient(circle 2.45rem at 50% 0.4rem, transparent 97%, #000 100%);
+          mask: radial-gradient(circle 2.45rem at 50% 0.4rem, transparent 97%, #000 100%);
 }
 .isla .pestana { position: relative; }
 .isla .hueco-fab { flex: 0 0 4.75rem; }
@@ -94,11 +95,12 @@ body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"]
 
 .fab-registro {
   position: fixed; left: 50%; z-index: calc(var(--z-barra) + 1); transform: translateX(-50%);
-  bottom: calc(var(--e-2) + env(safe-area-inset-bottom) + var(--alto-barra-inferior) - 1.75rem);
+  /* El centro del «+» queda a 0.4rem del borde superior de la isla, dentro de la muesca */
+  bottom: calc(var(--e-2) + env(safe-area-inset-bottom) + var(--alto-barra-inferior) - 2.15rem);
   display: grid; justify-items: center; pointer-events: none;
 }
 .fab {
-  pointer-events: auto; width: 3.5rem; height: 3.5rem; border-radius: 50%; border: 0; position: relative;
+  pointer-events: auto; width: 3.5rem; height: 3.5rem; margin-top: 0; border-radius: 50%; border: 0; position: relative;
   display: grid; place-items: center; cursor: pointer; color: var(--sobre-fab);
   background: var(--fab); box-shadow: var(--sombra-2);
   transition: background-color var(--dur-media) var(--curva), transform var(--dur-rapida) var(--curva);
@@ -127,5 +129,13 @@ body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"]
 
 @media (min-width: 900px) {
   .barra-inferior.isla { left: 50%; right: auto; width: min(36rem, 100%); transform: translateX(-50%); bottom: var(--e-3); }
-  .fab-registro { bottom: calc(var(--e-3) + var(--alto-barra-inferior) - 1.75rem); }
+  .fab-registro { bottom: calc(var(--e-3) + var(--alto-barra-inferior) - 2.15rem); }
 }
+
+/* Base sólida desde la línea de los íconos hasta el borde: el contenido no asoma alrededor de la isla */
+.base-isla {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: calc(var(--z-barra) - 1); pointer-events: none;
+  height: calc(var(--e-2) + env(safe-area-inset-bottom) + var(--alto-barra-inferior) * 0.55);
+  background: var(--fondo);
+}
+@media (min-width: 900px) { .base-isla { display: none; } }

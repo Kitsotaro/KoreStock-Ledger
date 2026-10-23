@@ -1,8 +1,8 @@
 // © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
-// FILTROS.JS — la fila de filtros de abajo, justo encima de la barra
-// inferior (D25, D40, §17.1). Una fila de chips que se desliza; cada chip
-// abre una hoja inferior. Los filtros se apilan y afectan a TODO lo de la
+// FILTROS.JS — filtros de cada pantalla (D25, D40, §17.1). Fase UI: un botón
+// flotante con contador en la esquina inferior derecha abre el panel de
+// chips; cada chip abre una hoja inferior. Los filtros se apilan y afectan a TODO lo de la
 // pantalla (cifras, gráficos y listas). No tocan los datos.
 //   Período (lista única, INV. 14) · Producto «Solo» o «Excluir» · Marca ·
 //   Categoría · Cliente · Sabor.
@@ -52,7 +52,7 @@ function actualizarCintaPeriodo() {
 
 // opciones: { contenedor, estado, usar: ['periodo','producto','marca','categoria','cliente','sabor'], alCambiar }
 function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
-  contenedor.className = 'filtros-abajo';
+  contenedor.className = 'filtros-flotantes';
   const textoPeriodo = () => {
     const p = PRESETS_PERIODO.find(x => x.valor === estado.preset);
     return p && estado.preset !== 'PERSONALIZADO' ? p.etiqueta : `${formatearFechaCorta(estado.inicio)} – ${formatearFechaCorta(estado.fin)}`;
@@ -61,6 +61,17 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
   // Compactos (como el explorador de Zeghi): inactivos solo muestran el ícono y
   // se despliegan con su texto al activarse; el período siempre lleva texto.
   const chip = (clave, texto, activo, iconoNombre) => html`<span class="chip-grupo"><button type="button" class="chip chip-compacto" data-filtro="${clave}" aria-pressed="${String(!!activo)}" aria-label="${texto}" title="${texto}">${seguro(icono(iconoNombre, 'icono-sm'))}<span class="etiqueta-chip">${texto}</span></button>${activo && clave !== 'periodo' ? html`<button type="button" class="chip-quitar" data-quitar="${clave}" aria-label="Quitar filtro">${seguro(icono('cerrar', 'icono-sm'))}</button>` : ''}</span>`;
+  // Fase UI: todos los filtros viven en un botón flotante (esquina inferior
+  // derecha) con su contador; al tocarlo se abre el panel con los chips.
+  contenedor.innerHTML = html`<button type="button" class="boton-filtros" data-abrir-filtros aria-expanded="false" aria-label="Filtros">${seguro(icono('filtros'))}<span class="contador-filtros" hidden></span></button>
+    <div class="panel-filtros" role="dialog" aria-label="Filtros" hidden>
+      <div class="panel-filtros-cabecera"><strong>Filtros</strong><button type="button" class="boton boton-texto boton-sm" data-filtro="limpiar">${seguro(icono('cerrar', 'icono-sm'))}Limpiar</button></div>
+      <div class="fila-chips envolver" data-chips></div>
+    </div>`.texto;
+  const boton = $('[data-abrir-filtros]', contenedor), panel = $('.panel-filtros', contenedor);
+  const abrirPanel = (si) => { panel.hidden = !si; boton.setAttribute('aria-expanded', String(si)); contenedor.classList.toggle('abierto', si); };
+  boton.addEventListener('click', () => abrirPanel(panel.hidden));
+  document.addEventListener('pointerdown', (e) => { if (!panel.hidden && !contenedor.contains(e.target) && !e.target.closest('.hoja-inferior, .velo')) abrirPanel(false); });
   const pintar = () => {
     const partes = [];
     if (usar.includes('periodo')) partes.push(chip('periodo', textoPeriodo(), true, 'calendario'));
@@ -69,9 +80,10 @@ function crearFiltrosAbajo({ contenedor, estado, usar, alCambiar }) {
     if (usar.includes('categoria') && Almacen.categorias().length) partes.push(chip('categoria', estado.categorias.size ? `${estado.categorias.size} ${pluralizar(estado.categorias.size, 'categoría')}` : 'Categoría', estado.categorias.size, 'organizacion'));
     if (usar.includes('cliente') && Almacen.hojas.CLIENTES.length) partes.push(chip('cliente', estado.clientes.size ? `${estado.clientes.size} ${pluralizar(estado.clientes.size, 'cliente')}` : 'Cliente', estado.clientes.size, 'persona'));
     if (usar.includes('sabor')) partes.push(chip('sabor', estado.sabor || 'Sabor', estado.sabor, 'sabor'));
-    const hayAlgo = estado.productos.size || estado.marcas.size || estado.categorias.size || estado.clientes.size || estado.sabor;
-    if (hayAlgo) partes.push(html`<button type="button" class="chip" data-filtro="limpiar">${seguro(icono('cerrar', 'icono-sm'))}Quitar filtros</button>`);
-    contenedor.innerHTML = `<div class="fila-chips">${partes.map(p => p.texto).join('')}</div>`;
+    const activos = [estado.productos.size, estado.marcas.size, estado.categorias.size, estado.clientes.size, estado.sabor ? 1 : 0].filter(Boolean).length;
+    $('[data-chips]', contenedor).innerHTML = partes.map(p => p.texto).join('');
+    const cont = $('.contador-filtros', contenedor); cont.hidden = !activos; cont.textContent = activos;
+    $('[data-filtro="limpiar"]', contenedor).hidden = !activos;
     if (Shell.actual === pantalla) actualizarCintaPeriodo();
   };
   const cambio = () => { pintar(); alCambiar(); };

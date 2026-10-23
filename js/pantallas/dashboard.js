@@ -53,11 +53,11 @@ function pintarDashboard() {
 }
 
 function comparacionHTML(actual, anterior, esDinero, neutral) {
-  if (!anterior && !actual) return html`<div class="comparacion igual">Sin movimientos</div>`;
-  if (!anterior) return html`<div class="comparacion sube">${seguro(icono('flecha-arriba', 'icono-sm'))}Nuevo en este período</div>`;
+  if (!anterior && !actual) return html`<div class="comparacion igual">Sin datos</div>`;
+  if (!anterior) return html`<div class="comparacion sube">${seguro(icono('flecha-arriba', 'icono-sm'))}Nuevo</div>`;
   const pct = ((actual - anterior) / Math.abs(anterior)) * 100;
   const clase = Math.abs(pct) < 0.5 ? 'igual' : pct > 0 ? 'sube' : 'baja';
-  return html`<div class="comparacion ${neutral ? 'igual' : clase}">${seguro(icono(clase === 'baja' ? 'flecha-abajo' : 'flecha-arriba', 'icono-sm'))}${Math.abs(pct).toFixed(0)}% vs. período anterior (${esDinero ? formatearDinero(anterior) : formatearNumero(anterior)})</div>`;
+  return html`<div class="comparacion ${neutral ? 'igual' : clase}" title="Período anterior: ${esDinero ? formatearDinero(anterior) : formatearNumero(anterior)}">${seguro(icono(clase === 'baja' ? 'flecha-abajo' : 'flecha-arriba', 'icono-sm'))}${Math.abs(pct).toFixed(0)}% vs. anterior</div>`;
 }
 
 function pintarResumenDashboard() {
@@ -81,10 +81,10 @@ function pintarResumenDashboard() {
   $('#dash-cuerpo', dashUI.el).innerHTML = html`
     ${notaHistoricosHTML(est.inicio)}
     <div class="cifras">
-      <div class="cifra-tarjeta"><div class="etiqueta">Ventas ${botonInfo('Ventas', 'Suma de lo que cobraste en las ventas del período (lo cobrado es el dato, aunque hayas hecho rebaja). No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'unidad vendida', 'unidades vendidas')}</div></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Ventas ${botonInfo('Ventas', 'Suma de lo que cobraste en las ventas del período (lo cobrado es el dato, aunque hayas hecho rebaja). No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'vendida', 'vendidas')}</div></div>
       <div class="cifra-tarjeta"><div class="etiqueta">Utilidad ${botonInfo('Utilidad', 'Lo que ganaste: lo cobrado menos lo que te costó cada producto (último costo de compra al momento de vender). Con la casilla de abajo ves también el cálculo con costo promedio. No incluye anuladas.')}</div><div class="valor ${r.utilidad < 0 ? 't-peligro' : ''}">${formatearDinero(r.utilidad)}</div>${comparacionHTML(r.utilidad, ra.utilidad, true)}
         ${est.verCostoPromedio ? html`<div class="t-mini t-secundario">Con costo promedio: <strong>${formatearDinero(cpp.utilidad)}</strong></div>` : ''}</div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Total invertido ${botonInfo('Total invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'unidad ingresada', 'unidades ingresadas')}</div></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Invertido ${botonInfo('Invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'ingresada', 'ingresadas')}</div></div>
     </div>
     <label class="casilla t-pequeno"><input type="checkbox" data-accion="ver-costo-promedio" ${est.verCostoPromedio ? 'checked' : ''}> Ver también la utilidad con costo promedio</label>
     ${bodega ? '' : html`
@@ -206,15 +206,24 @@ function pintarMovimientosDashboard() {
   const est = estadoDashboard;
   const grupos = gruposMovimientos();
   const cuerpo = $('#dash-cuerpo', dashUI.el);
+  // Fase UI: buscador y botón de ajustes en una fila; las acciones de alto
+  // nivel (corregir precio, anular lo filtrado, acciones recientes) quedan
+  // ocultas en ese panel, marcadas en rojo porque cambian el historial.
   cuerpo.innerHTML = html`
-    <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="dash-buscar" type="search" placeholder="Buscar folio, producto o cliente" value="${est.texto}" autocomplete="off"></div></div>
+    <div class="fila-busqueda">
+      <div class="buscador crece"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="dash-buscar" type="search" placeholder="Buscar folio, producto o cliente" value="${est.texto}" autocomplete="off"></div></div>
+      <button type="button" class="boton boton-icono boton-ajustes-criticos" data-accion="ajustes-movimientos" aria-expanded="${String(!!est.ajustesAbiertos)}" aria-label="Ajustes de movimientos">${seguro(icono('ajustes'))}</button>
+    </div>
+    <div class="ajustes-criticos" id="dash-ajustes" ${est.ajustesAbiertos ? '' : 'hidden'}>
+      <div class="ajustes-criticos-aviso">${seguro(icono('peligro', 'icono-sm'))}<span><strong>Ajustes de alto nivel.</strong> Cambian tu historial: revisa la vista previa antes de confirmar. Se pueden revertir durante ${DIAS_REVERSION} días.</span></div>
+      <div class="grupo-botones" data-solo-modo="tienda pro" id="dash-acciones-lote"></div>
+      <div id="dash-acciones-recientes"></div>
+    </div>
     <div class="fila-chips" role="group" aria-label="Tipo">
       ${[['TODO', 'Todo'], ['VENTA', 'Ventas'], ['ENTRADA', 'Entradas']].map(([v, t]) => html`<button type="button" class="chip" data-accion="tipo" data-valor="${v}" aria-pressed="${String(est.tipo === v)}">${t}</button>`)}
       <button type="button" class="chip" data-accion="solo-nuevos" aria-pressed="${String(est.soloNuevos)}">${seguro(icono('estrella', 'icono-sm'))}Productos nuevos</button>
     </div>
-    <div class="grupo-botones" data-solo-modo="tienda pro" id="dash-acciones-lote"></div>
-    <div id="dash-lista"></div>
-    <div id="dash-acciones-recientes"></div>`.texto;
+    <div id="dash-lista"></div>`.texto;
   const buscar = $('#dash-buscar', cuerpo);
   buscar.addEventListener('input', () => { est.texto = buscar.value; pintarListaMovimientos(); });
   if (typeof pintarBotonesLote === 'function') pintarBotonesLote($('#dash-acciones-lote', cuerpo));
@@ -247,6 +256,7 @@ async function anularConConfirmacion(folios, accion) {
 
 const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
+  'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
   'ver-costo-promedio': (b) => { estadoDashboard.verCostoPromedio = b.checked; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarMovimientosDashboard(); },
   'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarMovimientosDashboard(); },

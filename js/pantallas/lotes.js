@@ -12,8 +12,8 @@
 
 function pintarBotonesLote(contenedor) {
   contenedor.innerHTML = html`
-    <button type="button" class="boton boton-secundario boton-sm" data-lote="corregir">${seguro(icono('precio', 'icono-sm'))}Corregir precio por lote</button>
-    <button type="button" class="boton boton-secundario boton-sm" data-lote="anular">${seguro(icono('lote', 'icono-sm'))}Anular lo filtrado</button>`.texto;
+    <button type="button" class="boton boton-critico boton-sm" data-lote="corregir">${seguro(icono('precio', 'icono-sm'))}Corregir precio por lote</button>
+    <button type="button" class="boton boton-critico boton-sm" data-lote="anular">${seguro(icono('lote', 'icono-sm'))}Anular lo filtrado</button>`.texto;
   $('[data-lote="corregir"]', contenedor).addEventListener('click', abrirCorreccionPrecio);
   $('[data-lote="anular"]', contenedor).addEventListener('click', abrirAnulacionLote);
 }

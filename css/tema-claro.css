@@ -6,13 +6,13 @@
 :root, :root[data-tema="claro"] {
   color-scheme: light;
   /* Base blanca y grises neutros (fase UI 2026-10-23: sobrio). */
-  --fondo: #F4F5F7;
+  --fondo: #ECEEF2;
   --superficie: #FFFFFF;
-  --superficie-2: #F1F2F4;
+  --superficie-2: #F3F4F6;
   --superficie-3: #E5E7EB;
   --superficie-elevada: #FFFFFF;
   --velo: rgb(17 20 24 / 0.42);
-  --borde: #DADDE2;
+  --borde: #E0E3E8;
   --borde-fuerte: #777D88;
 
   --texto: #111418;

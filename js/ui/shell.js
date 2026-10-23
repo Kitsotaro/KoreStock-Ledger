@@ -46,8 +46,8 @@ const Shell = {
       'abrir-panel': () => this.abrirPanel(),
       'cinta-periodo': () => { const f = filtrosDePantalla.get(this.actual); if (f && f.usaPeriodo) f.abrirPeriodo(); },
       'elegir-modo': () => { this.cerrarPanel(); this.elegirModo(); },
-      // Tema: interruptor claro ⇄ oscuro (sin menú emergente).
-      'cambiar-tema': (b) => this.aplicarTema(b.checked ? 'oscuro' : 'claro'),
+      // Tema: 3 posiciones, cada toque avanza: Día → Noche → Auto (sigue al sistema).
+      'cambiar-tema': () => { const orden = ['claro', 'oscuro', 'sistema']; const actual = leerLocal(CLAVES_LOCALES.TEMA) || 'sistema'; this.aplicarTema(orden[(orden.indexOf(actual) + 1) % 3]); },
       'poner-modo': (b) => this.cambiarModo(b.dataset.modoValor),
       'tamano-texto': () => { this.cerrarPanel(); this.elegirTamanoTexto(); },
       'todos-decimales': (b) => this.cambiarTodosLosDecimales(b.type === 'checkbox' ? b.checked : !this.todosLosDecimales()),
@@ -140,7 +140,10 @@ const Shell = {
     const modo = MODOS[this.modo];
     $$('.segmentado-modo [data-modo-valor]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.modoValor === this.modo)));
     const m = $('#panel-modo'); if (m) m.textContent = modo ? modo.frase : '';
-    const t = $('#panel-tema-oscuro'); if (t) t.checked = document.documentElement.dataset.tema === 'oscuro';
+    const tema = leerLocal(CLAVES_LOCALES.TEMA) || 'sistema';
+    const bt = $('#panel-tema'); if (bt) bt.dataset.posicion = tema;
+    const ic = $('#panel-tema-icono'); if (ic) ic.innerHTML = icono({ claro: 'sol', oscuro: 'luna', sistema: 'telefono' }[tema]);
+    const tt = $('#panel-tema-texto'); if (tt) tt.textContent = { claro: 'Día', oscuro: 'Noche', sistema: 'Auto (como tu teléfono)' }[tema];
     const dc = $('#panel-todos-decimales'); if (dc) dc.checked = this.todosLosDecimales();
     const dl = $('#panel-decimales'); if (dl) dl.textContent = this.todosLosDecimales() ? 'Costos y CPP con 5 decimales' : 'Todo a 2 decimales';
     const tx = $('#panel-texto'); if (tx) tx.textContent = (TAMANOS_TEXTO.find(t => t[0] === (leerLocal(CLAVES_LOCALES.TAMANO_TEXTO) || 'normal')) || TAMANOS_TEXTO[1])[1];
@@ -153,7 +156,7 @@ const Shell = {
     const ultimo = leerLocal(CLAVES_LOCALES.ULTIMO_RESPALDO);
     if (!ultimo) return '';
     const dias = diasEntre(ultimo.slice(0, 10), obtenerFechaLocal());
-    return dias <= 0 ? 'respaldo: hoy' : `respaldo: hace ${dias} ${pluralizar(dias, 'día')}`;
+    return dias <= 0 ? 'Último respaldo: hoy' : `Último respaldo: hace ${dias} ${pluralizar(dias, 'día')}`;
   },
 
   // ---------- Modos (D10, D22) ----------
@@ -183,11 +186,11 @@ const Shell = {
     capa.innerHTML = html`<div class="contenido-transicion">${seguro(icono(m.icono, 'icono-xl'))}<strong>Modo ${m.nombre}</strong><span>${m.frase}</span></div>`.texto;
     document.body.appendChild(capa);
     document.body.classList.add('cambiando-modo');
+    document.documentElement.classList.add('sin-desplazar'); // la capa tapa todo, también la barra de desplazamiento
     requestAnimationFrame(() => capa.classList.add('visible'));
     setTimeout(aplicar, 220);
     setTimeout(() => { capa.classList.remove('visible'); document.body.classList.remove('cambiando-modo'); }, 700);
-    setTimeout(() => capa.remove(), 1100);
-    avisar(`Modo ${m.nombre}`);
+    setTimeout(() => { capa.remove(); document.documentElement.classList.remove('sin-desplazar'); }, 1100);
   },
   elegirModo(alElegir) {
     const actual = this.modo;

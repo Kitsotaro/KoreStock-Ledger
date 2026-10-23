@@ -4,3 +4,13 @@
 .linea-mov:first-child { border-top: 0; }
 .linea-mov.anulada .t-fuerte, .linea-mov.anulada .cifra { text-decoration: line-through; color: var(--texto-3); }
 .desplegable > summary .insignia { flex-shrink: 0; }
+/* Movimientos: buscador + ajustes en una fila; panel de ajustes críticos en rojo (fase UI) */
+.fila-busqueda { display: flex; align-items: center; gap: var(--e-2); }
+.boton-ajustes-criticos { flex: none; border: 1px solid var(--borde); background: var(--superficie); }
+.boton-ajustes-criticos[aria-expanded="true"] { background: var(--peligro); color: #fff; border-color: transparent; }
+.ajustes-criticos { display: grid; gap: var(--e-3); padding: var(--e-3); border-radius: var(--r-lg); border: 1.5px solid var(--peligro); background: var(--peligro-suave); }
+.ajustes-criticos-aviso { display: flex; gap: var(--e-2); align-items: flex-start; color: var(--peligro); font-size: var(--t-sm); }
+.ajustes-criticos-aviso strong { color: var(--peligro); }
+.ajustes-criticos .grupo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-2); }
+.boton-critico { background: var(--superficie); color: var(--peligro); border: 1.5px solid var(--peligro); font-weight: var(--peso-fuerte); }
+#dash-cuerpo > * + * { margin-top: var(--e-3); }

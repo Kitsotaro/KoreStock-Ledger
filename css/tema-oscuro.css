@@ -7,13 +7,13 @@
 :root[data-tema="oscuro"] {
   color-scheme: dark;
   /* El claro invertido: grises que dan contraste, sin tinte azul. */
-  --fondo: #0E1013;
-  --superficie: #16191D;
-  --superficie-2: #1C1F24;
-  --superficie-3: #262A30;
-  --superficie-elevada: #1C1F24;
+  --fondo: #0A0C0F;
+  --superficie: #17191E;
+  --superficie-2: #20232A;
+  --superficie-3: #2A2E36;
+  --superficie-elevada: #22262D;
   --velo: rgb(0 0 0 / 0.6);
-  --borde: #30353C;
+  --borde: #2E333B;
   --borde-fuerte: #7D838E;
 
   --texto: #F1F2F4;

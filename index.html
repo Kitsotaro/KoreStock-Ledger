@@ -171,6 +171,7 @@
 
     <!-- Isla inferior con el botón «+» central (fase UI, 2026-10-23): el «+» lleva a
          Venta y muestra dos accesos flotantes (Venta / Entrada); su color sigue a lo elegido. -->
+    <div class="base-isla" aria-hidden="true"></div>
     <nav class="barra-inferior isla" aria-label="Navegación principal">
       <button type="button" class="pestana" data-ir="stock"><span class="pildora"><span data-icono="caja"></span></span>Stock</button>
       <button type="button" class="pestana" data-ir="dashboard"><span class="pildora"><span data-icono="grafico-barras"></span></span>Dashboard</button>
@@ -207,17 +208,24 @@
         <button type="button" class="opcion-panel" data-ir="clientes"><span data-icono="clientes"></span>Clientes</button>
         <button type="button" class="opcion-panel" data-ir="gastos"><span data-icono="recibo"></span>Gastos</button>
         <button type="button" class="opcion-panel" data-ir="combustible"><span data-icono="combustible"></span>Combustible</button>
-        <button type="button" class="opcion-panel" data-ir="datos"><span data-icono="descargar"></span>Exportar / Importar<span class="detalle" id="panel-respaldo"></span></button>
+        </section>
+        <section class="grupo-panel grupo-solo" aria-label="Tus datos">
+          <button type="button" class="opcion-panel" data-ir="datos"><span data-icono="descargar"></span><span class="crece">Exportar / Importar<span class="detalle-linea" id="panel-respaldo"></span></span></button>
         </section>
         <section class="grupo-panel" aria-labelledby="g-preferencias">
         <div class="grupo-titulo" id="g-preferencias"><span data-icono="ajustes" data-icono-clase="icono-sm"></span>Preferencias</div>
-        <label class="opcion-panel opcion-interruptor"><span data-icono="luna"></span><span class="crece">Tema oscuro</span>
-          <span class="interruptor"><input type="checkbox" id="panel-tema-oscuro" data-accion="cambiar-tema"><span class="riel"></span></span></label>
+        <!-- Tema: un control de 3 posiciones; cada toque pasa a la siguiente (Día → Noche → Auto). -->
+        <button type="button" class="opcion-panel opcion-interruptor" data-accion="cambiar-tema" id="panel-tema">
+          <span data-icono="sol" id="panel-tema-icono"></span><span class="crece">Tema<span class="detalle-linea" id="panel-tema-texto"></span></span>
+          <span class="selector-tres" aria-hidden="true"><span class="ranura" data-icono="sol" data-icono-clase="icono-sm"></span><span class="ranura" data-icono="luna" data-icono-clase="icono-sm"></span><span class="ranura ranura-auto">A</span><span class="perilla"></span></span>
+        </button>
         <label class="opcion-panel opcion-interruptor"><span data-icono="identificador"></span><span class="crece">Todos los decimales<span class="detalle-linea" id="panel-decimales"></span></span>
           <span class="interruptor"><input type="checkbox" id="panel-todos-decimales" data-accion="todos-decimales"><span class="riel"></span></span></label>
         <button type="button" class="opcion-panel" data-accion="tamano-texto"><span data-icono="texto"></span>Tamaño de texto<span class="detalle" id="panel-texto"></span></button>
         <button type="button" class="opcion-panel" data-ir="ayuda"><span data-icono="ayuda"></span>Ayuda y políticas</button>
-        <button type="button" class="opcion-panel" data-accion="salir"><span data-icono="salir"></span>Salir</button>
+        </section>
+        <section class="grupo-panel grupo-solo" aria-label="Sesión">
+          <button type="button" class="opcion-panel peligro" data-accion="salir"><span data-icono="salir"></span>Cerrar sesión</button>
         </section>
       </nav>
       <p class="pie" id="panel-pie"></p>

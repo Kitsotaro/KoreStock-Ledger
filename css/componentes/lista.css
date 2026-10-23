@@ -3,6 +3,10 @@
  * (D37), estados vacíos. */
 .lista { display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--r-md); overflow: hidden; }
 .lista > * + * { border-top: 1px solid var(--borde); }
+.tarjeta .lista { border: 0; border-radius: 0; background: transparent; margin: 0 calc(-1 * var(--e-4)); }
+.tarjeta .lista > .fila-lista { padding-left: var(--e-4); padding-right: var(--e-4); }
+.lista { box-shadow: var(--sombra-1); }
+.tarjeta .lista { box-shadow: none; }
 .fila-lista { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-4); min-height: 3.5rem; background: transparent; border: 0; width: 100%; text-align: left; }
 button.fila-lista:hover, a.fila-lista:hover { background: var(--superficie-2); }
 .fila-lista .titulo { font-weight: var(--peso-fuerte); line-height: 1.3; }
