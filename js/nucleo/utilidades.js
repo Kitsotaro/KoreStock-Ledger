@@ -12,7 +12,7 @@
 // Expone: escaparHTML, normalizarTexto, normalizarIdentidad, coincidenPalabras,
 //   parsearNumero, normalizarFechaCelda, obtenerFechaLocal, obtenerTimestampLocal,
 //   fechaATexto, textoAFecha, sumarDias, restarDias, diasEntre, PRESETS_PERIODO,
-//   calcularFechasPreset, periodoAnterior, formatearFechaCorta, formatearNumero,
+//   calcularFechasPreset, periodoAnterior, periodoComparable, formatearFechaCorta, formatearNumero,
 //   pluralizar, esperar.
 // Depende de: nada.
 // ============================================================
@@ -162,6 +162,21 @@ function calcularFechasPreset(preset, hoyTexto) {
 function periodoAnterior(inicio, fin) {
   const dias = diasEntre(inicio, fin) + 1;
   return { inicio: restarDias(inicio, dias), fin: restarDias(inicio, 1) };
+}
+
+// Período con el que se compara (Kitso, 2026-10-23): si el período va en curso,
+// se compara hasta HOY contra los MISMOS días del período anterior del calendario
+// («Este mes» al 23 de octubre → 1–23 oct contra 1–23 sep). Fechas elegidas a
+// mano: los días inmediatamente anteriores, de igual duración.
+const UNIDAD_PRESET = { SEMANA: 'SEMANA', QUINCENA: 'QUINCENA', MES: 'MES', MES_ANTERIOR: 'MES', TRIMESTRE: 'TRIMESTRE', SEMESTRE: 'SEMESTRE', ANIO: 'ANIO' };
+function periodoComparable(inicio, fin, preset, hoyTexto) {
+  const hoy = hoyTexto || obtenerFechaLocal();
+  const finActual = inicio <= hoy && fin > hoy ? hoy : fin;
+  const unidad = UNIDAD_PRESET[preset];
+  if (!unidad) return Object.assign(periodoAnterior(inicio, finActual), { finActual });
+  const previo = calcularFechasPreset(unidad, restarDias(inicio, 1));
+  const finPrevio = sumarDias(previo.inicio, diasEntre(inicio, finActual));
+  return { inicio: previo.inicio, fin: finPrevio < previo.fin ? finPrevio : previo.fin, finActual };
 }
 
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];

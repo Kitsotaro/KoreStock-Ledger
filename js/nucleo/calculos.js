@@ -105,20 +105,23 @@ function stockDerivadoPorProducto(movimientos, opciones) {
   return r;
 }
 
-// Valor de bodega (V2, DATOS §2): Bruto = Σ stock × costo vigente;
-// Neto = Σ (stock − bonificado en bodega) × costo vigente.
+// Valor de bodega (DATOS §2; Kitso 2026-10-23, como la app original):
+//   bruto = Σ stock × costo vigente, CON lo que llegó gratis → capital que vale
+//           la bodega (en pantalla: «neto», el de por defecto).
+//   real  = Σ fondo de costo → dinero que de verdad pagaste por lo que queda
+//           (lo gratis entró con costo 0). Antes se restaba el total histórico
+//           de bonificadas al stock, lo que daba $0 si ya se habían vendido.
 function valorBodega(productos, estados) {
-  let bruto = 0, neto = 0, unidades = 0;
+  let bruto = 0, real = 0, unidades = 0;
   productos.forEach(p => {
     const e = estados[p.idProducto];
     const stock = e ? e.stock : 0;
     if (stock <= 0) return;
-    const bonif = Math.min(e ? e.bonif : 0, stock);
     bruto = sumarDinero(bruto, multiplicarDinero(p.costo, stock));
-    neto = sumarDinero(neto, multiplicarDinero(p.costo, stock - bonif));
+    real = sumarDinero(real, Math.max(0, e.fondo || 0));
     unidades += stock;
   });
-  return { bruto: redondearCentavo(bruto), neto: redondearCentavo(neto), unidades: redondearCantidad(unidades) };
+  return { bruto: redondearCentavo(bruto), real: redondearCentavo(real), unidades: redondearCantidad(unidades) };
 }
 
 // Semáforo con el umbral PROPIO del producto (V3 §15.2).

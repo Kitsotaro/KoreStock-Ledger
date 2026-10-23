@@ -170,3 +170,25 @@ prueba('vale el último color de cada nivel y nombre; vacío vuelve al automáti
   igual(Almacen.colorGrafico('marca', 'Diana'), '#445566');
   Almacen.hojas.COLORES = antes;
 });
+
+grupo('Decisiones de Kitso 2026-10-23: valor de bodega y comparación');
+prueba('valor neto incluye lo gratis; valor real = lo pagado por lo que queda', () => {
+  // 10 pagadas a $1 + 10 gratis; se venden 15 → quedan 5 y el fondo $2.50 (la mitad eran gratis).
+  const movs = [mov('ENTRADA', 1, 10, { inversion: 10, bonif: 10 }), mov('VENTA', 1, 15, { cobrado: 30, utilidad: 15 })];
+  const estados = calcularEstadoProductos(movs);
+  const v = valorBodega([{ idProducto: 1, costo: dinero(1) }], estados);
+  igual(formatearDinero(v.bruto), '$5.00', '5 en bodega × $1');
+  igual(formatearDinero(v.real), '$2.50', 'antes daba $0: restaba las 10 gratis de toda la historia');
+});
+prueba('«Este mes» en curso se compara con los mismos días del mes anterior', () => {
+  const p = periodoComparable('2026-10-01', '2026-10-31', 'MES', '2026-10-23');
+  igual(p.inicio, '2026-09-01'); igual(p.fin, '2026-09-23'); igual(p.finActual, '2026-10-23');
+  const s = periodoComparable('2026-10-19', '2026-10-25', 'SEMANA', '2026-10-21'); // miércoles
+  igual(s.inicio, '2026-10-12'); igual(s.fin, '2026-10-14');
+  const m = periodoComparable('2026-03-01', '2026-03-31', 'MES', '2026-03-31'); // mes completo; febrero tiene 28
+  igual(m.inicio, '2026-02-01'); igual(m.fin, '2026-02-28');
+  const a = periodoComparable('2026-10-01', '2026-10-31', 'MES_ANTERIOR', '2026-11-05');
+  igual(a.inicio, '2026-09-01'); igual(a.fin, '2026-09-30');
+  const x = periodoComparable('2026-10-10', '2026-10-19', 'PERSONALIZADO', '2026-10-23');
+  igual(x.inicio, '2026-09-30'); igual(x.fin, '2026-10-09');
+});

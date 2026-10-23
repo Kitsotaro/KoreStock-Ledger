@@ -32,7 +32,7 @@ const SEMAFOROS = {
 };
 function infoSemaforo(p, stock) { return SEMAFOROS[semaforoStock(stock, p)]; }
 
-const stockUI = { el: null, turno: 0, filtro: 'TODOS', categoria: '', empaque: '', texto: '', valor: 'BRUTO', seleccion: new Set(), seleccionando: false, expandirTodo: false, ocultarSabores: false };
+const stockUI = { el: null, turno: 0, filtro: 'TODOS', categoria: '', empaque: '', texto: '', valor: 'NETO', seleccion: new Set(), seleccionando: false, expandirTodo: false, ocultarSabores: false };
 
 // Empaques de un producto: su tipo de empaque y los que tiene registrados (caja, fardo…).
 function empaquesDeProducto(p) {
@@ -85,9 +85,9 @@ function pintarCifrasStock() {
   const conteo = { agotado: 0, bajo: 0, medio: 0, optimo: 0 };
   activos.forEach(p => { conteo[semaforoStock(Almacen.stock(p.idProducto), p)]++; });
   $('#stock-cifras', stockUI.el).innerHTML = html`
-    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', stockUI.valor === 'BRUTO' ? 'Cuánto valen TODAS las unidades que tienes en bodega ahora, a último costo, sumando también lo que llegó gratis por bonificación. Úsalo para cuadrar contra tu conteo físico.' : 'Cuánto dinero REAL pagaste por lo que sigue en bodega: no cuenta lo que llegó gratis por bonificación. Te dice cuánto capital tienes metido en inventario.')} ${seguro(`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-valor" style="min-height:auto;padding:0">${stockUI.valor === 'BRUTO' ? 'bruto' : 'neto'} ▾</button>`)}</div>
-      <div class="valor">${formatearDinero(stockUI.valor === 'BRUTO' ? v.bruto : v.neto)}</div>
-      <div class="comparacion igual">${stockUI.valor === 'BRUTO' ? 'Todo lo que hay, a último costo' : 'Sin contar lo que llegó gratis'}</div></div>
+    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', stockUI.valor === 'NETO' ? 'Cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis por bonificación. Úsalo para cuadrar contra tu conteo físico.' : 'Cuánto dinero pagaste de verdad por lo que sigue en bodega: lo que llegó gratis entra con costo $0. Es tu dinero invertido en inventario.')} ${seguro(`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-valor" style="min-height:auto;padding:0">${stockUI.valor === 'NETO' ? 'neto' : 'real'} ▾</button>`)}</div>
+      <div class="valor">${formatearDinero(stockUI.valor === 'NETO' ? v.bruto : v.real)}</div>
+      <div class="comparacion igual">${stockUI.valor === 'NETO' ? 'Todo lo que hay, con lo gratis' : 'Lo que pagaste por lo que queda'}</div></div>
     <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}</div>
       <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>`.texto;
 }
@@ -249,7 +249,7 @@ const accionesStock = {
       alMontar: (hoja) => $$('[data-cat]', hoja).forEach(b => b.addEventListener('click', () => { stockUI.categoria = b.dataset.cat; control.cerrar(); pintarChipsStock(); pintarListaStock(); }))
     });
   },
-  'alternar-valor': () => { stockUI.valor = stockUI.valor === 'BRUTO' ? 'NETO' : 'BRUTO'; pintarCifrasStock(); },
+  'alternar-valor': () => { stockUI.valor = stockUI.valor === 'NETO' ? 'REAL' : 'NETO'; pintarCifrasStock(); },
   'expandir': (b) => { stockUI.expandirTodo = !stockUI.expandirTodo; b.textContent = stockUI.expandirTodo ? 'Contraer todo' : 'Expandir todo'; pintarListaStock(); },
   'seleccionar': () => { stockUI.seleccionando = !stockUI.seleccionando; stockUI.seleccion.clear(); pintarListaStock(); },
   'marcar': (b, e) => {
