@@ -157,7 +157,7 @@ function calcularResumenPeriodo(movimientos, inicio, fin, filtro) {
       r.utilidad = sumarDinero(r.utilidad, m.utilidad || 0);
       r.unidadesVendidas += Math.abs(m.cantidad);
       r.nVentas++;
-      if (m.idTicket) r.tickets.add(m.idTicket);
+      r.tickets.add(m.idTicket || m.folio); // en la v2 cada venta era su propio ticket
     } else if (m.tipo === TIPOS_MOV.ENTRADA) {
       r.inversion = sumarDinero(r.inversion, m.inversion);
       r.unidadesEntradas += Number(m.cantidad || 0) + Number(m.bonif || 0);
@@ -211,7 +211,7 @@ function calcularROI(movimientos, inicio, fin, filtro) {
 // Proyección de agotamiento: ritmo = ventas de los últimos N días ÷ N.
 function calcularProyeccion(movimientos, estados, ventanaDias, hoy, filtro) {
   const fin = hoy || obtenerFechaLocal();
-  const inicio = restarDias(fin, ventanaDias);
+  const inicio = restarDias(fin, ventanaDias - 1); // N días contando hoy (antes tomaba N + 1 y dividía entre N)
   const ventas = {};
   for (const m of movimientos) {
     if (!esMovValido(m) || m.tipo !== TIPOS_MOV.VENTA || !enPeriodo(m.fecha, inicio, fin)) continue;
@@ -269,9 +269,12 @@ function calcularResumenCombustible(cargas, inicio, fin) {
   const r = {};
   orden.forEach(c => {
     if (!esGastoValido(c) || c.fecha > fin) return;
-    const e = r[c.placa] || (r[c.placa] = { galones: 0, gastado: 0, kmInicio: null, kmFin: null, cargas: 0 });
+    const e = r[c.placa] || (r[c.placa] = { galones: 0, galonesRecorridos: 0, gastado: 0, kmInicio: null, kmFin: null, cargas: 0 });
     if (c.fecha < inicio) { e.kmInicio = c.odometro; return; }
+    // Los galones de la primera carga sin lectura anterior no se recorrieron
+    // dentro de los km medidos: no cuentan para el rendimiento (sí para lo gastado).
     if (e.kmInicio === null) e.kmInicio = c.odometro;
+    else e.galonesRecorridos += c.galones;
     e.kmFin = c.odometro;
     e.galones += c.galones;
     e.gastado = sumarDinero(e.gastado, c.monto);
@@ -279,7 +282,7 @@ function calcularResumenCombustible(cargas, inicio, fin) {
   });
   Object.values(r).forEach(e => {
     e.km = (e.kmInicio !== null && e.kmFin !== null) ? Math.max(0, e.kmFin - e.kmInicio) : null;
-    e.rendimiento = e.km && e.galones > 0 ? e.km / e.galones : null;
+    e.rendimiento = e.km && e.galonesRecorridos > 0 ? e.km / e.galonesRecorridos : null;
   });
   return r;
 }

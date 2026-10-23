@@ -130,3 +130,36 @@ prueba('stock guardado distinto del historial: avisa y migra con el historial (a
   await abrirBase(r2.idNuevo);
   igual(Almacen.stock(r1.verificacion.diferencias[0].id), r1.verificacion.diferencias[0].historial);
 });
+
+// Ronda de matemática (2026-10-23), caso de la base real de Kitso: dos productos
+// con el mismo SKU en el catálogo y movimientos con otro SKU y sin el sabor.
+prueba('SKU repetido y movimiento sin sabor: se enlaza por marca/producto/presentación y toma su código', async () => {
+  DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo);
+  const encCat = ['SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'STOCK_ACTUAL', 'ESTADO_ITEM', 'ULTIMA_MODIF', 'TIPO_EMPAQUE', 'ID_PRODUCTO', 'FECHA_CREACION', 'MODIFICACION_ANTERIOR', 'STOCK_BONIFICADO'];
+  const encLog = ['TRANS_ID', 'TIMESTAMP_LOG', 'FECHA_MOV', 'TIPO_MOV', 'SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'CANTIDAD', 'UNID_BONIF', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'TOTAL_INVERSION', 'MARGEN_UNIT', 'TOTAL_VENTA', 'UTILIDAD_NETA', 'TIPO_EMPAQUE', 'ESTADO_MOV'];
+  const id = DriveDemo.crearDesdeDatos('StockCentral_DB', {
+    CATALOGO: [encCat,
+      ['CBPET-002', 'CBC', 'Petit', 'Tetra', '200 ml', 'uva', 4, 5.5, 4, 'ACTIVO', 46299, 'Sixpack', 5, 46275, '', 1],
+      ['CBPET-002', 'CBC', 'Petit', 'Lata', '355 ml', '', 9, 11, 2, 'ACTIVO', 46299, 'Caja', 6, 46275, '', 0]],
+    LOG_TRANS: [encLog,
+      ['IN-000001', 46275.3, 46275, 'ENTRADA', 'CBPET-001', 'CBC', 'Petit', 'Tetra', '200 ml', '', 5, 1, '4', '5,5', '20', '1,5', '', '', 'Sixpack', ''],
+      ['IN-000002', 46275.31, 46275, 'ENTRADA', 'CBPET-002', 'CBC', 'Petit', 'Lata', '355 ml', '', 3, 0, '9', '11', '27', '2', '', '', 'Caja', ''],
+      ['FAC-000001', 46276.3, 46276, 'VENTA', 'CBPET-001', 'CBC', 'Petit', 'Tetra', '200 ml', '', -2, 0, '4', '5,5', '8', '1,5', '11', '3', 'Sixpack', ''],
+      ['FAC-000002', 46276.31, 46276, 'VENTA', 'CBPET-002', 'CBC', 'Petit', 'Lata', '355 ml', '', -1, 0, '9', '11', '9', '2', '11', '2', 'Caja', '']],
+    LOG_HISTORICO_PRECIOS: [['ID_LOG', 'SKU_ITEM', 'P_DIST_ANT', 'P_DIST_NUEVO', 'P_CONS_ANT', 'P_CONS_NUEVO', 'FECHA_CAMBIO', 'USUARIO']],
+    UMBRALES: [['TIPO_EMPAQUE', 'STOCK_MIN', 'STOCK_MAX'], ['TODOS', 4, 7]],
+    COSTOS_OPERATIVOS: [['ID_GASTO', 'TIMESTAMP_LOG', 'FECHA_GASTO', 'CATEGORIA', 'MONTO', 'DESCRIPCION', 'ESTADO']],
+    VEHICULOS: [['PLACA', 'MARCA', 'MODELO', 'COLOR', 'TIPO_COMBUSTIBLE', 'ESTADO']],
+    COSTOS_COMBUSTIBLE: [['ID_GASTO', 'TIMESTAMP_LOG', 'FECHA_MOV', 'PLACA', 'ODOMETRO', 'GALONES', 'MONTO_PAGADO', 'ESTADO']]
+  });
+  const r = await migrarBaseV2(id, []);
+  verdadero(r.ok, JSON.stringify(r.verificacion));
+  igual(r.verificacion.diferencias.length, 0, 'sin diferencias de stock');
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  const tetra = v3.CATALOGO.find(p => p.presentacion === 'Tetra'), lata = v3.CATALOGO.find(p => p.presentacion === 'Lata');
+  igual(tetra.sku, 'CBPET-001', 'toma el código de sus movimientos');
+  igual(lata.sku, 'CBPET-002');
+  igual(tetra.stockCache, 4); igual(lata.stockCache, 2);
+  verdadero(v3.LOG_TRANS.every(m => m.idProducto), 'ningún movimiento queda sin producto');
+  igual(formatearDinero(calcularResumenPeriodo(v3.LOG_TRANS, null, null).ventas), '$22.00', '«5,5» con coma se lee bien');
+});

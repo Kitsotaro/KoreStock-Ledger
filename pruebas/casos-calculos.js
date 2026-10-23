@@ -107,6 +107,19 @@ prueba('rendimiento por carga y resumen del período', () => {
   igual(calcularRendimientos(cargas).get('CB-1').rendimiento, null);
   const r = calcularResumenCombustible(cargas, '2026-01-02', '2026-01-31');
   igual(r.P1.km, 150);
+  // Período que incluye la primera carga: sus galones no se recorrieron en esos km (ronda de matemática).
+  const todo = calcularResumenCombustible(cargas, '2026-01-01', '2026-01-31');
+  igual(todo.P1.km, 150); igual(todo.P1.galones, 10, 'lo cargado sí suma'); igual(todo.P1.rendimiento, 30, '150 km ÷ 5 gal, no ÷ 10');
+});
+prueba('proyección: «últimos 30 días» son 30 días contando hoy', () => {
+  const movs = [mov('ENTRADA', 1, 100, { fecha: '2026-01-01' }), mov('VENTA', 1, 30, { fecha: '2026-01-31' }), mov('VENTA', 1, 60, { fecha: '2026-03-02' })];
+  // 2026-03-02 menos 29 días = 2026-02-01: la venta del 31 de enero queda fuera.
+  const r = calcularProyeccion(movs, { 1: { stock: 10 } }, 30, '2026-03-02');
+  igual(r[1].ventasVentana, 60); igual(r[1].ritmoDiario, 2); igual(r[1].diasRestantes, 5);
+});
+prueba('ventas de la v2 sin ticket cuentan una por folio', () => {
+  const movs = [mov('VENTA', 1, 1, { cobrado: 1, utilidad: 0 }), mov('VENTA', 2, 1, { cobrado: 1, utilidad: 0 })];
+  igual(calcularResumenPeriodo(movs, null, null).nTickets, 2);
 });
 prueba('el resumen cuenta tickets y unidades', () => {
   const movs = [mov('VENTA', 1, 2, { cobrado: 2, utilidad: 1, extra: { idTicket: 'TK-1' } }), mov('VENTA', 2, 1, { cobrado: 1, utilidad: 0.5, extra: { idTicket: 'TK-1' } })];

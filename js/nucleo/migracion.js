@@ -136,19 +136,28 @@ function convertirAV3(datos, fusiones, opciones) {
   // Índices para enlazar cada movimiento viejo (que solo trae SKU y datos
   // copiados) con su producto. El SKU podía repetirse en la v2, así que
   // primero se busca por identidad completa.
+  // Si no hay coincidencia exacta, se intenta sin el sabor (la v2 guardaba el
+  // sabor del catálogo, p. ej. «uva», pero el movimiento podía venir vacío)
+  // cuando hay UN solo producto con esa marca, producto, presentación y contenido.
   const claveIdentidad = (x) => [x.marca, x.linea, x.presentacion, x.volumen, x.variante].map(normalizarIdentidad).join('|');
-  const porIdentidad = new Map(), porSku = new Map();
+  const claveSinSabor = (x) => [x.marca, x.linea, x.presentacion, x.volumen].map(normalizarIdentidad).join('|');
+  const porIdentidad = new Map(), porSku = new Map(), porSinSabor = new Map();
   datos.CATALOGO.forEach(p => {
     porIdentidad.set(claveIdentidad(p), p);
     if (!porSku.has(p.sku)) porSku.set(p.sku, []);
     porSku.get(p.sku).push(p);
+    if (!porSinSabor.has(claveSinSabor(p))) porSinSabor.set(claveSinSabor(p), []);
+    porSinSabor.get(claveSinSabor(p)).push(p);
   });
   const productoDeMov = (m) => {
     const ident = porIdentidad.get(claveIdentidad(m));
     if (ident && ident.sku === m.sku) return ident;
     const conSku = porSku.get(m.sku) || [];
-    if (conSku.length === 1) return conSku[0];
-    return ident || conSku[0] || null;
+    if (conSku.length === 1 && claveSinSabor(conSku[0]) === claveSinSabor(m)) return conSku[0];
+    if (ident) return ident;
+    const sinSabor = porSinSabor.get(claveSinSabor(m)) || [];
+    if (sinSabor.length === 1) return sinSabor[0];
+    return conSku[0] || null;
   };
 
   const umbralDe = (p) => {
@@ -188,11 +197,26 @@ function convertirAV3(datos, fusiones, opciones) {
   });
   if (sinProducto) avisos.push(`${sinProducto} movimiento(s) no se pudieron enlazar con un producto del catálogo; se copiaron sin producto.`);
 
+  // SKU repetido en el catálogo v2 (dos productos con el mismo código): el que
+  // no lo usa en sus movimientos toma el código con el que sí se registraron.
+  const skuNuevo = new Map();
+  porSku.forEach((lista, sku) => {
+    if (lista.length < 2) return;
+    lista.forEach(p => {
+      const usados = new Set(log.filter(m => m.idProducto === p.idProducto && !m.referencia).map(m => m.sku));
+      if (usados.size === 1 && !usados.has(sku)) {
+        const otro = [...usados][0];
+        if (!porSku.has(otro)) { skuNuevo.set(p.idProducto, otro); avisos.push(`El código ${sku} estaba repetido: «${[p.marca, p.linea, p.presentacion, p.volumen].filter(Boolean).join(' ')}» queda con ${otro}, el de sus movimientos.`); }
+      }
+    });
+  });
+
   // ----- Catálogo -----
   const stockNuevo = stockDerivadoPorProducto(log);
   const catalogo = datos.CATALOGO.map(p => {
     const n = Object.assign({}, p);
     delete n._fila;
+    if (skuNuevo.has(p.idProducto)) n.sku = skuNuevo.get(p.idProducto);
     const fusion = fusionDe.get(p.idProducto);
     const esDestino = fusion && fusion.destino === p.idProducto;
     const f = factorDe.get(p.idProducto) || 1;
