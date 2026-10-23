@@ -37,7 +37,12 @@ registrarPantalla('panorama', {
     delegar(el, 'click', accionesPanorama);
     el.addEventListener('toggle', (e) => {
       const d = e.target.closest('details[data-tarjeta]');
-      if (d) { if (d.open) estadoPanorama.abiertas.add(d.dataset.tarjeta); else estadoPanorama.abiertas.delete(d.dataset.tarjeta); }
+      if (!d) return;
+      if (d.open) {
+        // Solo una tarjeta abierta a la vez: abrir una cierra la otra (Kitso, 2026-10-23).
+        $$('details[data-tarjeta][open]', el).forEach(o => { if (o !== d) o.open = false; });
+        estadoPanorama.abiertas.add(d.dataset.tarjeta);
+      } else estadoPanorama.abiertas.delete(d.dataset.tarjeta);
     }, true);
     Almacen.suscribir(() => { if (Shell.actual === 'panorama') pintarPanorama(); });
   },
