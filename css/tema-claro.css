@@ -4,6 +4,9 @@
  * superficie y blanco sobre acento ≥ 6:1. Paleta base de Zeghi (índigo + marino).
  */
 :root, :root[data-tema="claro"] {
+  /* Botón «+» de la isla: oscuro en claro, claro en oscuro */
+  --fab: #1F2430; --sobre-fab: #FFFFFF;
+
   color-scheme: light;
   --fondo: #F6F7FB;
   --superficie: #FFFFFF;

@@ -169,15 +169,24 @@
       <section class="pantalla" data-pantalla="migracion" hidden></section>
     </main>
 
-    <nav class="barra-inferior" aria-label="Navegación principal">
+    <!-- Isla inferior con el botón «+» central (fase UI, 2026-10-23): el «+» lleva a
+         Venta y muestra dos accesos flotantes (Venta / Entrada); su color sigue a lo elegido. -->
+    <nav class="barra-inferior isla" aria-label="Navegación principal">
       <button type="button" class="pestana" data-ir="stock"><span class="pildora"><span data-icono="caja"></span></span>Stock</button>
-      <div class="interruptor-registro" role="group" aria-label="Registrar">
-        <button type="button" data-tipo="ENTRADA" aria-pressed="false"><span data-icono="entrada" data-icono-clase="icono-sm"></span>Entrada</button>
-        <button type="button" data-tipo="VENTA" aria-pressed="true"><span data-icono="carrito" data-icono-clase="icono-sm"></span>Venta</button>
-      </div>
       <button type="button" class="pestana" data-ir="dashboard"><span class="pildora"><span data-icono="grafico-barras"></span></span>Dashboard</button>
+      <span class="hueco-fab" aria-hidden="true"></span>
       <button type="button" class="pestana" data-ir="panorama" data-solo-modo="pro"><span class="pildora"><span data-icono="panorama"></span></span>Panorama</button>
+      <button type="button" class="pestana" data-ir="clientes" data-solo-modo="tienda"><span class="pildora"><span data-icono="clientes"></span></span>Clientes</button>
+      <button type="button" class="pestana" data-ir="gastos" data-solo-modo="bodega"><span class="pildora"><span data-icono="recibo"></span></span>Gastos</button>
+      <button type="button" class="pestana" data-accion="abrir-panel"><span class="pildora"><span data-icono="menu"></span></span>Menú</button>
     </nav>
+    <div class="fab-registro" id="fab-registro">
+      <div class="fab-opciones" role="group" aria-label="Registrar">
+        <button type="button" class="fab-mini venta" data-tipo="VENTA" aria-pressed="false"><span data-icono="carrito" data-icono-clase="icono-sm"></span>Venta</button>
+        <button type="button" class="fab-mini entrada" data-tipo="ENTRADA" aria-pressed="false"><span data-icono="entrada" data-icono-clase="icono-sm"></span>Entrada</button>
+      </div>
+      <button type="button" class="fab" id="fab" aria-label="Registrar una venta o una entrada"><span class="fab-icono fab-mas" data-icono="mas"></span><span class="fab-icono fab-venta" data-icono="carrito"></span><span class="fab-icono fab-entrada" data-icono="entrada"></span></button>
+    </div>
 
     <div class="velo" id="velo-panel"></div>
     <aside class="panel-lateral" id="panel-lateral" aria-label="Menú" aria-hidden="true">

@@ -1,7 +1,7 @@
 // © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
 // ============================================================
 // SHELL.JS — el marco de la app: barra superior, barra inferior con el
-// interruptor Entrada ⇄ Venta, panel lateral, modos, tema, tamaño de texto,
+// isla inferior con botón «+» (Venta / Entrada), panel lateral, modos, tema, tamaño de texto,
 // estado de conexión y aviso de sesión.
 //
 // Reglas (D11, §12.1, §23.1, D22):
@@ -55,9 +55,17 @@ const Shell = {
       const destino = e.target.closest('[data-ir]');
       if (destino) { this.cerrarPanel(); this.ir(destino.dataset.ir); }
     });
-    $$('.interruptor-registro button').forEach(b => b.addEventListener('click', () => {
+    // Botón «+»: fuera de Venta/Entrada lleva a Venta y muestra los accesos;
+    // dentro, solo muestra u oculta los accesos. Los accesos cambian de pantalla.
+    $('#fab').addEventListener('click', () => {
       const enRegistro = this.actual === 'venta' || this.actual === 'entrada';
-      this.ir(enRegistro ? (b.dataset.tipo === 'ENTRADA' ? 'entrada' : 'venta') : 'venta');
+      if (!enRegistro) { this.ir('venta'); this.mostrarAccesosFab(true); }
+      else this.mostrarAccesosFab(!$('#fab-registro').classList.contains('abierto'));
+    });
+    // Los accesos no deben tapar el formulario: se ocultan al tocar el contenido.
+    $('#contenido').addEventListener('pointerdown', () => this.mostrarAccesosFab(false));
+    $$('.fab-mini').forEach(b => b.addEventListener('click', () => {
+      this.ir(b.dataset.tipo === 'ENTRADA' ? 'entrada' : 'venta');
     }));
     $('#velo-panel').addEventListener('click', () => this.cerrarPanel());
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.cerrarPanel(); });
@@ -90,9 +98,10 @@ const Shell = {
     titulo.className = 'titulo-pantalla' + (nombre === 'venta' ? ' venta' : nombre === 'entrada' ? ' entrada' : '');
     $$('.barra-inferior .pestana').forEach(b => b.setAttribute('aria-current', b.dataset.ir === nombre ? 'page' : 'false'));
     const enRegistro = nombre === 'venta' || nombre === 'entrada';
-    const interruptor = $('.interruptor-registro');
-    interruptor.classList.toggle('activo', enRegistro);
-    $$('button', interruptor).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tipo === (nombre === 'entrada' ? 'ENTRADA' : 'VENTA'))));
+    const fab = $('#fab-registro');
+    fab.dataset.registro = enRegistro ? nombre : '';
+    $$('.fab-mini', fab).forEach(b => b.setAttribute('aria-pressed', String(enRegistro && b.dataset.tipo === (nombre === 'entrada' ? 'ENTRADA' : 'VENTA'))));
+    if (!enRegistro) this.mostrarAccesosFab(false);
     $$('.panel-lateral [data-ir]').forEach(b => b.setAttribute('aria-current', b.dataset.ir === nombre ? 'page' : 'false'));
     document.body.dataset.pantalla = nombre;
     if (def.mostrar) def.mostrar(el, opciones || {});
@@ -144,6 +153,12 @@ const Shell = {
   },
 
   // ---------- Modos (D10, D22) ----------
+  mostrarAccesosFab(si) {
+    const fab = $('#fab-registro');
+    fab.classList.toggle('abierto', !!si);
+    $('#fab').setAttribute('aria-expanded', String(!!si));
+  },
+
   cambiarModo(modo) {
     if (!MODOS[modo]) return;
     const aplicar = () => {

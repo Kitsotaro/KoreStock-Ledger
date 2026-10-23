@@ -34,29 +34,15 @@
 .pestana[aria-current="page"] { color: var(--texto); font-weight: var(--peso-fuerte); }
 .pestana[aria-current="page"] .pildora { background: var(--primario-suave); color: var(--sobre-primario-suave); }
 
-/* Interruptor central Entrada ⇄ Venta (§12.1): Entrada azul, Venta verde. */
-.interruptor-registro {
-  flex: 1.6 1 0; max-width: 12rem; align-self: center;
-  display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px;
-  border-radius: var(--r-pildora); background: var(--superficie-3); border: 1px solid var(--borde);
-}
-.interruptor-registro button {
-  border: 0; border-radius: var(--r-pildora); background: transparent; color: var(--texto-2);
-  min-height: 2.625rem; display: flex; align-items: center; justify-content: center; gap: var(--e-1);
-  font-size: var(--t-sm); font-weight: var(--peso-fuerte);
-}
-.interruptor-registro button[aria-pressed="true"][data-tipo="ENTRADA"] { background: var(--entrada); color: var(--sobre-entrada); }
-.interruptor-registro button[aria-pressed="true"][data-tipo="VENTA"] { background: var(--venta); color: var(--sobre-venta); }
-.interruptor-registro:not(.activo) button[aria-pressed="true"] { background: var(--superficie); color: var(--texto); box-shadow: var(--sombra-1); }
-
 /* Espacio para que el contenido no quede debajo de la barra inferior */
-.contenido { padding: var(--e-4) var(--e-4) calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-6)); max-width: var(--ancho-max); margin: 0 auto; }
-body[data-pantalla="dashboard"] .contenido, body[data-pantalla="panorama"] .contenido, body[data-pantalla="gastos"] .contenido, body[data-pantalla="combustible"] .contenido { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 4.5rem); }
+.contenido { padding: var(--e-4) var(--e-4) calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-6) + 2rem); max-width: var(--ancho-max); margin: 0 auto; }
+body[data-pantalla="dashboard"] .contenido, body[data-pantalla="panorama"] .contenido, body[data-pantalla="gastos"] .contenido, body[data-pantalla="combustible"] .contenido { padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 7rem); }
 
 /* Filtros abajo, justo encima de la barra (D25, D40) */
 .filtros-abajo {
   position: fixed; left: 0; right: 0; z-index: calc(var(--z-barra) - 1);
-  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  /* Encima de la isla y del «+» que sobresale */
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + var(--e-2) + 1.9rem);
   padding: var(--e-2) var(--e-3); background: color-mix(in srgb, var(--fondo) 92%, transparent);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--borde);
 }
@@ -64,15 +50,13 @@ body[data-pantalla="dashboard"] .contenido, body[data-pantalla="panorama"] .cont
 
 @media (min-width: 900px) {
   .barra-inferior { left: 50%; right: auto; transform: translateX(-50%); width: min(40rem, 100%); bottom: var(--e-3); border-radius: var(--r-xl); border: 1px solid var(--borde); height: var(--alto-barra-inferior); padding-bottom: var(--e-1); }
-  .filtros-abajo { bottom: calc(var(--alto-barra-inferior) + var(--e-4)); background: transparent; border: 0; backdrop-filter: none; }
+  .filtros-abajo { bottom: calc(var(--alto-barra-inferior) + var(--e-3) + 1.9rem); background: transparent; border: 0; backdrop-filter: none; }
 }
 
 /* Con 4 pestañas (modo Pro) se compacta para que las etiquetas no choquen. */
-body[data-modo="pro"] .pestana .pildora { width: 2.75rem; }
-body[data-modo="pro"] .interruptor-registro { flex: 1.35 1 0; }
 .pestana { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Durante la migración no hay a dónde navegar. */
-body[data-pantalla="migracion"] .barra-inferior { display: none; }
+body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"] .fab-registro { display: none; }
 /* Cinta del período en la barra superior: siempre visible donde hay filtro de fechas */
 .cinta-periodo {
   display: inline-flex; align-items: center; gap: var(--e-1); flex: none; max-width: 52%;
@@ -83,3 +67,65 @@ body[data-pantalla="migracion"] .barra-inferior { display: none; }
 .cinta-periodo span { overflow: hidden; text-overflow: ellipsis; }
 .cinta-periodo[hidden] { display: none; }
 .cinta-periodo:hover { border-color: var(--primario); }
+
+/* ---------- Isla inferior con «+» central (fase UI 2026-10-23) ----------
+   Rendimiento: el hueco del «+» es una máscara (sin JS) y las animaciones
+   solo usan transform y opacity. */
+.barra-inferior.isla {
+  left: var(--e-3); right: var(--e-3); bottom: calc(var(--e-2) + env(safe-area-inset-bottom));
+  height: var(--alto-barra-inferior); padding: 0 var(--e-2);
+  border: 0; border-radius: var(--r-xl); box-shadow: var(--sombra-2);
+  background: transparent; isolation: isolate;
+}
+.barra-inferior.isla::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--superficie-elevada);
+  -webkit-mask: radial-gradient(circle 2.25rem at 50% -0.35rem, transparent 98%, #000 100%);
+          mask: radial-gradient(circle 2.25rem at 50% -0.35rem, transparent 98%, #000 100%);
+}
+.isla .pestana { position: relative; }
+.isla .hueco-fab { flex: 0 0 4.75rem; }
+/* Pestaña activa: ícono en su píldora y una pequeña ola debajo */
+.isla .pestana::after {
+  content: ''; position: absolute; bottom: 0.35rem; left: 50%; width: 1.25rem; height: 3px; border-radius: 3px;
+  background: currentColor; transform: translateX(-50%) scaleX(0); transition: transform var(--dur-media) var(--curva);
+}
+.isla .pestana[aria-current="page"]::after { transform: translateX(-50%) scaleX(1); }
+.isla .pestana .pildora { width: 3rem; }
+
+.fab-registro {
+  position: fixed; left: 50%; z-index: calc(var(--z-barra) + 1); transform: translateX(-50%);
+  bottom: calc(var(--e-2) + env(safe-area-inset-bottom) + var(--alto-barra-inferior) - 1.75rem);
+  display: grid; justify-items: center; pointer-events: none;
+}
+.fab {
+  pointer-events: auto; width: 3.5rem; height: 3.5rem; border-radius: 50%; border: 0; position: relative;
+  display: grid; place-items: center; cursor: pointer; color: var(--sobre-fab);
+  background: var(--fab); box-shadow: var(--sombra-2);
+  transition: background-color var(--dur-media) var(--curva), transform var(--dur-rapida) var(--curva);
+}
+.fab:active { transform: scale(0.94); }
+.fab .fab-icono { position: absolute; display: grid; place-items: center; transition: opacity var(--dur-media) var(--curva), transform var(--dur-media) var(--curva); }
+.fab .fab-venta, .fab .fab-entrada { opacity: 0; transform: scale(0.6) rotate(-30deg); }
+.fab-registro[data-registro="venta"] .fab { background: var(--venta); color: var(--sobre-venta); }
+.fab-registro[data-registro="entrada"] .fab { background: var(--entrada); color: var(--sobre-entrada); }
+.fab-registro[data-registro="venta"] .fab-mas, .fab-registro[data-registro="entrada"] .fab-mas { opacity: 0; transform: scale(0.6) rotate(45deg); }
+.fab-registro[data-registro="venta"] .fab-venta, .fab-registro[data-registro="entrada"] .fab-entrada { opacity: 1; transform: none; }
+
+/* Dos accesos flotantes sobre la isla */
+.fab-opciones { display: flex; gap: var(--e-2); margin-bottom: var(--e-2); }
+.fab-mini {
+  pointer-events: none; opacity: 0; transform: translateY(0.75rem) scale(0.9);
+  display: inline-flex; align-items: center; gap: var(--e-1); min-height: 2.5rem; padding: 0 var(--e-4);
+  border: 1px solid var(--borde); border-radius: var(--r-pildora); background: var(--superficie-elevada); color: var(--texto);
+  font-size: var(--t-sm); font-weight: var(--peso-fuerte); box-shadow: var(--sombra-2); cursor: pointer;
+  transition: opacity var(--dur-media) var(--curva), transform var(--dur-media) var(--curva), background-color var(--dur-media) var(--curva);
+}
+.fab-registro.abierto .fab-mini { pointer-events: auto; opacity: 1; transform: none; }
+.fab-registro.abierto .fab-mini.entrada { transition-delay: 40ms; }
+.fab-mini.venta[aria-pressed="true"] { background: var(--venta); color: var(--sobre-venta); border-color: transparent; }
+.fab-mini.entrada[aria-pressed="true"] { background: var(--entrada); color: var(--sobre-entrada); border-color: transparent; }
+
+@media (min-width: 900px) {
+  .barra-inferior.isla { left: 50%; right: auto; width: min(36rem, 100%); transform: translateX(-50%); bottom: var(--e-3); }
+  .fab-registro { bottom: calc(var(--e-3) + var(--alto-barra-inferior) - 1.75rem); }
+}
