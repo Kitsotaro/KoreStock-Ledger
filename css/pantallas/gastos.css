@@ -15,3 +15,7 @@
 .anillo-centro span { font-size: 0.7rem; color: var(--texto-2); max-width: 4.2rem; }
 /* Clientes: avatar con iniciales */
 .avatar-cliente { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border-radius: 50%; background: var(--primario-suave); color: var(--sobre-primario-suave); font-size: var(--t-xs); font-weight: var(--peso-fuerte); }
+/* Botón de ajuste en la esquina inferior derecha de una cifra (Clientes: días sin pedido) */
+.cifra-tarjeta.con-ajuste { position: relative; }
+.boton-ajuste { position: absolute; right: var(--e-2); bottom: var(--e-2); display: grid; place-items: center; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: transparent; color: var(--texto-3); cursor: pointer; }
+.boton-ajuste:hover { background: var(--superficie-2); color: var(--texto); }

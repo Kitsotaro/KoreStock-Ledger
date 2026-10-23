@@ -25,7 +25,7 @@ const API_KEY = 'AIzaSyB812PW3rt74DVzSuy21Kr6uv4WLUR1GjI';
 const PICKER_APP_ID = '1070607567316';
 // Verificador de licencias (Apps Script). Contrato: V3 §P3.7 (D63, D68).
 const URL_VERIFICACION_ACCESO = 'https://script.google.com/macros/s/AKfycby_YtBiiqthE8vDZ7VAB-XUmsbVL2OqsPBG_CBiF6EuGXIueOKU8TwtMU5Ge39LAd-mZg/exec';
-const CORREO_CONTACTO = 'kitsotaro@gmail.com';
+const CORREO_CONTACTO = 'contacto@kitsotaro.com';
 
 // Claves de almacenamiento del navegador. NO cambiar los nombres heredados:
 // si cambian, los usuarios pierden la sesión y deben volver a elegir su archivo.
