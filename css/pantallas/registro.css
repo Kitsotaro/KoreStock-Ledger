@@ -42,7 +42,7 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 /* Modo editor dentro de la tarjeta del producto */
 .editor-producto { padding-top: var(--e-2); border-top: 1px dashed var(--borde); gap: var(--e-3); }
 /* Vista compacta (2026-10-24): menos aire, mismas funciones. */
-.registro .fila-folio { flex-wrap: nowrap; gap: var(--e-2) var(--e-3); font-size: var(--t-xs); }
+.registro .fila-folio { flex-wrap: nowrap; gap: var(--e-2); font-size: var(--t-xs); }
 .registro .fila-folio .control { padding: 0 var(--e-2); }
 .registro .fila-folio input[type="date"] { font-size: var(--t-sm); }
 #venta-folio, #entrada-folio { margin-left: auto; white-space: nowrap; }
@@ -59,3 +59,9 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .interruptor-cobro { min-height: 2rem; margin-top: 0; }
 .registro .tarjeta-producto .dato .cifra { text-align: right; }
 .fila-precio > span { flex: none; }
+.casilla-compacta { min-height: 2rem; gap: var(--e-2); }
+.registro-entrada .frase-notas { gap: var(--e-2); }
+.registro-entrada .boton-texto.boton-sm { min-height: 1.75rem; }
+.registro details.desplegable > summary { min-height: 2rem; }
+.registro .fila-folio input[type="date"] { width: 6.1rem; }
+.registro .fila-folio .boton-icono { min-width: 2rem; width: 2rem; min-height: 2rem; padding: 0; margin-left: 0; }

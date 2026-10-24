@@ -41,15 +41,12 @@ registrarPantalla('entrada', {
     entrada.el = el;
     el.innerHTML = html`
       <div class="registro registro-entrada">
-        <div class="fila-separada">
-          <p class="t-pequeno t-secundario">Registra lo que compraste como lo compraste.</p>
-          <button type="button" class="boton boton-icono" data-accion="menu-entrada" aria-label="Más opciones">${seguro(icono('mas-opciones'))}</button>
-        </div>
         <div class="fila-folio">
           <label class="fila" for="entrada-fecha">${seguro(icono('calendario', 'icono-sm'))}<span class="solo-lector">Fecha</span>
             <span class="control"><input type="date" id="entrada-fecha"></span></label>
           <span class="fila t-pequeno t-secundario">${seguro(icono('reloj', 'icono-sm'))}<span class="cifra" data-reloj></span></span>
           <span id="entrada-folio" class="cifra"></span>
+          <button type="button" class="boton boton-icono" data-accion="menu-entrada" aria-label="Más opciones" title="Registra lo que compraste como lo compraste.">${seguro(icono('mas-opciones'))}</button>
         </div>
         <div id="entrada-selector"></div>
         <div id="entrada-producto"></div>
@@ -374,10 +371,10 @@ function pintarProductoEntradaSinFoco() {
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
       <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
-      <div class="dato"><span>Compra a distribuidor por ${p.unidadBase}${factorReg > 1 ? ` · por ${empReg.empaque.toLowerCase()}` : ''}</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.costo, factorReg))}` : ''}</strong></div>
-      <div class="dato"><span>Venta al consumidor por ${p.unidadBase}${factorReg > 1 ? ` · por ${empReg.empaque.toLowerCase()}` : ''}</span><strong class="cifra">${formatearDinero(p.precio)}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}` : ''}</strong></div>
+      <div class="dato"><span title="Lo que te cobra el distribuidor">Costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.costo, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
+      <div class="dato"><span title="Lo que cobras al consumidor">Venta</span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
       ${seguro(detalleProProductoHTML(p).texto)}
-      <label class="casilla t-pequeno"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
+      <label class="casilla t-pequeno casilla-compacta"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
       ${editorArriba ? html`<div class="columna editor-producto">
         <div class="campo"><label for="entrada-costo">Costo por ${compra}</label>
           <div class="control"><span class="prefijo">$</span><input id="entrada-costo" value="${entrada.costoEditado ? valorCampoDinero(costoEmpaqueEntrada(), 5) : ''}" placeholder="${valorCampoDinero(costoEmpaqueEntrada(), 2)}"></div></div>
@@ -390,7 +387,7 @@ function pintarProductoEntradaSinFoco() {
       ${empaqueNuevo && !error ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Se creará una nueva forma de compra para este producto: ${nombreEmp.toLowerCase()} de ${formatearNumero(factor)} ${pluralUnidad(unidad, factor)}. Queda registrada al guardar.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
       ${bloqueCosto}
-      ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
+      ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno casilla-compacta"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
       ${!editorArriba && (editor || entrada.costoCambio) ? campoPrecio(!editor) : ''}
       <details class="desplegable" ${entrada.bonif ? 'open' : ''}>
         <summary class="fila t-pequeno">${seguro(icono('caja', 'icono-sm'))}<span class="crece">Bonificadas (gratis)</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
