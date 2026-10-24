@@ -53,7 +53,6 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .interruptor-cobro { min-height: 2rem; margin-top: 0; }
 .registro .tarjeta-producto .dato .cifra { text-align: right; }
 .casilla-compacta { min-height: 2rem; gap: var(--e-2); }
-.registro-entrada .frase-notas { gap: var(--e-2); }
 .registro-entrada .boton-texto.boton-sm { min-height: 1.75rem; }
 .registro details.desplegable > summary { min-height: 2rem; }
 .registro .fila-folio input[type="date"] { width: 6.1rem; }
@@ -64,10 +63,17 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 /* Jerarquía: el total cobrado manda; la cantidad y las frases de Entrada son más discretas. */
 .registro-venta .control.grande:has(#venta-cantidad) { min-height: 3.25rem; }
 .registro-venta #venta-cantidad { font-size: var(--t-2xl); }
-.registro-entrada .frase-notas .frase-campo:has(#entrada-cant) { flex: 0 1 6.5rem; }
 /* Botón principal flotante (solo teléfono): ver anclarBotonPrincipal en componentes.js */
-.boton-flotante { position: fixed; left: var(--e-4); bottom: calc(var(--alto-barra-inferior) + var(--e-6) + env(safe-area-inset-bottom)); z-index: calc(var(--z-barra) + 1); min-height: 2.75rem; padding: 0 var(--e-4); box-shadow: var(--sombra-2); }
+.boton-flotante { position: fixed; right: var(--e-4); bottom: calc(var(--alto-barra-inferior) + var(--e-3) + var(--e-5) + env(safe-area-inset-bottom)); z-index: calc(var(--z-barra) + 1); min-height: 2.75rem; padding: 0 var(--e-4); gap: var(--e-2); box-shadow: var(--sombra-2); }
+.boton-flotante:disabled { opacity: 1; background: var(--superficie-3); color: var(--texto-2); border-color: var(--borde-fuerte); box-shadow: var(--sombra-1); }
 .boton-flotante[hidden] { display: none; }
 @media (min-width: 720px) { .boton-flotante { display: none; } }
 .vacio .boton { margin-top: var(--e-2); }
 .vacio .boton .icono { width: 1.25rem; height: 1.25rem; color: currentColor; }
+.registro .campo > .fila-separada + .control { margin-top: var(--e-2); }
+.titulo-ingreso { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-md); font-weight: var(--peso-fuerte); color: var(--texto-2); }
+.rejilla-compra { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--e-3); }
+.fila-cantidad { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); }
+.fila-cantidad > .control { flex: none; width: 7.5rem; min-width: 0; }
+.fila-cantidad > .control input { width: 100%; }
+.fila-cantidad > .control input { text-align: center; font-weight: var(--peso-fuerte); font-size: var(--t-lg); }

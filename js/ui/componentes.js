@@ -384,7 +384,13 @@ function anclarBotonPrincipal(pantalla, selector, clase) {
     // Con el teclado abierto (escribiendo en un campo) no estorba.
     const escribiendo = pantalla.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
     flota.hidden = !(activa && abajo && !escribiendo);
-    if (activa) { flota.innerHTML = real.innerHTML; flota.disabled = real.disabled; }
+    if (activa) {
+      // Compacto: solo el ícono y el monto («$2.87»); el texto completo queda para lectores de pantalla.
+      const monto = (real.textContent.match(/\$[\d.,]+/) || [''])[0], ic = real.querySelector('svg');
+      flota.innerHTML = monto && ic ? ic.outerHTML + `<span>${monto}</span>` : real.innerHTML;
+      flota.setAttribute('aria-label', real.textContent.trim());
+      flota.disabled = real.disabled;
+    }
   }
   function buscar() {
     const nuevo = pantalla.querySelector(selector);

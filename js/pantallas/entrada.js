@@ -334,29 +334,31 @@ function pintarProductoEntradaSinFoco() {
   const nota = (texto) => html`<span class="nota-campo">${texto}</span>`;
 
   // 1. El empaque: cómo viene el producto (se registra aunque se compren unidades sueltas).
+  // Cada campo lleva su etiqueta arriba; los de tamaño van en rejilla de dos columnas.
+  const campoEmp = (id, etiqueta, valor, { lista = '', placeholder = '' } = {}) => html`<div class="campo"><label for="${id}">${etiqueta}</label>
+        <div class="control"><input id="${id}" value="${valor}" placeholder="${placeholder}" ${lista ? html`list="${lista}"` : ''} autocomplete="off"></div></div>`;
   const filaEmpaque = html`
-      <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Empaque">
-        <span class="frase-palabra">Tipo de compra</span>
-        <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${entrada.empaque}" list="lista-empaques-entrada" aria-label="Tipo de compra" placeholder="${unidad}, caja, fardo…" autocomplete="off"></span>${nota(entrada.conNivel ? 'Empaque mayor' : 'Por unidad o por mayoreo')}</span>
-        ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
-          ${entrada.conNivel
-            ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
-              <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>${nota('Empaque de adentro')}</span>
-              <span class="frase-palabra">de</span><span class="frase-campo"><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>${nota(pluralUnidad(unidad, 2))}</span>`
-            : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades || ''}" placeholder="¿cuántas?" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}
+      <div class="rejilla-compra" aria-label="Empaque">
+        ${campoEmp('entrada-empaque', entrada.conNivel ? 'Empaque mayor' : 'Tipo de compra', entrada.empaque, { lista: 'lista-empaques-entrada', placeholder: `${unidad}, caja, fardo…` })}
+        ${empaqueEsUnidad && !entrada.conNivel ? '' : entrada.conNivel
+          ? html`${campoEmp('entrada-por-sub', 'Empaques que trae', entrada.unidades)}
+            ${campoEmp('entrada-sub', 'Empaque de adentro', entrada.subEmpaque, { lista: 'lista-empaques-entrada', placeholder: 'adentro' })}
+            ${campoEmp('entrada-por-unidad', `${pluralUnidad(unidad, 2)} por empaque`, entrada.porSub)}`
+          : campoEmp('entrada-por', `${pluralUnidad(unidad, 2)} que trae`, entrada.unidades || '', { placeholder: '¿cuántas?' })}
         ${datalistEmpaques(unidad, listaEmpaques)}
       </div>
       ${entrada.conNivel || (!empaqueEsUnidad && entrada.empaque.trim()) ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Volver a un solo empaque (${(entrada.subEmpaque || 'el de adentro').toLowerCase()})` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
 
   // 2. Cuánto compraste y en qué unidad (empaque o unidad suelta).
   const filaCompra = html`
-      <div class="frase frase-notas" aria-label="Cantidad comprada">
-        <span class="frase-palabra">Compré</span>
-        <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Cantidad')}</span>
-        ${factor > 1 ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Unidad de compra">
-            <button type="button" role="radio" data-accion="compra-por" data-por="empaque" aria-checked="${String(!entrada.porUnidad)}">${pluralUnidad(nombreEmp.toLowerCase(), 2)}</button>
-            <button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>
-          </span>` : html`<span class="frase-palabra t-fuerte">${pluralUnidad(bodega && nombreEmp ? nombreEmp.toLowerCase() : unidad, entrada.cantEmp)}</span>`}
+      <div class="campo"><label for="entrada-cant">Cantidad comprada</label>
+        <div class="fila-cantidad">
+          <span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>
+          ${factor > 1 ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Unidad de compra">
+              <button type="button" role="radio" data-accion="compra-por" data-por="empaque" aria-checked="${String(!entrada.porUnidad)}">${pluralUnidad(nombreEmp.toLowerCase(), 2)}</button>
+              <button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>
+            </span>` : html`<span class="t-fuerte">${pluralUnidad(bodega && nombreEmp ? nombreEmp.toLowerCase() : unidad, entrada.cantEmp)}</span>`}
+        </div>
       </div>
       <p class="t-pequeno t-secundario entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreEmp.toLowerCase(), entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}</p>`;
 
@@ -382,11 +384,15 @@ function pintarProductoEntradaSinFoco() {
         ${campoPrecio(false)}</div>` : ''}
     </div>` : seguro(formularioNuevo().texto)}
 
-    <div class="tarjeta columna">
+    <div class="tarjeta columna tarjeta-ingreso">
+      <h2 class="titulo-ingreso">${seguro(icono('caja', 'icono-sm'))}Cómo compraste</h2>
       ${filaEmpaque}
       ${filaCompra}
       ${empaqueNuevo && !error ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Se creará una nueva forma de compra para este producto: ${nombreEmp.toLowerCase()} de ${formatearNumero(factor)} ${pluralUnidad(unidad, factor)}. Queda registrada al guardar.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
+    </div>
+    <div class="tarjeta columna tarjeta-ingreso">
+      <h2 class="titulo-ingreso">${seguro(icono('precio', 'icono-sm'))}Costo y detalles</h2>
       ${bloqueCosto}
       ${!editorArriba && (editor || entrada.costoCambio) ? campoPrecio(!editor) : ''}
       <details class="desplegable" ${entrada.bonif ? 'open' : ''}>
