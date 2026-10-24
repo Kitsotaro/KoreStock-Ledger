@@ -21,3 +21,6 @@ desktop.ini
 # ── Respaldos de documentos y datos de prueba (privados) ──────────
 /V3*.md
 *.xlsx
+
+# ── Carpeta que arma herramientas/publicar.sh (solo en el despliegue) ──
+publico/
