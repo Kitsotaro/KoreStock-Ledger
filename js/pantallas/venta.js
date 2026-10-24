@@ -178,8 +178,7 @@ function pintarProductoVenta() {
       </div>
       <div class="campo campo-total">
         <label for="venta-total">Total cobrado</label>
-        <div class="control grande total-cobrado ${venta.cobroExtra ? (venta.totalEditado ? 'precio-cambiado' : '') : 'solo-lectura'}"><span class="prefijo">$</span><input id="venta-total" value="${valorCampoDinero(venta.total)}" ${venta.cobroExtra ? '' : 'readonly tabindex="-1"'}>
-          <span class="ganancia-total ${ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'}">${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}</span></div>
+        <div class="control grande total-cobrado ${venta.cobroExtra ? (venta.totalEditado ? 'precio-cambiado' : '') : 'solo-lectura'}"><span class="prefijo">$</span><input id="venta-total" value="${valorCampoDinero(venta.total)}" ${venta.cobroExtra ? '' : 'readonly tabindex="-1"'}><span class="ganancia-total ${ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'}">${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}</span></div>
         <div class="fila-separada t-pequeno fila-ganancia">
           ${venta.totalEditado
             ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="usar-sugerido">Usar sugerido ${formatearDinero(sugerido.total)}</button>`
@@ -215,11 +214,15 @@ function pintarProductoVenta() {
   const inTotal = $('#venta-total', cont);
   prepararCampoNumerico(inTotal, { decimales: 2 });
   inTotal.addEventListener('input', () => { venta.total = leerDineroCampo(inTotal); venta.totalEditado = true; actualizarCifrasVenta(); });
+  ajustarAnchoTotal(inTotal);
   inTotal.addEventListener('change', () => pintarProductoVenta());
   inTotal.addEventListener('focus', () => inTotal.select());
   const inSabor = $('#venta-sabor', cont);
   inSabor.addEventListener('input', () => { venta.variante = inSabor.value.trim(); });
 }
+
+// El campo del total mide lo que su cifra, para que «Ganancia» quede pegada a ella (solo presentación).
+function ajustarAnchoTotal(input) { input.style.flex = '0 0 auto'; input.style.width = `${Math.max(input.value.length, 3) * 0.56 + 0.1}em`; }
 
 // Actualiza ganancia y botón sin redibujar (para no perder el foco al escribir).
 function actualizarCifrasVenta() {
@@ -227,6 +230,7 @@ function actualizarCifrasVenta() {
   const p = venta.producto; if (!p) return;
   const inTotal = $('#venta-total', cont);
   if (!venta.totalEditado && document.activeElement !== inTotal) inTotal.value = valorCampoDinero(venta.total);
+  ajustarAnchoTotal(inTotal);
   const ganancia = gananciaVenta();
   const linea = $('.ganancia-total', cont);
   if (linea) { linea.className = `ganancia-total ${ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'}`; linea.textContent = `${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}`; }
