@@ -1,6 +1,6 @@
 /* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * REGISTRO — pantallas Venta (verde) y Entrada (azul), §12.2 y §13. */
-.registro { display: grid; gap: var(--e-3); }
+.registro { display: grid; gap: var(--e-2); }
 .registro .buscador .control { min-height: var(--alto-control); border-radius: var(--r-sm); }
 .registro-venta .tarjeta-producto { border-left: 4px solid var(--venta); }
 .registro-entrada .tarjeta-producto { border-left: 4px solid var(--entrada); }
@@ -28,7 +28,7 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .registro .dato strong { color: var(--texto); }
 .registro .dato strong.t-exito { color: var(--exito); } .registro .dato strong.t-peligro { color: var(--peligro); }
 /* Mismo espacio entre todas las tarjetas del registro (también Cliente, resumen y botones) */
-#venta-producto, #venta-carrito, #entrada-producto, #entrada-carrito { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-3); }
+#venta-producto, #venta-carrito, #entrada-producto, #entrada-carrito { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-2); }
 #venta-producto:empty, #venta-carrito:empty, #entrada-carrito:empty, #entrada-resumen:empty { display: none; }
 .registro .tarjeta + .tarjeta { margin-top: 0; }
 #venta-cliente { margin: 0; }
@@ -41,3 +41,21 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .interruptor-cobro { align-items: flex-start; margin-top: var(--e-1); }
 /* Modo editor dentro de la tarjeta del producto */
 .editor-producto { padding-top: var(--e-2); border-top: 1px dashed var(--borde); gap: var(--e-3); }
+/* Vista compacta (2026-10-24): menos aire, mismas funciones. */
+.registro .fila-folio { flex-wrap: nowrap; gap: var(--e-2) var(--e-3); font-size: var(--t-xs); }
+.registro .fila-folio .control { padding: 0 var(--e-2); }
+.registro .fila-folio input[type="date"] { font-size: var(--t-sm); }
+#venta-folio, #entrada-folio { margin-left: auto; white-space: nowrap; }
+.registro .tarjeta { padding: var(--e-3); }
+.registro .tarjeta.columna { gap: var(--e-2); }
+.registro .tarjeta-producto { gap: var(--e-1); }
+.fila-precio { display: inline-flex; align-items: center; gap: var(--e-2); flex: none; }
+.fila-precio .boton { min-height: 1.75rem; padding: 0 var(--e-2); }
+.registro .fila-folio > label > .icono, .registro .fila-folio > .fila > .icono { display: none; }
+.registro .fila-folio .control { min-width: 0; }
+.registro .control.grande { min-height: 3rem; }
+.campo-total { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--e-3); row-gap: var(--e-1); }
+.campo-total > .fila-ganancia, .campo-total > .interruptor { grid-column: 1 / -1; }
+.interruptor-cobro { min-height: 2rem; margin-top: 0; }
+.registro .tarjeta-producto .dato .cifra { text-align: right; }
+.fila-precio > span { flex: none; }

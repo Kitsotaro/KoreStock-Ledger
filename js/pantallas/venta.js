@@ -156,8 +156,7 @@ function pintarProductoVenta() {
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
       <div class="dato"><span>En stock</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
-      <div class="dato"><span>Precio por ${p.unidadBase}${factorEmp > 1 ? ` · por ${nombreEmpaqueVenta}` : ''}</span><span><strong class="cifra">${formatearDinero(p.precio)}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}` : ''}</strong>
-        <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span></div>
+      <div class="dato"><span class="fila-precio"><span>Precio</span><button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}/${nombreEmpaqueVenta}` : ''}</strong></div>
       <div class="dato"><span>Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
@@ -176,17 +175,17 @@ function pintarProductoVenta() {
         ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
       </div>
-      <div class="campo">
+      <div class="campo campo-total">
         <label for="venta-total">Total cobrado</label>
         <div class="control grande total-cobrado ${venta.cobroExtra ? (venta.totalEditado ? 'precio-cambiado' : '') : 'solo-lectura'}"><span class="prefijo">$</span><input id="venta-total" value="${valorCampoDinero(venta.total)}" ${venta.cobroExtra ? '' : 'readonly tabindex="-1"'}></div>
-        <label class="interruptor interruptor-cobro"><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
-          <span><strong>¿Cobro extraordinario?</strong><span class="t-pequeno t-secundario" style="display:block">${venta.cobroExtra ? 'Escribe el precio real con el que cobraste.' : 'Actívalo si cobraste distinto al precio sugerido.'}</span></span></label>
-        <div class="fila-separada t-pequeno">
+        <div class="fila-separada t-pequeno fila-ganancia">
           <span class="${ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'}">${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}</span>
           ${venta.totalEditado
             ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="usar-sugerido">Usar sugerido ${formatearDinero(sugerido.total)}</button>`
             : html`<span class="t-tenue">${sugerido.desglose.length > 1 ? sugerido.desglose.map(d => `${formatearNumero(d.veces)} × ${d.etiqueta}`).join(' + ') : 'Sugerido'}</span>`}
         </div>
+        <label class="interruptor interruptor-cobro" title="Actívalo si cobraste distinto al precio sugerido."><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
+          <span><strong>¿Cobro extraordinario?</strong>${venta.cobroExtra ? html`<span class="t-pequeno t-secundario" style="display:block">Escribe el precio real con el que cobraste.</span>` : ''}</span></label>
       </div>
       <details class="desplegable" ${variantes.length ? 'open' : ''}>
         <summary class="fila t-pequeno">${seguro(icono('sabor', 'icono-sm'))}<span class="crece">Sabor <span class="t-tenue">(opcional)</span></span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
