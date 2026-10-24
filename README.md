@@ -20,32 +20,41 @@ autor, con todos los derechos reservados. No se permite copiarlo,
 redistribuirlo ni usarlo para ofrecer otro servicio. Si quieres una
 licencia comercial, escríbenos. Detalles en [`LICENSE`](./LICENSE).
 
-## ✨ Qué hace
+## ✨ Qué hace (versión 3)
 
-- **Registrar** — entradas (compras) y ventas (despacho), con búsqueda
-  de producto, SKU autogenerado, importación desde Excel y detección de
-  producto nuevo o existente.
-- **Stock & Catálogo** — semáforo de inventario, valor de bodega y
-  gráfico de distribución (pastel/barras) con navegación por niveles.
-- **Dashboard** — historial de movimientos con filtros, buscador y
-  anulación (nada se borra: solo se marca anulado).
-- **Panorama** — costo promedio ponderado, ROI, proyección de
-  agotamiento, resumen de combustible y punto de equilibrio.
-- **Costos Operativos** — costos fijos con categorías y control de
-  combustible por vehículo.
-- **Tus datos a salvo** — respaldo diario automático en tu carpeta de
-  Drive, copia descargable en Excel y restauración verificada; cada 6
-  meses la base se archiva para seguir rápida, sin perder reportes.
-- **Sin conexión, solo lectura** — puedes abrir y consultar lo último
-  guardado en tu dispositivo; para registrar necesitas internet.
-- Tema claro/oscuro, instalable como app (PWA) y pensada primero para
-  el teléfono.
+- **Venta y Entrada** — tickets con varios productos, cantidades por
+  unidad o por mayoreo (caja, fardo, sixpack…), bonificaciones, sabores,
+  clientes y precio de compra y de venta por unidad y por empaque.
+- **Stock** — semáforo por producto, valor de bodega neto y real, total
+  por mayoreo y por unidad, gráfico por marca → producto → presentación →
+  sabor, editar productos y ajustar con un conteo físico.
+- **Dashboard** — lo vendido hoy, movimientos por ticket con buscador
+  que suma lo filtrado, anular y revertir; resumen con tendencia,
+  rankings y unidades del período.
+- **Panorama** — ROI y rotación, punto de equilibrio, agotamiento,
+  costo promedio (las bonificaciones salen primero) y combustible.
+- **Gastos, Combustible y Clientes** — con sus propios historiales.
+- **Tus datos a salvo** — respaldo diario en tu carpeta de Drive, copia
+  descargable en Excel, restauración verificada y archivo histórico
+  cada 6 meses para seguir rápida.
+- **Actualiza desde la versión anterior** — un asistente lleva tus
+  datos de la versión 2 a una base nueva y comprueba que todo cuadre;
+  tu base anterior queda intacta.
+- **Sin conexión, solo lectura**, modos Bodega / Tienda / Pro, tema
+  claro y oscuro, instalable como app (PWA) y pensada primero para el
+  teléfono.
+
+La versión anterior (KoreStock básico) sigue disponible un tiempo en
+[`/v2/`](https://korestock.kitsotaro.com/v2/); usa su propio archivo
+(`StockCentral_DB`) y no se cruza con la versión 3 (`KoreStock_DB`).
 
 ## 🧱  Stack técnico
 
-JavaScript, HTML y CSS puros, sin frameworks ni compilación. Tu "base
-de datos" es una hoja de Google Sheets que la app lee y escribe
-directamente desde tu navegador con las APIs de Google.
+JavaScript, HTML y CSS puros, sin frameworks ni compilación; librerías
+propias en `lib/`. Tu "base de datos" es una hoja de Google Sheets en tu
+propio Drive, que la app lee y escribe desde tu navegador con las APIs
+de Google; el dinero se calcula con enteros exactos. Pruebas en
+`pruebas/` (`node pruebas/ejecutar.js`).
 
 ## 📄 Licencia, privacidad y términos
 

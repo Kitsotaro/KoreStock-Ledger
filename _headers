@@ -31,3 +31,12 @@
 
 /herramientas/*
   X-Robots-Tag: noindex
+
+/v2/*
+  X-Robots-Tag: noindex
+
+/v2/sw.js
+  Cache-Control: no-cache
+
+/v2/index.html
+  Cache-Control: no-cache

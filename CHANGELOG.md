@@ -1,5 +1,16 @@
 # Changelog — KoreStock Ledger
 
+## v3.0 — 2026-10-24
+
+Versión nueva, reconstruida desde cero.
+- Tickets con varios productos, unidades y mayoreo, bonificaciones que salen primero, sabores y clientes.
+- Stock con valor neto y real, total por mayoreo y por unidad, gráfico por niveles y ajuste por conteo físico.
+- Dashboard con buscador que suma lo filtrado, anular y revertir, resumen y unidades del período.
+- Panorama con ROI, punto de equilibrio, agotamiento, costo promedio y combustible.
+- Respaldos diarios, copia en Excel, archivo histórico y consulta sin conexión.
+- Asistente para actualizar los datos de la versión 2 (queda intacta) con verificación completa.
+- La versión 2 sigue un tiempo en `/v2/`.
+
 ## v2.3 — 2026-09-26
 
 ### 🔐 Login y sesión

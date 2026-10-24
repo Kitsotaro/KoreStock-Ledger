@@ -47,7 +47,8 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((nombres) => Promise.all(nombres.filter((n) => n !== CACHE_APP).map((n) => caches.delete(n))))
+      // Borra sus cachés viejas y la de la v2 que vivía en la raíz; la de /v2/ (korestock-v2-*) se respeta.
+      .then((nombres) => Promise.all(nombres.filter((n) => n !== CACHE_APP && !n.startsWith('korestock-v2-')).map((n) => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });
@@ -57,6 +58,7 @@ self.addEventListener('fetch', (e) => {
   if (peticion.method !== 'GET') return;
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin || url.pathname.includes('/_privado/')) return;
+  if (url.pathname.startsWith('/v2/')) return; // la versión anterior en /v2/ tiene su propio SW
   e.respondWith(
     fetch(peticion, { cache: 'no-cache' }) // revalida siempre: nunca una versión vieja pegada
       .then((respuesta) => {
