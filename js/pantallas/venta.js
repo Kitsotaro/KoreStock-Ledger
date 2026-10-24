@@ -169,7 +169,7 @@ function pintarProductoVenta() {
     <div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span>${seguro(stockPorModoHTML(p, disponible))}</div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span>${seguro(stockPorModoHTML(p, disponible, venta.empaqueVenta || empaquesVenta[0] || null))}</div>
       <div class="dato"><span class="etiqueta-dato">${seguro(icono('precio', 'icono-sm'))}Precio <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span>${seguro(dineroPorModoHTML(p.precio, p, empCifra, false))}</div>
       <div class="dato" data-solo-modo="tienda pro"><span class="etiqueta-dato">${seguro(icono('panorama', 'icono-sm'))}Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}

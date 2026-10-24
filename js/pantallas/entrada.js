@@ -224,13 +224,16 @@ function precioVentaEntrada() {
 // Cifras de la tarjeta del producto según el modo (Kitso 2026-10-24): Bodega pone el
 // mayoreo grande y la unidad chica; Tienda solo unidades; Pro, ambas en una línea.
 // Solo presentación: no calculan nada nuevo.
-function stockPorModoHTML(p, unidades) {
+function stockPorModoHTML(p, unidades, emp) {
   const eq = Almacen.empaqueMayor(p.idProducto);
+  // El empaque en uso (el elegido o el habitual); si no hay, el mayor del producto.
+  const f = emp ? (emp.conNivel ? emp.unidades * emp.porSub : emp.unidades) : (eq ? eq.unidades : 0);
+  const nombre = emp ? emp.empaque : (eq ? eq.nombre : '');
   const base = `${formatearNumero(unidades)} ${pluralUnidad(p.unidadBase, unidades)}`;
   if (Shell.modo === 'tienda') return html`<strong class="cifra">${base}</strong>`.texto;
-  if (Shell.modo === 'bodega' && eq && unidades >= eq.unidades) {
-    const n = Math.floor(unidades / eq.unidades);
-    return html`<span class="mayor"><strong>${formatearNumero(n)} ${pluralUnidad(eq.nombre, n)}</strong><small>${base}</small></span>`.texto;
+  if (Shell.modo === 'bodega' && f > 1 && unidades >= f) {
+    const n = Math.floor(unidades / f);
+    return html`<span class="mayor"><strong>${formatearNumero(n)} ${pluralUnidad(nombre.toLowerCase(), n)}</strong><small>${base}</small></span>`.texto;
   }
   return html`<strong>${describirCantidad(p.idProducto, unidades)}</strong>`.texto;
 }
@@ -426,7 +429,7 @@ function pintarProductoEntradaSinFoco() {
     ${p ? html`<div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En bodega</span>${seguro(stockPorModoHTML(p, Almacen.stock(p.idProducto)))}</div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En bodega</span>${seguro(stockPorModoHTML(p, Almacen.stock(p.idProducto), empSel))}</div>
       <div class="dato"><span class="etiqueta-dato" title="Lo que te cobra el distribuidor">${seguro(icono('precio', 'icono-sm'))}Costo</span>${seguro(dineroPorModoHTML(p.costo, p, empSel, true))}</div>
       <div class="dato"><span class="etiqueta-dato" title="Lo que cobras al consumidor">${seguro(icono('etiqueta', 'icono-sm'))}Venta</span>${seguro(dineroPorModoHTML(p.precio, p, empSel, false))}</div>
       ${seguro(detalleProProductoHTML(p).texto)}
