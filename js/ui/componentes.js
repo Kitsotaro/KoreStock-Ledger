@@ -295,7 +295,7 @@ if (typeof document !== 'undefined') {
 // El <datalist> del navegador no abre en todos los entornos (p. ej. vistas
 // incrustadas). Cada input[list] se convierte solo en un buscador propio
 // que lee las opciones de su <datalist> cada vez que se abre, con un botón
-// para ver todas. Se activa sola en todo HTML nuevo (MutationObserver).
+// para ver todas (sin abrir el teclado: el chevron no enfoca el campo). Se activa sola en todo HTML nuevo (MutationObserver).
 function activarSugerencias(raiz) {
   const inputs = raiz.matches && raiz.matches('input[list]') ? [raiz] : $$('input[list]', raiz);
   inputs.forEach(input => {
@@ -330,10 +330,19 @@ function activarSugerencias(raiz) {
     boton.setAttribute('aria-label', 'Ver opciones');
     boton.innerHTML = icono('chevron-abajo', 'icono-sm');
     boton.addEventListener('mousedown', (e) => e.preventDefault());
+    let quitar = () => {};
     boton.addEventListener('click', () => {
       const abierta = input.getAttribute('aria-expanded') === 'true';
+      quitar();
       if (abierta) { buscador.cerrar(); return; }
-      const antes = input.value; input.value = ''; input.focus(); buscador.refrescar(); input.value = antes;
+      // Regla global: el chevron solo despliega la lista (no enfoca el campo), así no sube el teclado
+      // en el teléfono. Sin foco no hay «blur» que la cierre: se cierra al tocar fuera o con Escape.
+      const antes = input.value; input.value = ''; buscador.refrescar(); input.value = antes;
+      const fuera = (e) => { if (!control.contains(e.target)) { buscador.cerrar(); quitar(); } };
+      const tecla = (e) => { if (e.key === 'Escape') { buscador.cerrar(); quitar(); } };
+      quitar = () => { document.removeEventListener('pointerdown', fuera, true); document.removeEventListener('keydown', tecla, true); quitar = () => {}; };
+      document.addEventListener('pointerdown', fuera, true);
+      document.addEventListener('keydown', tecla, true);
     });
     control.appendChild(boton);
   });
