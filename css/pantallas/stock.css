@@ -48,3 +48,5 @@
 .tabla-precios.dos .fila-precio.cabecera { grid-template-columns: minmax(0, 1fr) 6.5rem 6.5rem; }
 .fila-precio.cabecera span:not(.crece) { text-align: right; }
 .valor-anexo { font-weight: normal; }
+.grupo-detalle-titulo { margin-bottom: var(--e-2); }
+.fila-precio .equivalente { text-align: right; color: var(--texto-3); font-weight: normal; }

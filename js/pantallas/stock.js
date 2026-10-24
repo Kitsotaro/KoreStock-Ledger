@@ -179,9 +179,9 @@ function filaStockHTML(p) {
     <div class="desplegable-cuerpo">
       <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('caja', 'icono-sm'))}Existencias</div>
         ${par('caja', 'Stock', describirCantidad(p.idProducto, e.stock))}
-        ${e.bonif ? par('estrella', 'Bonificación en bodega', e.bonifEnBodega > 0 ? `${describirCantidad(p.idProducto, e.bonifEnBodega)} (sale primero)` : `ya se vendió (recibidas ${describirCantidad(p.idProducto, e.bonif)})`) : ''}
+        ${e.bonif ? par('estrella', 'Bonificación en bodega', e.bonifEnBodega > 0 ? describirCantidad(p.idProducto, e.bonifEnBodega) : 'Vendidas') : ''}
         ${tieneSabores ? par('sabor', 'Sabores vendidos y comprados', sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')) : ''}
-        ${par('advertencia', 'Avisar', `muy poco ≤ ${textoUmbral(p, p.umbralMin ?? 4)} · poco ≤ ${textoUmbral(p, p.umbralMax ?? 6)}`)}
+        ${tablaAvisoStock(p, eq)}
       </div>
       <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('precio', 'icono-sm'))}Precios</div>
         ${tablaPreciosStock(p, e, eq, presentaciones)}
@@ -203,6 +203,23 @@ function filaStockHTML(p) {
   </details>`;
 }
 
+// ¿El aviso se fijó en empaques? No se guarda aparte (se guarda en unidades):
+// se toma por empaques cuando ambos umbrales son empaques completos.
+function umbralEnEmpaques(p, eq) {
+  const n = eq ? eq.unidades : 0, a = p.umbralMin ?? 4, b = p.umbralMax ?? 6;
+  return n > 1 && (a > 0 || b > 0) && a % n === 0 && b % n === 0;
+}
+
+// Avisar: 2 filas (muy poco · poco) en las mismas columnas que Precios.
+// En negrita el valor en el que se fijó el aviso; el otro es su equivalente.
+function tablaAvisoStock(p, eq) {
+  const n = eq ? eq.unidades : 0, porEmpaque = umbralEnEmpaques(p, eq);
+  const nombre = n ? String(eq.nombre).toLowerCase() : '';
+  const celda = (texto, elegido) => elegido ? html`<strong class="cifra">${texto}</strong>` : html`<span class="cifra equivalente">${texto}</span>`;
+  const fila = (etiqueta, u) => html`<div class="fila-precio">${seguro(icono('advertencia', 'icono-sm'))}<span class="crece">${etiqueta}</span>${n ? celda(`${formatearNumero(redondearCantidad(u / n))} ${pluralUnidad(nombre, u / n)}`, porEmpaque) : ''}${celda(`${formatearNumero(u)} ${pluralUnidad(p.unidadBase, u)}`, !porEmpaque)}</div>`;
+  return html`<div class="tabla-precios ${n ? 'dos' : 'una'}">${fila('Avisar «muy poco»', p.umbralMin ?? 4)}${fila('Avisar «poco»', p.umbralMax ?? 6)}</div>`;
+}
+
 // Precios del detalle en columnas: por empaque (mayoreo, primero) y por unidad.
 // Venta por empaque: su presentación de venta si existe; si no, precio × N.
 function tablaPreciosStock(p, e, eq, presentaciones) {
@@ -213,7 +230,7 @@ function tablaPreciosStock(p, e, eq, presentaciones) {
   return html`<div class="tabla-precios ${n ? 'dos' : 'una'}">
     <div class="fila-precio cabecera"><span class="crece"></span>${n ? html`<span>Por ${String(eq.nombre).toLowerCase()} (${formatearNumero(n)})</span>` : ''}<span>Por ${p.unidadBase}</span></div>
     ${fila('precio', 'Último costo', p.costo, multiplicarDinero(p.costo, n))}
-    ${fila('tendencia', 'Costo promedio (pagadas)', e.cpp, multiplicarDinero(e.cpp, n))}
+    ${fila('tendencia', 'Costo promedio', e.cpp, multiplicarDinero(e.cpp, n))}
     ${fila('etiqueta', 'Precio de venta', p.precio, pres ? pres.precio : multiplicarDinero(p.precio, n))}
   </div>
   ${otras.map(x => html`<div class="par-dato con-icono">${seguro(icono('precio', 'icono-sm'))}<span class="crece">${x.etiqueta}</span><strong class="cifra">${formatearDinero(x.precio)}</strong></div>`)}`;
@@ -367,7 +384,9 @@ function editarProducto(idProducto) {
   const campo = (id, etiqueta, valor, extra) => html`<div class="campo"><label for="${id}">${etiqueta}</label><div class="control">${extra && extra.prefijo ? html`<span class="prefijo">${extra.prefijo}</span>` : ''}<input id="${id}" value="${valor}" ${extra && extra.lista ? html`list="${extra.lista}"` : ''} autocomplete="off" ${extra && extra.deshabilitado ? 'disabled' : ''}>${extra && extra.sufijo ? html`<span class="sufijo">${extra.sufijo}</span>` : ''}</div>${extra && extra.ayuda ? html`<span class="ayuda-campo">${extra.ayuda}</span>` : ''}</div>`;
   const eqMayor = empaqueMayor(p);
   const nombreEmp = eqMayor ? String(eqMayor.nombre).toLowerCase() : '';
-  let umbralPorEmpaque = false;
+  let umbralPorEmpaque = umbralEnEmpaques(p, eqMayor);
+  const enAviso = (u) => umbralPorEmpaque ? redondearCantidad(u / eqMayor.unidades) : u;
+  const sufijoAviso = umbralPorEmpaque ? pluralUnidad(nombreEmp, 2) : pluralUnidad(p.unidadBase, 2);
   const lista = (id, valores) => html`<datalist id="${id}">${valores.map(x => html`<option value="${x}"></option>`)}</datalist>`;
   const unicos = (campo) => [...new Set(Almacen.productosVisibles().map(x => String(x[campo] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
   const control = abrirHoja({
@@ -385,12 +404,12 @@ function editarProducto(idProducto) {
       </div>
       ${eqMayor ? html`<div class="fila-separada"><span class="t-pequeno t-secundario">Avisar con</span>
         <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Contar el aviso en">
-          <button type="button" role="radio" data-umbral-por="unidad" aria-checked="true">${pluralUnidad(p.unidadBase, 2)}</button>
-          <button type="button" role="radio" data-umbral-por="empaque" aria-checked="false">${pluralUnidad(nombreEmp, 2)} de ${formatearNumero(eqMayor.unidades)}</button>
+          <button type="button" role="radio" data-umbral-por="unidad" aria-checked="${String(!umbralPorEmpaque)}">${pluralUnidad(p.unidadBase, 2)}</button>
+          <button type="button" role="radio" data-umbral-por="empaque" aria-checked="${String(umbralPorEmpaque)}">${pluralUnidad(nombreEmp, 2)} de ${formatearNumero(eqMayor.unidades)}</button>
         </span></div>` : ''}
       <div class="rejilla-campos">
-        ${campo('ed-umin', 'Avisar «muy poco» con', p.umbralMin ?? 4, { sufijo: pluralUnidad(p.unidadBase, 2) })}
-        ${campo('ed-umax', 'Avisar «poco» con', p.umbralMax ?? 6, { sufijo: pluralUnidad(p.unidadBase, 2) })}
+        ${campo('ed-umin', 'Avisar «muy poco» con', enAviso(p.umbralMin ?? 4), { sufijo: sufijoAviso })}
+        ${campo('ed-umax', 'Avisar «poco» con', enAviso(p.umbralMax ?? 6), { sufijo: sufijoAviso })}
       </div>
       <div class="rejilla-campos">${campo('ed-categoria', 'Categoría', p.categoria, { lista: 'ed-cats' })}${campo('ed-empaque', 'Tipo de empaque', p.tipoEmpaque, { lista: 'ed-empaques' })}</div>
       <datalist id="ed-cats">${Almacen.categorias().map(c => html`<option value="${c}"></option>`)}</datalist>
