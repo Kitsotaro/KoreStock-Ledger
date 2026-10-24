@@ -132,6 +132,28 @@ const Almacen = {
       .filter(p => p && p.estado === ESTADOS.ACTIVO).slice(0, limite || 12);
   },
 
+  // Sugeridos de Venta/Entrada (Kitso 2026-10-23): los 3 con más movimientos de
+  // ese tipo, luego los más recientes y, si falta, el catálogo como en Stock.
+  // Nunca vacío mientras haya productos activos.
+  sugeridos(tipo, limite) {
+    const conteo = {}, ultimo = {};
+    this.movimientos.forEach(m => {
+      if (!esMovValido(m) || m.tipo !== tipo || !m.idProducto) return;
+      conteo[m.idProducto] = (conteo[m.idProducto] || 0) + 1;
+      const t = m.timestamp || m.fecha || '';
+      if (!ultimo[m.idProducto] || t > ultimo[m.idProducto]) ultimo[m.idProducto] = t;
+    });
+    const activos = this.productosActivos();
+    const ids = Object.keys(conteo);
+    const populares = ids.slice().sort((a, b) => conteo[b] - conteo[a] || (ultimo[b] > ultimo[a] ? 1 : -1)).slice(0, 3);
+    const recientes = ids.filter(id => !populares.includes(id)).sort((a, b) => (ultimo[b] > ultimo[a] ? 1 : -1));
+    const vistos = new Set();
+    const lista = [];
+    populares.concat(recientes).map(id => this.producto(id)).concat(activos.slice().sort((a, b) => nombreProducto(a).localeCompare(nombreProducto(b), 'es')))
+      .forEach(p => { if (p && p.estado === ESTADOS.ACTIVO && !vistos.has(p.idProducto)) { vistos.add(p.idProducto); lista.push(p); } });
+    return lista.slice(0, limite || 12);
+  },
+
   presentacionesDe(idProducto) {
     return this.hojas.PRESENTACIONES_VENTA.filter(x => x.idProducto === Number(idProducto) && x.estado !== ESTADOS.INACTIVO)
       .sort((a, b) => b.cantidad - a.cantidad || a.orden - b.orden);

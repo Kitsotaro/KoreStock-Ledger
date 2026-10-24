@@ -32,3 +32,10 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 #venta-producto:empty, #venta-carrito:empty, #entrada-carrito:empty, #entrada-resumen:empty { display: none; }
 .registro .tarjeta + .tarjeta { margin-top: 0; }
 #venta-cliente { margin: 0; }
+/* Modo Pro: todo lo que se sabe del producto en su tarjeta */
+.detalle-pro { display: grid; gap: var(--e-1); padding-top: var(--e-2); margin-top: var(--e-1); border-top: 1px dashed var(--borde); }
+.detalle-pro .dato strong { text-align: right; }
+/* Total cobrado: solo lectura salvo «¿Cobro extraordinario?» */
+.control.solo-lectura { background: var(--superficie-2); }
+.control.solo-lectura input { cursor: default; }
+.interruptor-cobro { align-items: flex-start; margin-top: var(--e-1); }

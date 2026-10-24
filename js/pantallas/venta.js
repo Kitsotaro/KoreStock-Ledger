@@ -19,7 +19,7 @@
 
 const venta = {
   el: null, selector: null,
-  producto: null, cantidad: 0, total: 0, totalEditado: false, variante: '', etiqueta: '',
+  producto: null, cantidad: 0, total: 0, totalEditado: false, cobroExtra: false, variante: '', etiqueta: '',
   carrito: [], idCliente: null, fecha: '', empaqueVenta: null,
 };
 
@@ -93,6 +93,7 @@ function elegirProductoVenta(p) {
   venta.variante = '';
   venta.etiqueta = '';
   venta.totalEditado = false;
+  venta.cobroExtra = false;
   recalcularTotalVenta();
   pintarProductoVenta();
   setTimeout(() => { const c = $('#venta-cantidad', venta.el); if (c) { c.focus(); c.select(); } }, 50);
@@ -158,6 +159,7 @@ function pintarProductoVenta() {
       <div class="dato"><span>Precio por ${p.unidadBase}${factorEmp > 1 ? ` · por ${nombreEmpaqueVenta}` : ''}</span><span><strong class="cifra">${formatearDinero(p.precio)}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}` : ''}</strong>
         <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span></div>
       <div class="dato"><span>Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
+      ${seguro(detalleProProductoHTML(p).texto)}
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
         ${presentaciones.map(x => html`<button type="button" class="chip" data-accion="usar-presentacion" data-cantidad="${x.cantidad}" data-precio="${x.precio}" data-etiqueta="${x.etiqueta}">${x.etiqueta} · ${formatearDinero(x.precio)}</button>`)}
       </div>` : ''}
@@ -176,7 +178,9 @@ function pintarProductoVenta() {
       </div>
       <div class="campo">
         <label for="venta-total">Total cobrado</label>
-        <div class="control grande total-cobrado"><span class="prefijo">$</span><input id="venta-total" value="${valorCampoDinero(venta.total)}"></div>
+        <div class="control grande total-cobrado ${venta.cobroExtra ? (venta.totalEditado ? 'precio-cambiado' : '') : 'solo-lectura'}"><span class="prefijo">$</span><input id="venta-total" value="${valorCampoDinero(venta.total)}" ${venta.cobroExtra ? '' : 'readonly tabindex="-1"'}></div>
+        <label class="interruptor interruptor-cobro"><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
+          <span><strong>¿Cobro extraordinario?</strong><span class="t-pequeno t-secundario" style="display:block">${venta.cobroExtra ? 'Escribe el precio real con el que cobraste.' : 'Actívalo si cobraste distinto al precio sugerido.'}</span></span></label>
         <div class="fila-separada t-pequeno">
           <span class="${ganancia < 0 ? 't-peligro t-fuerte' : 't-secundario'}">${ganancia < 0 ? 'Pierdes' : 'Ganancia'} ${formatearDinero(Math.abs(ganancia))}</span>
           ${venta.totalEditado
@@ -301,6 +305,12 @@ const accionesVenta = {
     pintarProductoVenta();
   },
   'usar-sugerido': () => { venta.totalEditado = false; recalcularTotalVenta(); pintarProductoVenta(); },
+  'cobro-extra': (b) => {
+    venta.cobroExtra = b.checked;
+    if (!venta.cobroExtra) { venta.totalEditado = false; recalcularTotalVenta(); }
+    pintarProductoVenta();
+    if (venta.cobroExtra) setTimeout(() => { const i = $('#venta-total', venta.el); if (i) { i.focus(); i.select(); } }, 30);
+  },
   'elegir-sabor': (b) => { venta.variante = normalizarIdentidad(venta.variante) === normalizarIdentidad(b.dataset.sabor) ? '' : b.dataset.sabor; pintarProductoVenta(); },
   'cambiar-precio': () => editarPrecioProducto(venta.producto, () => { recalcularTotalVenta(); pintarProductoVenta(); }),
   'editar-presentaciones': () => editarPresentaciones(venta.producto, () => { recalcularTotalVenta(); pintarProductoVenta(); }),

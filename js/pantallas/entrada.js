@@ -56,7 +56,7 @@ registrarPantalla('entrada', {
         <div id="entrada-carrito"></div>
       </div>`.texto;
     entrada.selector = crearSelectorProducto({
-      contenedor: $('#entrada-selector', el), permitirNuevo: true, placeholder: 'Buscar producto o agregar uno nuevo',
+      contenedor: $('#entrada-selector', el), conCinta: true, tipoSugeridos: 'ENTRADA', permitirNuevo: true, placeholder: 'Buscar producto o agregar uno nuevo',
       alElegir: (p) => elegirProductoEntrada(p),
       alNuevo: (texto) => empezarProductoNuevo(texto)
     });
@@ -168,7 +168,9 @@ function empaquesRegistrados(p) {
   return opciones.filter((o, i, a) => a.findIndex(x => x.clave === o.clave) === i);
 }
 function claveEmpaqueEntrada() {
-  if (factorEntrada() === 1) return 'u';
+  // Solo es «la unidad» si el empaque se llama como la unidad: «sixpack» de 1 (o sin
+  // número todavía) es otro empaque y cuenta como cambio importante (Kitso 2026-10-23).
+  if (!entrada.empaque.trim() || normalizarTexto(entrada.empaque) === normalizarTexto(unidadBaseEntrada())) return 'u';
   return entrada.conNivel ? `n|${normalizarTexto(entrada.empaque)}|${entrada.unidades}|${normalizarTexto(entrada.subEmpaque)}|${entrada.porSub}` : `d|${normalizarTexto(entrada.empaque)}|${entrada.unidades}`;
 }
 function aplicarEmpaque(o) {
@@ -195,7 +197,9 @@ function validarEmpaqueEntrada() {
     if (normalizarTexto(entrada.subEmpaque) === normalizarTexto(nombre)) return 'El empaque mayor y el de adentro deben tener nombres distintos.';
     if (normalizarTexto(entrada.subEmpaque) === normalizarTexto(unidad)) return `El empaque de adentro no puede llamarse igual que la unidad (${unidad}).`;
     if (!(entrada.unidades >= 1) || !(entrada.porSub > 1)) return 'Indica cuántos empaques trae el mayor y cuántas unidades trae cada uno.';
-  } else if (!(factor > 1)) return `Un empaque debe traer más de una unidad. Si compraste por ${unidad}, elige «${unidad}».`;
+  } else if (!(factor > 1)) return entrada.unidades > 1 || !entrada.unidades
+    ? `¿Cuántas ${pluralUnidad(unidad, 2)} trae cada ${nombre.toLowerCase()}? Escríbelo en «de». Si compraste por ${unidad}, elige «${unidad}» (compra individual).`
+    : `Un empaque debe traer más de una unidad. Si compraste por ${unidad}, elige «${unidad}» (compra individual).`;
   // Un nombre ya registrado no cambia de tamaño (rompería las equivalencias).
   if (entrada.producto) {
     const choque = (nom, unidades, inferior) => Almacen.equivalenciasDe(entrada.producto.idProducto)
@@ -213,6 +217,12 @@ function precioVentaEntrada() {
   return (entrada.nuevo && entrada.nuevo.precio) || 0;
 }
 
+// Lista del campo «Empaque» con dos grupos: la unidad (compra individual) y los
+// empaques (compra por mayor, que pide cuántas unidades trae).
+function datalistEmpaques(unidad, valores) {
+  const mayor = valores.filter(v => normalizarTexto(v) !== normalizarTexto(unidad));
+  return html`<datalist id="lista-empaques-entrada"><option value="${unidad}" data-grupo="Compra individual (por ${unidad})"></option>${mayor.map(v => html`<option value="${v.toLowerCase()}" data-grupo="Compra por mayor (empaque con varias ${pluralUnidad(unidad, 2)})"></option>`)}</datalist>`;
+}
 function datalist(id, valores) {
   return html`<datalist id="${id}">${valores.map(v => html`<option value="${v}"></option>`)}</datalist>`;
 }
@@ -323,8 +333,8 @@ function pintarProductoEntradaSinFoco() {
             ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
               <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-sub" value="${entrada.subEmpaque}" placeholder="adentro" aria-label="Empaque de adentro" list="lista-empaques-entrada"></span>${nota('Empaque de adentro')}</span>
               <span class="frase-palabra">de</span><span class="frase-campo"><span class="control"><input id="entrada-por-unidad" value="${entrada.porSub}" aria-label="Unidades por empaque de adentro"></span>${nota(pluralUnidad(unidad, 2))}</span>`
-            : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades}" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}
-        ${datalist('lista-empaques-entrada', listaEmpaques)}
+            : html`<span class="frase-campo"><span class="control"><input id="entrada-por" value="${entrada.unidades || ''}" placeholder="¿cuántas?" aria-label="Unidades por empaque"></span>${nota(pluralUnidad(unidad, 2))}</span>`}`}
+        ${datalistEmpaques(unidad, listaEmpaques)}
       </div>
       ${opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaques registrados">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : ''}
       ${!empaqueEsUnidad && entrada.empaque.trim() ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? 'Quitar el empaque de adentro' : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
@@ -339,7 +349,7 @@ function pintarProductoEntradaSinFoco() {
             <button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>
           </span>` : html`<span class="frase-palabra t-fuerte">${pluralUnidad(unidad, entrada.cantEmp)}</span>`}
       </div>
-      <p class="t-pequeno t-secundario entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreEmp, entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}</p>`;
+      <p class="t-pequeno t-secundario entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreEmp.toLowerCase(), entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}</p>`;
 
   // 3. Costo: un solo campo, por la unidad de compra (el total se calcula).
   const costoEditable = editor || entrada.costoCambio || empaqueNuevo;
@@ -353,13 +363,14 @@ function pintarProductoEntradaSinFoco() {
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
       <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
+      ${seguro(detalleProProductoHTML(p).texto)}
       <label class="casilla t-pequeno"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
     </div>` : seguro(formularioNuevo().texto)}
 
     <div class="tarjeta columna">
       ${filaEmpaque}
       ${filaCompra}
-      ${empaqueNuevo && !error ? html`<span class="franja info-color">${seguro(icono('info', 'icono-sm'))}Empaque nuevo para este producto: al guardar queda registrado con este tamaño.</span>` : ''}
+      ${empaqueNuevo && !error ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Se creará una nueva forma de compra para este producto: ${nombreEmp.toLowerCase()} de ${formatearNumero(factor)} ${pluralUnidad(unidad, factor)}. Queda registrada al guardar.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
       ${bloqueCosto}
       ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
@@ -402,6 +413,8 @@ function conectarCamposEntrada(cont) {
     entrada.empaque = v.trim();
     const o = entrada.producto && empaquesRegistrados(entrada.producto).find(x => x.clave !== 'u' && normalizarTexto(x.empaque) === normalizarTexto(v));
     if (o && entrada.empaque) aplicarEmpaque(o);
+    // Empaque que este producto no tiene: su tamaño se escribe (no hereda el del anterior).
+    else if (entrada.empaque && normalizarTexto(entrada.empaque) !== normalizarTexto(unidadBaseEntrada())) { entrada.unidades = 0; entrada.conNivel = false; entrada.costoEditado = false; }
   }, true);
   texto('#entrada-sub', (v) => { entrada.subEmpaque = v.trim(); });
   texto('#entrada-sabor', (v) => { entrada.variante = v.trim(); });
@@ -519,6 +532,7 @@ function lineaActualEntrada() {
       categoria: n.categoria, umbralMin: n.umbralMin, umbralMax: n.umbralMax, decimales: n.decimales, precio: n.precio || 0 };
   }
   linea._importante = cambioImportanteEntrada();
+  if (entrada.producto && !empaqueRegistradoEntrada()) linea._empaqueNuevo = `${entrada.empaque.toLowerCase()} de ${formatearNumero(factorEntrada())} ${pluralUnidad(unidad, factorEntrada())}`;
   linea._descripcion = `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreCompra(), entrada.cantEmp)}${fc > 1 ? ` de ${formatearNumero(fc)}` : ''} = ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}`;
   linea._nombre = entrada.producto ? nombreProducto(entrada.producto, { conVariante: false }) : [entrada.nuevo.marca, entrada.nuevo.linea, entrada.nuevo.presentacion, entrada.nuevo.volumen].filter(Boolean).join(' ');
   return linea;
@@ -605,6 +619,7 @@ async function guardarEntradaUI(boton) {
     let nota = '';
     if (soloBonif.length) nota += `\n\nSolo estás ingresando unidades bonificadas (gratis) de ${soloBonif.map(l => l._nombre).join(', ')}, sin compra. Si es correcto, guarda; si también compraste, escribe la cantidad comprada antes de guardar.`;
     if (enCero.length) nota += `\n\nOjo: ${enCero.length === 1 ? 'un producto va' : `${enCero.length} productos van`} con costo $0.00. Si fue regalo, usa «Bonificadas»; si no, revisa el total pagado.`;
+    lineas.filter(l => l._empaqueNuevo).forEach(l => { nota += `\n\nSe creará una nueva forma de compra para ${l._nombre}: ${l._empaqueNuevo}.`; });
     const ok = await confirmar({
       titulo: lineas.length > 1 ? `¿Guardar la entrada de ${lineas.length} productos?` : '¿Guardar esta entrada?',
       mensaje: `${lineas.map(l => `${l._nombre}: ${l._descripcion}${l.bonif ? ` + ${formatearNumero(l.bonif)} gratis` : ''} · ${formatearDinero(l.totalPagado)}`).join('\n')}\n\nTotal: ${formatearDinero(totalTodo)}${nota}`,

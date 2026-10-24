@@ -217,7 +217,13 @@ function crearBuscador({ input, obtener, alElegir, nuevo = null, maximo = 8, alE
     if (htmlNuevo) opciones.push({ esNuevo: true, html: htmlNuevo });
     resaltada = opciones.length ? 0 : -1;
     if (!opciones.length) { cerrar(); return; }
-    lista.innerHTML = opciones.map((o, i) => `<div class="opcion${o.esNuevo ? ' nuevo' : ''}${i === 0 ? ' resaltada' : ''}" role="option" data-i="${i}">${o.html.texto !== undefined ? o.html.texto : o.html}</div>`).join('');
+    // Una opción con `grupo` abre un encabezado (no elegible) cuando cambia el grupo.
+    let grupo = null;
+    lista.innerHTML = opciones.map((o, i) => {
+      const cabecera = o.grupo && o.grupo !== grupo ? escaparHTML(o.grupo) : '';
+      if (o.grupo) grupo = o.grupo;
+      return `${cabecera ? `<div class="opcion-grupo" role="presentation">${cabecera}</div>` : ''}<div class="opcion${o.esNuevo ? ' nuevo' : ''}${i === 0 ? ' resaltada' : ''}" role="option" data-i="${i}">${o.html.texto !== undefined ? o.html.texto : o.html}</div>`;
+    }).join('');
     lista.classList.remove('oculto');
     input.setAttribute('aria-expanded', 'true');
   };
@@ -298,8 +304,10 @@ function activarSugerencias(raiz) {
     input.dataset.sugerencias = idLista;
     const control = input.parentElement;
     control.classList.add('con-sugerencias');
-    const valores = () => { const dl = document.getElementById(idLista); return dl ? [...dl.options].map(o => o.value).filter(Boolean) : []; };
-    const opcion = (v) => ({ valor: v, html: html`<span class="crece">${v}</span>` });
+    const opcionesLista = () => { const dl = document.getElementById(idLista); return dl ? [...dl.options].filter(o => o.value) : []; };
+    const valores = () => opcionesLista().map(o => o.value);
+    const grupoDe = (v) => { const o = opcionesLista().find(x => x.value === v); return o ? (o.dataset.grupo || null) : null; };
+    const opcion = (v) => ({ valor: v, grupo: grupoDe(v), html: html`<span class="crece">${v}</span>` });
     // Con data-permite-nuevo, si lo escrito no existe se ofrece «Agregar «X»» al final.
     const ponerValor = (v) => {
       input.value = v;

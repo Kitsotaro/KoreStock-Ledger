@@ -85,3 +85,6 @@
 .opcion-modo-color[aria-pressed="true"] { border-color: var(--texto); background: var(--superficie-2); font-weight: var(--peso-fuerte); }
 .tira-colores { display: flex; }
 .tira-colores span { width: 0.9rem; height: 0.9rem; border-radius: 50%; margin-left: -3px; box-shadow: 0 0 0 1.5px var(--superficie-elevada); }
+/* Encabezado de grupo en las listas desplegables (Entrada: compra individual / por mayor) */
+.opcion-grupo { padding: var(--e-2) var(--e-3) var(--e-1); font-size: var(--t-xs); font-weight: var(--peso-fuerte); color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.opcion-grupo:not(:first-child) { border-top: 1px solid var(--borde); margin-top: var(--e-1); }

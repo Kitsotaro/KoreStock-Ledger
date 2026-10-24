@@ -5,34 +5,62 @@
 // cinta deslizable con los más vendidos (§12.2); en Entrada ofrece al final
 // «+ Producto nuevo».
 //
-// Expone: crearSelectorProducto, ejecutarOperacion, filaProductoHTML.
+// Expone: crearSelectorProducto, ejecutarOperacion, filaProductoHTML,
+//   textoEmpaquesProducto, detalleProProductoHTML.
 // Depende de: componentes.js, almacen.js, operaciones-movimientos.js.
 // ============================================================
 
 // Fila de resultado. Muestra hasta 2 sabores del producto y «…» si hay más,
 // primero el que coincide con lo buscado: así se entiende por qué aparece
 // «Tortillitas 30 g» al escribir «jalapeño» (el sabor es dato del movimiento, D24).
+// Empaques registrados: «caja de 6 botellas · sixpack de …».
+function textoEmpaquesProducto(p) {
+  if (typeof empaquesRegistrados !== 'function') return '';
+  return empaquesRegistrados(p).filter(o => o.clave !== 'u').map(o => o.etiqueta).join(' · ');
+}
+
+// Todo lo que se sabe del producto (tarjeta de Venta y Entrada en modo Pro).
+function detalleProProductoHTML(p) {
+  const e = Almacen.estado(p.idProducto);
+  const empaques = textoEmpaquesProducto(p);
+  const sabores = Object.entries(e.porVariante || {}).filter(([s, u]) => s && u);
+  const dato = (etiqueta, valor) => html`<div class="dato"><span>${etiqueta}</span><strong>${valor}</strong></div>`;
+  return html`<div class="detalle-pro" data-solo-modo="pro">
+    ${dato('Código', `${p.sku}${p.categoria ? ` · ${p.categoria}` : ''}`)}
+    ${dato(`Costo del proveedor por ${p.unidadBase}`, formatearDinero(p.costo, { detalle: true }))}
+    ${dato('Costo promedio', formatearDinero(e.cpp || 0, { detalle: true }))}
+    ${dato(`Precio de venta por ${p.unidadBase}`, formatearDinero(p.precio))}
+    ${dato('Empaques', empaques || `solo por ${p.unidadBase}`)}
+    ${sabores.length ? dato('Sabores en stock', sabores.map(([s, u]) => `${s} ${formatearNumero(u)}`).join(' · ')) : ''}
+    ${e.bonif ? dato('Bonificadas recibidas', `${formatearNumero(e.bonif)} ${pluralUnidad(p.unidadBase, e.bonif)}`) : ''}
+    ${dato('Avisar con', `${formatearNumero(p.umbralMin || 0)} o menos (ideal ${formatearNumero(p.umbralMax || 0)})`)}
+    ${e.ultimaEntrada || e.ultimaVenta ? dato('Última compra · venta', `${e.ultimaEntrada ? formatearFechaCorta(e.ultimaEntrada) : '—'} · ${e.ultimaVenta ? formatearFechaCorta(e.ultimaVenta) : '—'}`) : ''}
+  </div>`;
+}
+
 function filaProductoHTML(p, q) {
   const e = Almacen.estado(p.idProducto);
   const sabores = Almacen.variantesDe(p.idProducto);
   const busca = q ? normalizarIdentidad(q) : '';
   const orden = busca ? sabores.slice().sort((a, b) => (normalizarIdentidad(b).includes(busca) ? 1 : 0) - (normalizarIdentidad(a).includes(busca) ? 1 : 0)) : sabores;
   const textoSabores = orden.length ? `${orden.slice(0, 2).join(', ')}${orden.length > 2 ? '…' : ''}` : '';
+  const empaques = textoEmpaquesProducto(p);
   return html`<div class="crece"><div class="recortar t-fuerte">${nombreProducto(p, { conVariante: false })}</div>
     <div class="sub">${p.sku} · ${describirCantidad(p.idProducto, e.stock)}</div>
+    ${empaques ? html`<div class="sub recortar">${seguro(icono('caja', 'icono-sm'))} ${empaques}</div>` : ''}
     ${textoSabores ? html`<div class="sub">${seguro(icono('sabor', 'icono-sm'))} ${textoSabores}</div>` : ''}</div>
     <span class="cifra t-pequeno">${formatearDinero(p.precio)}</span>`;
 }
 
-// opciones: { contenedor, conCinta, permitirNuevo, alElegir(p), alNuevo(texto), placeholder }
-function crearSelectorProducto({ contenedor, conCinta = false, permitirNuevo = false, alElegir, alNuevo, placeholder }) {
+// opciones: { contenedor, conCinta, tipoSugeridos ('VENTA'|'ENTRADA'), permitirNuevo, alElegir(p), alNuevo(texto), placeholder }
+function crearSelectorProducto({ contenedor, conCinta = false, tipoSugeridos = 'VENTA', permitirNuevo = false, alElegir, alNuevo, placeholder }) {
   const id = 'buscar-' + Math.random().toString(36).slice(2, 7);
   contenedor.innerHTML = html`
     <div class="buscador">
       <label class="solo-lector" for="${id}">Buscar producto</label>
       <div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="${id}" type="search" placeholder="${placeholder || 'Buscar producto o código'}" autocomplete="off" enterkeyhint="search"></div>
     </div>
-    ${conCinta ? html`<div class="cinta" aria-label="Más vendidos"></div>` : ''}`.texto;
+    ${conCinta ? html`<div class="cinta" aria-label="${tipoSugeridos === 'ENTRADA' ? 'Más comprados y recientes' : 'Más vendidos y recientes'}"></div>` : ''}`.texto;
   const input = $('input', contenedor);
   const cinta = $('.cinta', contenedor);
   let elegidoId = null;
@@ -51,11 +79,11 @@ function crearSelectorProducto({ contenedor, conCinta = false, permitirNuevo = f
 
   function pintarCinta() {
     if (!cinta) return;
-    const lista = Almacen.masVendidos(30, 12);
+    const lista = Almacen.sugeridos(tipoSugeridos, 12);
     cinta.hidden = lista.length === 0;
     cinta.innerHTML = lista.map(p => html`<button type="button" class="cinta-item" data-id="${p.idProducto}" aria-pressed="${String(p.idProducto === elegidoId)}">
         <span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
-        <span class="precio">${formatearDinero(p.precio)} · ${formatearNumero(Almacen.stock(p.idProducto))} ${pluralUnidad(p.unidadBase, Almacen.stock(p.idProducto))}</span>
+        <span class="precio">${formatearDinero(tipoSugeridos === 'ENTRADA' ? p.costo : p.precio)} · ${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</span>
       </button>`.texto).join('');
   }
   if (cinta) {
