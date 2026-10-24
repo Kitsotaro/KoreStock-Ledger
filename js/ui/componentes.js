@@ -26,7 +26,7 @@ const $ = (sel, raiz) => (raiz || document).querySelector(sel);
 const $$ = (sel, raiz) => Array.from((raiz || document).querySelectorAll(sel));
 
 function icono(nombre, clase) {
-  return `<svg class="icono ${clase || ''}" aria-hidden="true" focusable="false"><use href="assets/iconos.svg#i-${nombre}"></use></svg>`;
+  return `<svg class="icono ${clase || ''}" aria-hidden="true" focusable="false"><use href="assets/iconos.svg?v=${VERSION_APP}#i-${nombre}"></use></svg>`;
 }
 
 // Texto ya seguro (no se vuelve a escapar dentro de html``).
@@ -307,7 +307,8 @@ function activarSugerencias(raiz) {
     const opcionesLista = () => { const dl = document.getElementById(idLista); return dl ? [...dl.options].filter(o => o.value) : []; };
     const valores = () => opcionesLista().map(o => o.value);
     const grupoDe = (v) => { const o = opcionesLista().find(x => x.value === v); return o ? (o.dataset.grupo || null) : null; };
-    const opcion = (v) => ({ valor: v, grupo: grupoDe(v), html: html`<span class="crece">${v}</span>` });
+    const iconoDe = (v) => { const o = opcionesLista().find(x => x.value === v); return o ? (o.dataset.icono || '') : ''; };
+    const opcion = (v) => { const ic = iconoDe(v); return { valor: v, grupo: grupoDe(v), html: html`${ic ? html`<span class="icono-gasto">${seguro(icono(ic, 'icono-sm'))}</span>` : ''}<span class="crece">${v}</span>` }; };
     // Con data-permite-nuevo, si lo escrito no existe se ofrece «Agregar «X»» al final.
     const ponerValor = (v) => {
       input.value = v;

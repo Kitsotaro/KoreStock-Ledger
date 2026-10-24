@@ -58,9 +58,13 @@ function marcarCategoriaNueva() {
   $('#gasto-guardar', el).classList.toggle('boton-aviso', nueva);
 }
 
-// Ícono por categoría conocida; las demás llevan uno neutro (habrá un paquete de íconos para elegir).
-const ICONOS_GASTO = [[/alquiler|local|renta/, 'tienda'], [/energ|luz|electric/, 'temporizador'], [/agua/, 'recibo'], [/internet|telefon/, 'telefono'],
-  [/sueldo|salario|planilla|ayudante/, 'clientes'], [/vehic|combust|gasolin/, 'vehiculo'], [/seguro/, 'escudo'], [/viatic|comida/, 'billete'], [/manten|repar/, 'ajustes']];
+// Ícono por categoría conocida; las demás llevan uno neutro. Cada categoría base
+// tiene su propio dibujo (Kitso, 2026-10-24): lo específico va primero, así
+// «Seguro del vehículo» (escudo) y «Mantenimiento vehicular» (llave) no se repiten.
+const ICONOS_GASTO = [[/seguro/, 'escudo'], [/manten|repar/, 'herramienta'], [/combust|gasolin|diesel/, 'combustible'], [/vehic|transporte|flete/, 'vehiculo'],
+  [/alquiler|local|renta/, 'tienda'], [/energ|luz|electric/, 'foco'], [/agua/, 'agua'], [/internet|wifi/, 'wifi'], [/telefon|celular|movil/, 'telefono'],
+  [/sueldo|salario|planilla|ayudante|pago de personal/, 'cartera'], [/viatic|viaje/, 'maleta'], [/comida|almuerzo|aliment/, 'cubiertos'],
+  [/publicid|anunci|propaganda/, 'megafono'], [/impuest|tribut|alcaldia/, 'legal'], [/banco|comision/, 'billete'], [/papeler|oficina/, 'documento']];
 function iconoGasto(categoria) {
   const c = normalizarIdentidad(categoria || '');
   const par = ICONOS_GASTO.find(([re]) => re.test(c));
@@ -68,7 +72,7 @@ function iconoGasto(categoria) {
 }
 
 function pintarGastos() {
-  $('#gasto-categorias', gastosUI.el).innerHTML = sugerirCategoriasGasto().map(c => html`<option value="${c}"></option>`.texto).join('');
+  $('#gasto-categorias', gastosUI.el).innerHTML = sugerirCategoriasGasto().map(c => html`<option value="${c}" data-icono="${iconoGasto(c)}"></option>`.texto).join('');
   $('#gasto-folio', gastosUI.el).textContent = Almacen.verFolioSiguiente('GO-');
   pintarListaGastos();
 }

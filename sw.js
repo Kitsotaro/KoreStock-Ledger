@@ -66,6 +66,6 @@ self.addEventListener('fetch', (e) => {
         }
         return respuesta;
       })
-      .catch(() => caches.match(peticion).then((guardada) => guardada || (peticion.mode === 'navigate' ? caches.match('./index.html') : undefined)))
+      .catch(() => caches.match(peticion, { ignoreSearch: url.pathname.endsWith('.svg') }).then((guardada) => guardada || (peticion.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });

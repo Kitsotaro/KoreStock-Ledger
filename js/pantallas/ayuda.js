@@ -61,7 +61,9 @@ function pintarAyuda(el) {
 
     ${preguntas.length ? html`<section class="tarjeta columna" aria-labelledby="ayuda-faq">
       <div class="tarjeta-titulo"><h2 id="ayuda-faq">${seguro(icono('comentario', 'icono-sm'))} Preguntas frecuentes</h2></div>
-      ${preguntas.map(p => html`<details class="desplegable"><summary class="fila t-pequeno"><span class="crece t-fuerte">${p.pregunta}</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary><p class="t-pequeno t-secundario" style="padding-top:var(--e-2)">${p.respuesta}</p></details>`)}
+      <div class="lista">${preguntas.map(p => html`<details class="desplegable" name="faq">
+        <summary class="fila-lista"><span class="icono-gasto">${seguro(icono('ayuda', 'icono-sm'))}</span><span class="crece titulo">${p.pregunta}</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
+        <div class="desplegable-cuerpo"><p class="t-pequeno t-secundario">${p.respuesta}</p></div></details>`)}</div>
     </section>` : ''}
 
     <section class="tarjeta columna" aria-labelledby="ayuda-politicas">
