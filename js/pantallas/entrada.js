@@ -230,7 +230,11 @@ function stockPorModoHTML(p, unidades, emp) {
   const f = emp ? (emp.conNivel ? emp.unidades * emp.porSub : emp.unidades) : (eq ? eq.unidades : 0);
   const nombre = emp ? emp.empaque : (eq ? eq.nombre : '');
   const base = `${formatearNumero(unidades)} ${pluralUnidad(p.unidadBase, unidades)}`;
-  if (Shell.modo === 'tienda') return html`<strong class="cifra">${base}</strong>`.texto;
+  if (Shell.modo === 'tienda') {
+    // Unidades en grande y, debajo, cuántos empaques son (solo informativo).
+    if (f > 1 && unidades >= f) { const n = Math.floor(unidades / f); return html`<span class="mayor"><strong>${base}</strong><small>≈ ${formatearNumero(n)} ${pluralUnidad(nombre.toLowerCase(), n)}</small></span>`.texto; }
+    return html`<strong class="cifra">${base}</strong>`.texto;
+  }
   if (Shell.modo === 'bodega' && f > 1 && unidades >= f) {
     const n = Math.floor(unidades / f);
     return html`<span class="mayor"><strong>${formatearNumero(n)} ${pluralUnidad(nombre.toLowerCase(), n)}</strong><small>${base}</small></span>`.texto;
@@ -240,8 +244,9 @@ function stockPorModoHTML(p, unidades, emp) {
 function dineroPorModoHTML(valorUnidad, p, emp, detalle) {
   const u = `${formatearDinero(valorUnidad, { detalle })}/${p.unidadBase}`;
   const f = emp ? (emp.conNivel ? emp.unidades * emp.porSub : emp.unidades) : 1;
-  if (f <= 1 || Shell.modo === 'tienda') return html`<strong class="cifra">${u}</strong>`.texto;
+  if (f <= 1) return html`<strong class="cifra">${u}</strong>`.texto;
   const caja = `${formatearDinero(multiplicarDinero(valorUnidad, f))}/${emp.empaque.toLowerCase()}`;
+  if (Shell.modo === 'tienda') return html`<span class="mayor"><strong class="cifra">${u}</strong><small>${caja}</small></span>`.texto;
   if (Shell.modo === 'bodega') return html`<span class="mayor"><strong class="cifra">${caja}</strong><small>${u}</small></span>`.texto;
   return html`<strong class="cifra">${u} · ${caja}</strong>`.texto;
 }
