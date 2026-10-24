@@ -5,7 +5,7 @@
 // decir el sabor, aquí se indica de qué sabor fueron; si entró sin sabor,
 // de qué sabor es. No cambia el total ni el valor del producto.
 //
-// Expone: abrirReasignarSabores.
+// Expone: abrirReasignarSabores, abrirQuitarSabor.
 // Depende de: componentes.js, campos.js, operaciones-movimientos.js, almacen.js.
 // ============================================================
 
@@ -49,6 +49,40 @@ function abrirReasignarSabores(idProducto) {
       $$('[data-sabor], #ra-nuevo', hoja).forEach(i => { prepararCampoNumerico(i, { decimales: p.decimales ? 3 : 0 }); i.addEventListener('input', actualizar); });
       actualizar();
     }
+  });
+  return control;
+}
+
+// «Quitar sabor»: corrige un sabor mal escrito o que no existe (p. ej. «15» de una importación).
+// Sus unidades pasan a «Sin asignar» (suma 0: stock, costos y ganancias no cambian) y el sabor
+// deja de ofrecerse en Venta y Entrada. Si era el sabor del propio producto, también se limpia.
+function abrirQuitarSabor(idProducto) {
+  const p = Almacen.producto(idProducto);
+  const e = Almacen.estado(p.idProducto);
+  const sabores = Almacen.variantesDe(p.idProducto);
+  if (!sabores.length) { mostrarDialogo({ titulo: 'Sin sabores', mensaje: 'Este producto no tiene sabores registrados.' }); return; }
+  const unidad = (n) => pluralUnidad(p.unidadBase, n);
+  const control = abrirHoja({
+    titulo: 'Quitar un sabor',
+    contenido: html`<p class="t-fuerte">${nombreProducto(p, { conVariante: false })}</p>
+      <p class="t-pequeno t-secundario">Sirve para corregir un sabor mal escrito o que no existe. Sus unidades pasan a «Sin asignar»: el stock, los costos y las ganancias no cambian, y el historial se conserva.</p>
+      <div class="lista">${sabores.map(s => html`<div class="fila-lista"><div class="crece"><div class="titulo">${s}</div><div class="sub">Según registros: ${formatearNumero(e.porVariante[s] || 0)} ${unidad(e.porVariante[s] || 0)}</div></div>
+        <button type="button" class="boton boton-texto boton-sm peligro" data-quitar="${s}">Quitar</button></div>`)}</div>`,
+    acciones: [{ texto: 'Cerrar', fn: (c) => c.cerrar() }],
+    alMontar: (hoja) => $$('[data-quitar]', hoja).forEach(b => b.addEventListener('click', async () => {
+      const sabor = b.dataset.quitar;
+      const ok = await confirmar({ titulo: `¿Quitar el sabor «${sabor}»?`, mensaje: 'Dejará de ofrecerse en Venta y Entrada. Sus unidades pasan a «Sin asignar»; el total del producto no cambia.', textoConfirmar: 'Quitar sabor', peligro: true });
+      if (!ok) return;
+      let prep;
+      try { prep = prepararQuitarSabor(p.idProducto, sabor); } catch (err) { avisar(err.message); return; }
+      const r = await ejecutarOperacion(operacionGuardarTicket(prep));
+      if (!r) return;
+      if (normalizarIdentidad(Almacen.producto(p.idProducto).variante) === normalizarIdentidad(sabor)) {
+        try { await ejecutarOperacion(operacionActualizarProducto(p.idProducto, { variante: '' })); } catch (err) { avisar(err.message); }
+      }
+      control.cerrar();
+      avisar(`Sabor «${sabor}» quitado.`);
+    }))
   });
   return control;
 }

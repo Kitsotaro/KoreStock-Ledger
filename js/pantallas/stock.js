@@ -161,8 +161,11 @@ function filaStockHTML(p) {
   const valor = redondearCentavo(multiplicarDinero(p.costo, Math.max(0, e.stock)));
   const presentaciones = Almacen.presentacionesDe(p.idProducto);
   const eq = Almacen.empaqueMayor(p.idProducto);
-  const sabores = Object.entries(e.porVariante).filter(([k, v]) => k || v);
+  // Un sabor quitado desde Stock ya no aparece (aunque su historial siga en 0).
+  const vigentes = new Set(Almacen.variantesDe(p.idProducto).map(normalizarIdentidad));
+  const sabores = Object.entries(e.porVariante).filter(([k, v]) => k ? vigentes.has(normalizarIdentidad(k)) : v);
   const tieneSabores = sabores.some(([k]) => k) && !stockUI.ocultarSabores;
+  const empaques = Almacen.empaquesQuitables(p.idProducto);
   const par = (ic, etiqueta, valor, clase) => html`<div class="par-dato con-icono">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span><strong class="${clase || ''}">${valor}</strong></div>`;
   const seleccionado = stockUI.seleccion.has(p.idProducto);
   const unidad = (n) => pluralUnidad(p.unidadBase, n);
@@ -190,6 +193,10 @@ function filaStockHTML(p) {
       <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('precio', 'icono-sm'))}Precios</div>
         ${tablaPreciosStock(p, e, eq, presentaciones)}
       </div>
+      ${empaques.length ? html`<div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('lote', 'icono-sm'))}Empaques registrados</div>
+        ${empaques.map(x => html`<div class="par-dato con-icono"><span class="crece">${x.nombre} de ${formatearNumero(x.unidades)} ${pluralUnidad(x.nivelInferior, x.unidades)}</span>
+          <button type="button" class="boton boton-texto boton-sm peligro" data-accion="quitar-empaque" data-equiv="${x.idEquiv}" aria-label="Quitar ${x.nombre} de ${formatearNumero(x.unidades)}">Quitar</button></div>`)}
+      </div>` : ''}
       <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('identificador', 'icono-sm'))}Producto</div>
         ${eq ? par('lote', 'Empaque habitual', `${eq.nombre} de ${formatearNumero(eq.unidades)}`) : ''}
         ${p.variante ? par('sabor', 'Sabor del producto', p.variante) : ''}
@@ -200,7 +207,8 @@ function filaStockHTML(p) {
       <div class="grupo-botones" style="margin-top:var(--e-2)">
         <button type="button" class="boton boton-secundario boton-sm" data-accion="editar" data-id="${p.idProducto}">${seguro(icono('editar', 'icono-sm'))}Editar</button>
         <button type="button" class="boton boton-entrada boton-sm" data-accion="mas-entrada" data-id="${p.idProducto}">${seguro(icono('entrada', 'icono-sm'))}Entrada</button>
-        ${tieneSabores ? html`<button type="button" class="boton boton-secundario boton-sm" data-accion="reasignar" data-id="${p.idProducto}">${seguro(icono('sabor', 'icono-sm'))}Repartir sabores</button>` : ''}
+        ${tieneSabores ? html`<button type="button" class="boton boton-secundario boton-sm" data-accion="reasignar" data-id="${p.idProducto}">${seguro(icono('sabor', 'icono-sm'))}Repartir sabores</button>
+        <button type="button" class="boton boton-secundario boton-sm" data-accion="quitar-sabor" data-id="${p.idProducto}">${seguro(icono('cerrar', 'icono-sm'))}Quitar sabor</button>` : ''}
         <button type="button" class="boton boton-secundario boton-sm" data-accion="obsoleto" data-id="${p.idProducto}">${p.estado === ESTADOS.OBSOLETO ? 'Reactivar' : 'Marcar obsoleto'}</button>
       </div>
     </div>
@@ -354,6 +362,17 @@ const accionesStock = {
   'mas-entrada': (b) => abrirEntradaCon(Number(b.dataset.id)),
   'editar': (b) => editarProducto(Number(b.dataset.id)),
   'reasignar': (b) => { if (typeof abrirReasignarSabores === 'function') abrirReasignarSabores(Number(b.dataset.id)); },
+  'quitar-sabor': (b) => { if (typeof abrirQuitarSabor === 'function') abrirQuitarSabor(Number(b.dataset.id)); },
+  'quitar-empaque': async (b) => {
+    const e = Almacen.hojas.EQUIVALENCIAS.find(x => x.idEquiv === Number(b.dataset.equiv));
+    if (!e) return;
+    const texto = `${e.nombre} de ${formatearNumero(e.unidades)} ${pluralUnidad(e.nivelInferior, e.unidades)}`;
+    const ok = await confirmar({ titulo: '¿Quitar este empaque?', mensaje: `«${texto}» deja de ofrecerse en Entrada y Venta. Tu stock, tus compras y tus ventas no cambian.`, textoConfirmar: 'Quitar', peligro: true });
+    if (!ok) return;
+    let op;
+    try { op = operacionQuitarEquivalencia(e.idEquiv); } catch (err) { avisar(err.message); return; }
+    if (await ejecutarOperacion(op)) avisar('Empaque quitado.');
+  },
   'obsoleto': async (b) => {
     const p = Almacen.producto(b.dataset.id);
     const aObsoleto = p.estado !== ESTADOS.OBSOLETO;

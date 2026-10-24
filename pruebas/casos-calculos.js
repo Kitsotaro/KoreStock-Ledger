@@ -248,6 +248,53 @@ prueba('cada producto usa su propio empaque, no el de otro con la misma unidad',
   Almacen.cargar(antes);
 });
 
+grupo('Empaques y sabores quitados desde Stock (Kitso, 2026-10-24)');
+prueba('el empaque propio gana al de otro producto igual, y uno quitado (0 unidades) ya no se ofrece', () => {
+  const antes = Almacen.hojas;
+  Almacen.cargar({
+    CATALOGO: [
+      { idProducto: 1, sku: 'A', marca: 'CBC', linea: 'Petit', unidadBase: 'lata', estado: ESTADOS.ACTIVO },
+      { idProducto: 2, sku: 'B', marca: 'CBC', linea: 'Salutaris', unidadBase: 'lata', estado: ESTADOS.ACTIVO }
+    ],
+    EQUIVALENCIAS: [
+      { idEquiv: 1, nombre: 'caja', unidades: 24, nivelInferior: 'lata', idProducto: 1, ultimoUso: '2026-10-23' },
+      { idEquiv: 2, nombre: 'caja', unidades: 24, nivelInferior: 'lata', idProducto: 2, ultimoUso: '2026-10-23' },
+      { idEquiv: 3, nombre: 'fardo', unidades: 12, nivelInferior: 'lata', idProducto: 2, ultimoUso: '2026-10-20' }
+    ]
+  });
+  igual(Almacen.equivalenciasDe(2).find(e => e.nombre === 'caja').idProducto, 2, 'la caja que se ofrece es la suya');
+  igual(Almacen.empaquesQuitables(2).length, 2);
+  Almacen.hojas.EQUIVALENCIAS.find(e => e.idEquiv === 3).unidades = 0;
+  igual(Almacen.equivalenciasDe(2).some(e => e.nombre === 'fardo'), false, 'el quitado no se ofrece');
+  igual(Almacen.empaquesQuitables(2).length, 1);
+  Almacen.cargar(antes);
+});
+prueba('quitar un sabor no cambia stock ni totales y deja de ofrecerse hasta que se vuelva a usar', () => {
+  const antes = Almacen.hojas;
+  const mov = (extra) => Object.assign({ idProducto: 1, sku: 'A', marca: 'CBC', linea: 'Aqua', fecha: '2026-10-20', variante: '', cantidad: 0, bonif: 0, costoUnit: 0, precioUnit: 0, inversion: 0, estado: '' }, extra);
+  Almacen.cargar({
+    CATALOGO: [{ idProducto: 1, sku: 'A', marca: 'CBC', linea: 'Aqua', unidadBase: 'botella', estado: ESTADOS.ACTIVO, costo: dinero('0.30'), precio: dinero('0.40') }],
+    LOG_TRANS: [
+      mov({ folio: 'IN-1', tipo: TIPOS_MOV.ENTRADA, variante: '15', cantidad: 24, inversion: dinero('7.20') }),
+      mov({ folio: 'FAC-1', tipo: TIPOS_MOV.VENTA, variante: '15', cantidad: -30, totalVenta: dinero('12.00') }),
+      mov({ folio: 'IN-2', tipo: TIPOS_MOV.ENTRADA, variante: '', cantidad: 48, inversion: dinero('14.40') })
+    ]
+  });
+  const e0 = JSON.stringify(Object.assign({}, Almacen.estado(1), { porVariante: 0 }));
+  igualProfundo(Almacen.variantesDe(1), ['15']);
+  const prep = prepararQuitarSabor(1, '15');
+  igual(prep.filas.reduce((s, f) => s + f.cantidad, 0), 0, 'el par suma cero');
+  Almacen.hojas.LOG_TRANS = Almacen.hojas.LOG_TRANS.concat(prep.filas);
+  Almacen.recalcular();
+  igual(JSON.stringify(Object.assign({}, Almacen.estado(1), { porVariante: 0 })), e0, 'stock, costos y ventas intactos');
+  igual(Almacen.estado(1).porVariante['15'], 0);
+  igual(Almacen.estado(1).porVariante[''], 42, 'lo de «15» (−6) pasa a sin asignar');
+  igualProfundo(Almacen.variantesDe(1), [], 'ya no se ofrece');
+  Almacen.hojas.LOG_TRANS = Almacen.hojas.LOG_TRANS.concat([mov({ folio: 'FAC-2', tipo: TIPOS_MOV.VENTA, variante: '15', cantidad: -1, totalVenta: dinero('0.40') })]);
+  igualProfundo(Almacen.variantesDe(1), ['15'], 'si se vuelve a usar, reaparece');
+  Almacen.cargar(antes);
+});
+
 grupo('Aviso de costo en Entrada');
 prueba('el costo del catálogo no «cambia» por el redondeo a centavo (caja de $8.50 de 6 botellas)', () => {
   const costo = dividirDinero(dinero('8.50'), 6);

@@ -167,7 +167,8 @@ const Almacen = {
     const p = this.producto(idProducto);
     const unidad = p ? normalizarTexto(p.unidadBase) : '';
     const propias = [], otras = [];
-    this.hojas.EQUIVALENCIAS.forEach(e => {
+    // Una equivalencia con 0 unidades está quitada (se borra desde Stock): no se ofrece.
+    this.hojas.EQUIVALENCIAS.filter(e => e.unidades > 0).forEach(e => {
       if (e.idProducto === Number(idProducto)) propias.push(e);
       else if (!e.idProducto || normalizarTexto(e.nivelInferior) === unidad) otras.push(e);
     });
@@ -193,13 +194,25 @@ const Almacen = {
       .sort((a, b) => b.unidades - a.unidades || ((b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : -1))[0] || null;
   },
 
+  // Empaques del producto que se pueden quitar desde Stock: los suyos y los de sabores unidos a él.
+  empaquesQuitables(idProducto) {
+    const id = Number(idProducto);
+    const unidos = new Set(this.hojas.CATALOGO.filter(x => Number(x.fusionadoEn) === id).map(x => Number(x.idProducto)));
+    return this.hojas.EQUIVALENCIAS.filter(e => e.unidades > 0 && (Number(e.idProducto) === id || unidos.has(Number(e.idProducto))))
+      .sort((a, b) => (b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : (b.ultimoUso || '') < (a.ultimoUso || '') ? -1 : 0);
+  },
+
   // Sabores ya usados con este producto (D24: el sabor es dato del movimiento).
+  // Un sabor que se «quitó» desde Stock (su último movimiento es esa reasignación) ya no se ofrece
+  // hasta que vuelva a usarse; su historial queda intacto (el libro solo se agrega).
   variantesDe(idProducto) {
     const vistos = new Map();
     this.movimientos.forEach(m => {
-      if (m.idProducto === Number(idProducto) && m.variante) vistos.set(normalizarIdentidad(m.variante), m.variante);
+      if (m.idProducto === Number(idProducto) && m.variante) {
+        vistos.set(normalizarIdentidad(m.variante), { valor: m.variante, quitado: m.tipo === TIPOS_MOV.REASIGNACION && m.referencia === REFERENCIA_QUITAR_SABOR });
+      }
     });
-    return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
+    return [...vistos.values()].filter(v => !v.quitado).map(v => v.valor).sort((a, b) => a.localeCompare(b, 'es'));
   },
 
   clientesActivos() { return this.hojas.CLIENTES.filter(c => c.estado !== ESTADOS.INACTIVO).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')); },

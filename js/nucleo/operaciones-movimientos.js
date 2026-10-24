@@ -246,6 +246,25 @@ function prepararAjuste(idProducto, contado, nota) {
 // sabor con un PAR de filas REASIGNACION (−n de un lado, +n del otro). El
 // total y el valor del producto no cambian; el historial no se reescribe.
 // asignaciones: [{ variante, unidades }] (unidades > 0).
+// Quitar un sabor (error de captura, p. ej. «15»): sus unidades pasan a «Sin asignar» con un
+// PAR de filas REASIGNACION (suma 0: no cambia stock, costos ni ganancias) y el sabor deja de
+// ofrecerse. Si ya está en 0 se agrega el par en cero, que solo marca que se quitó.
+function prepararQuitarSabor(idProducto, sabor) {
+  const p = Almacen.producto(idProducto);
+  const s = String(sabor || '').trim();
+  if (!p || !s) throw new Error('Elige el sabor que quieres quitar.');
+  const enSabor = redondearCantidad(Almacen.estado(p.idProducto).porVariante[s] || 0);
+  const ahora = obtenerTimestampLocal(), dia = obtenerFechaLocal();
+  const idTicket = Almacen.tomarFolio('TK-');
+  const fila = (variante, cantidad) => Object.assign(denormalizado(p), {
+    folio: Almacen.tomarFolio('RA-'), timestamp: ahora, fecha: dia, tipo: TIPOS_MOV.REASIGNACION, variante, cantidad, bonif: 0,
+    costoUnit: 0, precioUnit: 0, inversion: 0, margenUnit: 0, totalVenta: null, utilidad: null, estado: '', idCliente: null,
+    empaqueMov: p.unidadBase, cantEmpaques: Math.abs(cantidad), unidPorEmpaque: 1, unidadesTotales: Math.abs(cantidad), idTicket, productoNuevo: '', referencia: REFERENCIA_QUITAR_SABOR
+  });
+  const filas = [fila(s, -enSabor), fila('', enSabor)];
+  return { tipo: TIPOS_MOV.REASIGNACION, idTicket, filas, productosNuevos: [], cambiados: [], historicos: [], equivalenciasNuevas: [], equivalenciasUsadas: [], resumen: { unidades: Math.abs(enSabor) } };
+}
+
 function prepararReasignacion(idProducto, asignaciones) {
   const p = Almacen.producto(idProducto);
   const e = Almacen.estado(p.idProducto);

@@ -18,6 +18,8 @@
 const VERSION_ESQUEMA = 3;
 
 const TIPOS_MOV = { ENTRADA: 'ENTRADA', VENTA: 'VENTA', APERTURA: 'APERTURA', REASIGNACION: 'REASIGNACION', AJUSTE: 'AJUSTE' };
+// Marca (columna REFERENCIA) de la reasignación que «quita» un sabor desde Stock.
+const REFERENCIA_QUITAR_SABOR = 'Quitar sabor';
 const ESTADOS = {
   MOV_ANULADA: 'ANULADA', GASTO_ANULADO: 'ANULADO',
   // Copias que una base rotada guarda SOLO para seguir los folios (T20); no cuentan para nada.

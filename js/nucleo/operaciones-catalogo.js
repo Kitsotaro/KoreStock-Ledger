@@ -159,6 +159,25 @@ function operacionGuardarPresentaciones(idProducto, lista) {
   ]);
 }
 
+// Quitar un empaque registrado (error de captura o ya no se usa). La fila no se borra: queda con
+// 0 unidades (así la hoja no se mueve) y deja de ofrecerse en Entrada y Venta. Las compras y ventas
+// ya guardadas llevan su propio empaque y no cambian.
+function operacionQuitarEquivalencia(idEquiv) {
+  const e = Almacen.hojas.EQUIVALENCIAS.find(x => x.idEquiv === Number(idEquiv));
+  if (!e) throw new Error('Empaque no encontrado');
+  const quitada = Object.assign({}, e, { unidades: 0 });
+  return crearOperacion('Quitar empaque', [
+    {
+      nombre: 'empaque',
+      fn: async () => {
+        await Hoja.actualizar(Almacen.baseId, [{ rango: rangoFila('EQUIVALENCIAS', quitada._fila), valores: [objetoAFila('EQUIVALENCIAS', quitada, false)] }]);
+        Almacen.reemplazarFila('EQUIVALENCIAS', quitada);
+      }
+    },
+    { nombre: 'copia local', fn: async () => { Almacen.notificar('equivalencias'); guardarCacheBase(); } }
+  ]);
+}
+
 // Color de la leyenda: nunca se reescribe una fila, se agrega otra (queda el historial).
 function operacionGuardarColor(nivel, nombre, color) {
   const valido = nivel === '_MODO' ? /^(SOBRIO|PASTEL|VIVIDO|MONOCROMO( #[0-9a-f]{6})?)$/i : /^#[0-9a-f]{6}$/i;
