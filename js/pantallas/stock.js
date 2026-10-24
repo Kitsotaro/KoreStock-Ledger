@@ -391,6 +391,9 @@ function editarProducto(idProducto) {
   let umbralPorEmpaque = umbralEnEmpaques(p, eqMayor);
   const enAviso = (u) => umbralPorEmpaque ? redondearCantidad(u / eqMayor.unidades) : u;
   const sufijoAviso = umbralPorEmpaque ? pluralUnidad(nombreEmp, 2) : pluralUnidad(p.unidadBase, 2);
+  // Costo y precio por unidad o por empaque (Kitso, 2026-10-24: a veces el dato que
+  // se tiene es el de la caja). Siempre se guardan por unidad.
+  let preciosPorEmpaque = false;
   const lista = (id, valores) => html`<datalist id="${id}">${valores.map(x => html`<option value="${x}"></option>`)}</datalist>`;
   const unicos = (campo) => [...new Set(Almacen.productosVisibles().map(x => String(x[campo] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
   const control = abrirHoja({
@@ -402,9 +405,14 @@ function editarProducto(idProducto) {
       </div>
       ${lista('ed-marcas', unicos('marca'))}${lista('ed-lineas', unicos('linea'))}${lista('ed-presentaciones-lista', unicos('presentacion'))}${lista('ed-volumenes', unicos('volumen'))}${lista('ed-empaques', unicos('tipoEmpaque'))}
       ${campo('ed-unidad', 'Se cuenta en', p.unidadBase, { deshabilitado: tieneHistorial, ayuda: tieneHistorial ? 'Con historial, cambiar la unidad necesita un asistente de reconversión (pendiente de decidir).' : '' })}
+      ${eqMayor ? html`<div class="fila-separada"><span class="t-pequeno t-secundario">Costo y precio por</span>
+        <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Escribir costo y precio por">
+          <button type="button" role="radio" data-precios-por="unidad" aria-checked="true">${p.unidadBase}</button>
+          <button type="button" role="radio" data-precios-por="empaque" aria-checked="false">${nombreEmp} de ${formatearNumero(eqMayor.unidades)}</button>
+        </span></div>` : ''}
       <div class="rejilla-campos">
-        ${campo('ed-costo', `Costo por ${p.unidadBase}`, valorCampoDinero(p.costo, 5).replace(/0+$/, '').replace(/\.$/, '.00'), { prefijo: '$' })}
-        ${campo('ed-precio', `Precio por ${p.unidadBase}`, valorCampoDinero(p.precio), { prefijo: '$', ayuda: 'El cambio de precio aplica a ventas nuevas.' })}
+        ${campo('ed-costo', html`Costo <span data-por-texto>por ${p.unidadBase}</span>`, valorCampoDinero(p.costo, 5).replace(/0+$/, '').replace(/\.$/, '.00'), { prefijo: '$' })}
+        ${campo('ed-precio', html`Precio de venta <span data-por-texto>por ${p.unidadBase}</span>`, valorCampoDinero(p.precio, 5).replace(/0+$/, '').replace(/\.$/, '.00').replace(/\.(\d)$/, '.$10'), { prefijo: '$', ayuda: 'El cambio de precio aplica a ventas nuevas.' })}
       </div>
       ${eqMayor ? html`<div class="fila-separada"><span class="t-pequeno t-secundario">Avisar con</span>
         <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Contar el aviso en">
@@ -423,7 +431,9 @@ function editarProducto(idProducto) {
       const v = (id) => $(id, c.el).value.trim();
       const cambios = {
         marca: v('#ed-marca'), linea: v('#ed-linea'), presentacion: v('#ed-presentacion'), volumen: v('#ed-volumen'),
-        costo: dinero(v('#ed-costo')), precio: dinero(v('#ed-precio')),
+        // Si se escribieron por empaque, se guardan por unidad (÷ N).
+        costo: preciosPorEmpaque ? dividirDinero(dinero(v('#ed-costo')), eqMayor.unidades) : dinero(v('#ed-costo')),
+        precio: preciosPorEmpaque ? dividirDinero(dinero(v('#ed-precio')), eqMayor.unidades) : dinero(v('#ed-precio')),
         // El aviso siempre se guarda en unidades; si se escribió en empaques se multiplica.
         umbralMin: redondearCantidad(parsearNumero(v('#ed-umin')) * (umbralPorEmpaque ? eqMayor.unidades : 1)),
         umbralMax: redondearCantidad(parsearNumero(v('#ed-umax')) * (umbralPorEmpaque ? eqMayor.unidades : 1)),
@@ -443,7 +453,7 @@ function editarProducto(idProducto) {
     } }],
     alMontar: (hoja) => {
       prepararCampoNumerico($('#ed-costo', hoja), { decimales: 5 });
-      prepararCampoNumerico($('#ed-precio', hoja), { decimales: 2 });
+      prepararCampoNumerico($('#ed-precio', hoja), { decimales: 5 });
       prepararCampoNumerico($('#ed-umin', hoja), { decimales: p.decimales ? 3 : 0 });
       prepararCampoNumerico($('#ed-umax', hoja), { decimales: p.decimales ? 3 : 0 });
       $('#ed-presentaciones', hoja).addEventListener('click', () => { control.cerrar(); setTimeout(() => editarPresentaciones(p), 340); });
@@ -462,6 +472,23 @@ function editarProducto(idProducto) {
         hoja.dispatchEvent(new Event('input'));
         umbralPorEmpaque = aEmpaque;
         $$('[data-umbral-por]', hoja).forEach(x => x.setAttribute('aria-checked', String(x === b)));
+      }));
+      // Costo y precio por unidad o por empaque: convierte lo escrito al cambiar.
+      $$('[data-precios-por]', hoja).forEach(b => b.addEventListener('click', () => {
+        const aEmpaque = b.dataset.preciosPor === 'empaque';
+        if (aEmpaque === preciosPorEmpaque) return;
+        const n = eqMayor.unidades;
+        // Por empaque se muestra a centavo; por unidad, con sus 5 decimales (sin ceros de más).
+        const convertir = (x, dec) => { const d = dinero(String(x).replace(/,/g, '')); return valorCampoDinero(aEmpaque ? multiplicarDinero(d, n) : dividirDinero(d, n), dec).replace(/(\.\d\d\d*?)0+$/, '$1'); };
+        const dec = aEmpaque ? 2 : 5;
+        [['#ed-costo', dec], ['#ed-precio', dec]].forEach(([id, dec]) => {
+          const i = $(id, hoja); i.value = convertir(i.value, dec);
+          if (originales.has(i)) originales.set(i, convertir(originales.get(i), dec)); // cambiar de unidad no es un cambio
+        });
+        $$('[data-por-texto]', hoja).forEach(t => { t.textContent = aEmpaque ? `por ${nombreEmp}` : `por ${p.unidadBase}`; });
+        preciosPorEmpaque = aEmpaque;
+        $$('[data-precios-por]', hoja).forEach(x => x.setAttribute('aria-checked', String(x === b)));
+        hoja.dispatchEvent(new Event('input'));
       }));
       // Cualquier cambio pone «Guardar» en naranja (cambio importante).
       const guardar = $('.acciones .boton-primario', hoja);
