@@ -53,14 +53,17 @@ function pintarHoyDashboard() {
   const cont = $('#dash-hoy', dashUI.el); if (!cont) return;
   const est = estadoDashboard;
   if (est.vista === 'MOVIMIENTOS' && est.texto.trim()) { cont.innerHTML = tarjetaBusquedaHTML(); return; }
-  const hoy = obtenerFechaLocal(), ayer = restarDias(hoy, 1);
+  // Se compara con el mismo día de la semana pasada (martes con martes; Kitso,
+  // 2026-10-24). En la v3.1 irá un interruptor para comparar con ayer.
+  const hoy = obtenerFechaLocal(), antes = restarDias(hoy, 7);
+  const dia = textoAFecha(antes).toLocaleDateString('es', { weekday: 'long' });
   const movs = Almacen.movimientosEfectivos();
-  const r = calcularResumenPeriodo(movs, hoy, hoy), ra = calcularResumenPeriodo(movs, ayer, ayer);
+  const r = calcularResumenPeriodo(movs, hoy, hoy), ra = calcularResumenPeriodo(movs, antes, antes);
   const pct = ra.ventas ? ((r.ventas - ra.ventas) / ra.ventas) * 100 : null;
   cont.innerHTML = html`<section class="tarjeta-hoy" aria-label="Hoy">
     <div class="tarjeta-hoy-cifras">
       <div><span class="etiqueta-hoy">Vendido hoy</span><strong class="cifra-hoy">${formatearDinero(r.ventas)}</strong>
-        <span class="detalle-hoy">${pct === null ? (r.ventas ? 'Ayer no hubo ventas' : 'Aún sin ventas') : `${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)} % vs. ayer`} · ${r.nTickets} ${pluralizar(r.nTickets, 'ticket')}</span></div>
+        <span class="detalle-hoy">${pct === null ? (r.ventas ? `El ${dia} pasado no hubo ventas` : 'Aún sin ventas') : `${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)} % vs. el ${dia} pasado`} · ${r.nTickets} ${pluralizar(r.nTickets, 'ticket')}</span></div>
       <div class="ganancia-hoy"><span class="etiqueta-hoy">Ganancia</span><strong>${formatearDinero(r.utilidad)}</strong></div>
     </div>
     ${accesosHoyHTML()}</section>`.texto;
