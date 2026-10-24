@@ -21,3 +21,7 @@
 /* Detalle del producto con íconos pequeños */
 .par-dato.con-icono { display: flex; align-items: center; gap: var(--e-2); }
 .par-dato.con-icono > .icono { width: 0.95rem; height: 0.95rem; color: var(--texto-3); flex: none; }
+/* Valor en bodega: real (verde) y lo gratis debajo del neto */
+.valor-desglose { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); font-size: var(--t-xs); font-weight: var(--peso-fuerte); margin-top: 2px; }
+.valor-desglose span { display: inline-flex; align-items: center; gap: 3px; }
+.valor-desglose .icono { width: 0.85rem; height: 0.85rem; }

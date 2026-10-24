@@ -49,9 +49,9 @@
   --activo-fondo: #F1F2F4; --activo-texto: #0E1013;
 
   --foco: #9DB4E8;
-  /* «Sobrio» en Noche: saturación media (distinta de «Pastel») */
-  --grafico-1: #6E93E8; --grafico-2: #4FA3A5; --grafico-3: #F2A541; --grafico-4: #E0605E;
-  --grafico-5: #A9B88A; --grafico-6: #C77D96; --grafico-7: #9B87F5; --grafico-8: #4CB8D4;
+  /* «Sobrio» en Noche: la misma paleta de Día (Kitso, 2026-10-24) */
+  --grafico-1: #1E3A8A; --grafico-2: #335C67; --grafico-3: #E09F3E; --grafico-4: #9E2A2B;
+  --grafico-5: #7D8C63; --grafico-6: #540B0E; --grafico-7: #6D28D9; --grafico-8: #0E7490;
   --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --sombra-2: 0 4px 16px rgb(0 0 0 / 0.5);
   --sombra-3: 0 12px 40px rgb(0 0 0 / 0.6);

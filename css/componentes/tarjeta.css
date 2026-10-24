@@ -33,3 +33,5 @@ details.tarjeta[open] > summary { margin-bottom: var(--e-3); }
 /* Texto grande del navegador: las cifras y títulos se recortan con «…» en vez de cortarse */
 .cifra-tarjeta .valor, .tarjeta-titulo h2, .tarjeta-hoy .etiqueta-hoy, .tarjeta-hoy .detalle-hoy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cifra-tarjeta .valor { overflow-wrap: normal; }
+/* Una etiqueta con ⓘ puede bajar a otra línea en vez de ocultar el ⓘ */
+.cifra-tarjeta .etiqueta:has(.boton-info) { white-space: normal; overflow: visible; flex-wrap: wrap; }

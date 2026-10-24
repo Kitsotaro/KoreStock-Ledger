@@ -34,12 +34,10 @@ const GraficoStock = {
       <div class="tarjeta">
         <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2>
           <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></div>
-        <div class="fila envolver" style="margin-bottom:var(--e-2)">
-          <label class="control" style="min-height:var(--alto-control-sm)" data-grafico-recorte><span class="solo-lector">Cuántas barras</span>
-            <select data-grafico="recorte"><option value="TODO">Todas</option><option value="10">5 mayores y 5 menores</option><option value="TOP5">3 mayores y 2 menores</option></select></label>
-          <button type="button" class="boton boton-icono" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos" style="margin-left:auto">${seguro(icono('paleta', 'icono-sm'))}</button>
-        </div>
-        <nav class="migas" aria-label="Nivel del gráfico"></nav>
+        <label class="control" style="min-height:var(--alto-control-sm);margin-bottom:var(--e-2)" data-grafico-recorte><span class="solo-lector">Cuántas barras</span>
+          <select data-grafico="recorte"><option value="TODO">Todas</option><option value="10">5 mayores y 5 menores</option><option value="TOP5">3 mayores y 2 menores</option></select></label>
+        <div class="fila-separada fila-migas"><nav class="migas" aria-label="Nivel del gráfico"></nav>
+          <button type="button" class="boton boton-icono boton-paleta" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos">${seguro(icono('paleta', 'icono-sm'))}</button></div>
         <div class="contenedor-grafico"><canvas aria-label="Gráfico de distribución del stock" role="img"></canvas></div>
         <p class="nota-grafico t-pequeno t-secundario"></p>
         <div class="leyenda"></div>
@@ -152,13 +150,17 @@ const GraficoStock = {
     const nota = $('.nota-grafico', c);
     nota.textContent = nivel.campo === 'sabor'
       ? `Según registros.${sinAsignar ? ` Sin asignar: ${formatearNumero(sinAsignar)}.` : ''}`
-      : 'Unidades en bodega (cada producto en su propia unidad) · valor a último costo · %.';
+      : '';
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
-    $('.leyenda', c).innerHTML = items.length ? items.map((it, i) => html`<div class="leyenda-fila">
+    const cabecera = items.length ? html`<div class="leyenda-cabecera"><span class="crece"></span><span class="valor columnas-leyenda">
+        <button type="button" class="col-n" data-info-titulo="Volumen" data-info="Cuántas unidades hay en bodega de este grupo, cada producto en su propia unidad (botellas, latas, bolsas…).">${seguro(icono('caja', 'icono-sm'))}Volumen</button><span class="sep"></span>
+        <button type="button" class="col-d" data-info-titulo="Valor" data-info="Lo que vale ese stock a último costo, con lo que llegó gratis (como el valor neto de bodega).">${seguro(icono('billete', 'icono-sm'))}Valor</button><span class="sep"></span>
+        <button type="button" class="col-p" data-info-titulo="Participación" data-info="Qué parte del volumen total de este nivel es este grupo (suma 100 %).">${seguro(icono('pastel', 'icono-sm'))}Part.</button></span></div>`.texto : '';
+    $('.leyenda', c).innerHTML = cabecera + (items.length ? items.map((it, i) => html`<div class="leyenda-fila">
         <button type="button" class="muestra-color" style="background:${colores[i]}" data-color="${this.nombreColor(it.etiqueta)}" data-actual="${aHex(colores[i])}" aria-label="Cambiar el color de ${it.etiqueta}" title="Cambiar color"></button>
         <button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}><span class="recortar">${it.etiqueta}</span>
         <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></button></div>`.texto).join('')
-      : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto;
+      : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto);
 
     try { await cargarChart(); } catch (e) { return; }
     const lienzo = $('canvas', c);

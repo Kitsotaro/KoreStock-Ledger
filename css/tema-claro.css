@@ -40,7 +40,7 @@
   --aviso: #B23C0A;
   --aviso-suave: #FFEDD5;
   /* Precaución (semáforo «Poco», «bajo la meta», «pronto»): amarillo; texto legible y relleno de barras */
-  --precaucion: #9A6700; --precaucion-relleno: #E5B300; --precaucion-suave: #FEF6D8;
+  --precaucion: #C2410C; --precaucion-relleno: #EA580C; --precaucion-suave: #FFEDD5; /* en Día, naranja: el amarillo no contrasta sobre blanco */
   --peligro: #B91C1C;
   --peligro-suave: #FDE8E8;
   --info: #1E3A8A;

@@ -85,18 +85,25 @@ function pintarCifrasStock() {
   activos.forEach(p => { conteo[semaforoStock(Almacen.stock(p.idProducto), p)]++; });
   const total = totalesPorEmpaque(activos);
   $('#stock-cifras', stockUI.el).innerHTML = html`
-    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', '**Neto**: cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis por bonificación. Úsalo para cuadrar contra tu conteo físico.\n\n**Real**: cuánto dinero pagaste de verdad por lo que sigue en bodega (costo promedio): lo que llegó gratis entra con costo $0.')}
-      <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Tipo de valor">
-        <button type="button" role="radio" data-accion="alternar-valor" data-valor="NETO" aria-checked="${String(stockUI.valor === 'NETO')}">Neto</button>
-        <button type="button" role="radio" data-accion="alternar-valor" data-valor="REAL" aria-checked="${String(stockUI.valor === 'REAL')}">Real</button>
-      </span></div>
-      <div class="valor">${formatearDinero(stockUI.valor === 'NETO' ? v.bruto : v.real)}</div>
-      <div class="comparacion igual">${stockUI.valor === 'NETO' ? 'Todo lo que hay, con lo gratis' : 'Lo que pagaste por lo que queda'}</div></div>
+    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', '**Valor neto** (cifra grande): cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis. Úsalo para cuadrar contra tu conteo físico.\n\n**Real** (verde): lo que pagaste de verdad por lo que sigue en bodega (costo promedio; lo gratis entra a $0).\n\n**Gratis**: la diferencia, lo que vale lo bonificado.')}</div>
+      <div class="valor">${formatearDinero(v.bruto)}</div>
+      <div class="valor-desglose"><span class="t-exito">${seguro(icono('billete', 'icono-sm'))}Real ${formatearDinero(v.real)}</span><span class="t-secundario">${seguro(icono('estrella', 'icono-sm'))}Gratis ${formatearDinero(Math.max(0, restarDinero(v.bruto, v.real)))}</span></div></div>
     <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}</div>
       <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>
     ${total.empaques ? html`<div class="cifra-tarjeta total-bodega" data-solo-modo="pro"><div class="etiqueta">Total en bodega ${botonInfo('Total en bodega', 'Cuántos empaques tienes en total, sin importar la marca: cada producto se cuenta en su empaque más grande (caja, fardo, sixpack…). Lo que no completa un empaque (o no tiene empaque) va aparte con «+».')}</div>
       <div class="valor">${formatearNumero(total.empaques)} <span class="t-pequeno t-secundario">empaques</span></div>
       <div class="chips-total">${total.grupos.map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`)}${total.sueltas.map(([n, c]) => html`<span class="chip-dato tenue" title="Fuera de un empaque completo">+${formatearNumero(c)} ${pluralUnidad(n, c)}</span>`)}</div></div>` : ''}`.texto;
+}
+
+// Umbral en unidades y, si tiene empaque, también en empaques: «96 (4 sixpacks)».
+function textoUmbral(p, n) {
+  const eq = empaqueMayor(p);
+  return eq ? `${formatearNumero(n)} (${formatearNumero(redondearCantidad(n / eq.unidades))} ${pluralUnidad(String(eq.nombre).toLowerCase(), n / eq.unidades)})` : formatearNumero(n);
+}
+// Empaque más grande registrado sobre la unidad del producto (o null).
+function empaqueMayor(p) {
+  return Almacen.equivalenciasDe(p.idProducto).filter(e => e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
+    .sort((a, b) => b.unidades - a.unidades)[0] || null;
 }
 
 // Total en bodega (modo Pro, como el «Total en Bodega» de la v2): cada producto en
@@ -173,7 +180,7 @@ function filaStockHTML(p) {
     </summary>
     <div class="desplegable-cuerpo">
       ${par('caja', 'Stock', describirCantidad(p.idProducto, e.stock))}
-      ${e.bonif ? par('estrella', 'Llegó gratis (bonificado)', `${formatearNumero(Math.min(e.bonif, Math.max(0, e.stock)))} ${unidad(e.bonif)}`) : ''}
+      ${e.bonif ? par('estrella', 'Llegó gratis (bonificado)', describirCantidad(p.idProducto, e.bonif)) : ''}
       ${par('precio', 'Último costo', `${formatearDinero(p.costo, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
       ${par('tendencia', 'Costo promedio', `${formatearDinero(e.cpp, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
       ${par('etiqueta', 'Precio de venta', `${formatearDinero(p.precio)} / ${p.unidadBase}`, 'cifra')}
@@ -181,7 +188,7 @@ function filaStockHTML(p) {
       ${eq ? par('lote', 'Empaque habitual', `${eq.nombre} de ${formatearNumero(eq.unidades)}`) : ''}
       ${p.variante ? par('sabor', 'Sabor del producto', p.variante) : ''}
       ${tieneSabores ? par('sabor', 'Sabores vendidos y comprados', sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')) : ''}
-      ${par('advertencia', 'Avisar', `muy poco ≤ ${formatearNumero(p.umbralMin ?? 4)} · poco ≤ ${formatearNumero(p.umbralMax ?? 6)}`)}
+      ${par('advertencia', 'Avisar', `muy poco ≤ ${textoUmbral(p, p.umbralMin ?? 4)} · poco ≤ ${textoUmbral(p, p.umbralMax ?? 6)}`)}
       ${p.categoria ? par('etiqueta-nueva', 'Categoría', p.categoria) : ''}
       ${par('identificador', 'Unidad', `${p.unidadBase}${p.decimales ? ' (permite decimales)' : ''}`)}
       ${par('reloj', 'Última modificación', String(p.ultimaModif || '').slice(0, 16))}
@@ -341,23 +348,34 @@ function editarProducto(idProducto) {
   const p = Almacen.producto(idProducto);
   const tieneHistorial = Almacen.movimientos.some(m => m.idProducto === p.idProducto);
   const campo = (id, etiqueta, valor, extra) => html`<div class="campo"><label for="${id}">${etiqueta}</label><div class="control">${extra && extra.prefijo ? html`<span class="prefijo">${extra.prefijo}</span>` : ''}<input id="${id}" value="${valor}" ${extra && extra.lista ? html`list="${extra.lista}"` : ''} autocomplete="off" ${extra && extra.deshabilitado ? 'disabled' : ''}>${extra && extra.sufijo ? html`<span class="sufijo">${extra.sufijo}</span>` : ''}</div>${extra && extra.ayuda ? html`<span class="ayuda-campo">${extra.ayuda}</span>` : ''}</div>`;
+  const eqMayor = empaqueMayor(p);
+  const nombreEmp = eqMayor ? String(eqMayor.nombre).toLowerCase() : '';
+  let umbralPorEmpaque = false;
+  const lista = (id, valores) => html`<datalist id="${id}">${valores.map(x => html`<option value="${x}"></option>`)}</datalist>`;
+  const unicos = (campo) => [...new Set(Almacen.productosVisibles().map(x => String(x[campo] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
   const control = abrirHoja({
     titulo: 'Editar producto',
     contenido: html`<p class="t-pequeno t-tenue">Código ${p.sku}</p>
       <div class="rejilla-campos">
-        ${campo('ed-marca', 'Marca', p.marca)}${campo('ed-linea', 'Producto', p.linea)}
-        ${campo('ed-presentacion', 'Presentación', p.presentacion)}${campo('ed-volumen', 'Contenido', p.volumen)}
+        ${campo('ed-marca', 'Marca', p.marca, { lista: 'ed-marcas' })}${campo('ed-linea', 'Producto', p.linea, { lista: 'ed-lineas' })}
+        ${campo('ed-presentacion', 'Presentación', p.presentacion, { lista: 'ed-presentaciones-lista' })}${campo('ed-volumen', 'Contenido', p.volumen, { lista: 'ed-volumenes' })}
       </div>
+      ${lista('ed-marcas', unicos('marca'))}${lista('ed-lineas', unicos('linea'))}${lista('ed-presentaciones-lista', unicos('presentacion'))}${lista('ed-volumenes', unicos('volumen'))}${lista('ed-empaques', unicos('tipoEmpaque'))}
       ${campo('ed-unidad', 'Se cuenta en', p.unidadBase, { deshabilitado: tieneHistorial, ayuda: tieneHistorial ? 'Con historial, cambiar la unidad necesita un asistente de reconversión (pendiente de decidir).' : '' })}
       <div class="rejilla-campos">
         ${campo('ed-costo', `Costo por ${p.unidadBase}`, valorCampoDinero(p.costo, 5).replace(/0+$/, '').replace(/\.$/, '.00'), { prefijo: '$' })}
         ${campo('ed-precio', `Precio por ${p.unidadBase}`, valorCampoDinero(p.precio), { prefijo: '$', ayuda: 'El cambio de precio aplica a ventas nuevas.' })}
       </div>
+      ${eqMayor ? html`<div class="fila-separada"><span class="t-pequeno t-secundario">Avisar con</span>
+        <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Contar el aviso en">
+          <button type="button" role="radio" data-umbral-por="unidad" aria-checked="true">${pluralUnidad(p.unidadBase, 2)}</button>
+          <button type="button" role="radio" data-umbral-por="empaque" aria-checked="false">${pluralUnidad(nombreEmp, 2)} de ${formatearNumero(eqMayor.unidades)}</button>
+        </span></div>` : ''}
       <div class="rejilla-campos">
         ${campo('ed-umin', 'Avisar «muy poco» con', p.umbralMin ?? 4, { sufijo: pluralUnidad(p.unidadBase, 2) })}
         ${campo('ed-umax', 'Avisar «poco» con', p.umbralMax ?? 6, { sufijo: pluralUnidad(p.unidadBase, 2) })}
       </div>
-      <div class="rejilla-campos">${campo('ed-categoria', 'Categoría', p.categoria, { lista: 'ed-cats' })}${campo('ed-empaque', 'Tipo de empaque', p.tipoEmpaque)}</div>
+      <div class="rejilla-campos">${campo('ed-categoria', 'Categoría', p.categoria, { lista: 'ed-cats' })}${campo('ed-empaque', 'Tipo de empaque', p.tipoEmpaque, { lista: 'ed-empaques' })}</div>
       <datalist id="ed-cats">${Almacen.categorias().map(c => html`<option value="${c}"></option>`)}</datalist>
       <label class="casilla" data-solo-modo="tienda pro"><input type="checkbox" id="ed-decimales" ${p.decimales ? 'checked' : ''}> Se vende por peso o medida (permite decimales)</label>
       <button type="button" class="boton boton-texto boton-sm" id="ed-presentaciones" data-solo-modo="tienda pro" style="justify-self:start">${seguro(icono('precio', 'icono-sm'))}Precios por presentación</button>`,
@@ -365,7 +383,10 @@ function editarProducto(idProducto) {
       const v = (id) => $(id, c.el).value.trim();
       const cambios = {
         marca: v('#ed-marca'), linea: v('#ed-linea'), presentacion: v('#ed-presentacion'), volumen: v('#ed-volumen'),
-        costo: dinero(v('#ed-costo')), precio: dinero(v('#ed-precio')), umbralMin: parsearNumero(v('#ed-umin')), umbralMax: parsearNumero(v('#ed-umax')),
+        costo: dinero(v('#ed-costo')), precio: dinero(v('#ed-precio')),
+        // El aviso siempre se guarda en unidades; si se escribió en empaques se multiplica.
+        umbralMin: redondearCantidad(parsearNumero(v('#ed-umin')) * (umbralPorEmpaque ? eqMayor.unidades : 1)),
+        umbralMax: redondearCantidad(parsearNumero(v('#ed-umax')) * (umbralPorEmpaque ? eqMayor.unidades : 1)),
         categoria: v('#ed-categoria'), tipoEmpaque: v('#ed-empaque'), decimales: $('#ed-decimales', c.el).checked ? 'SI' : ''
       };
       if (!tieneHistorial) cambios.unidadBase = v('#ed-unidad').toLowerCase() || p.unidadBase;
@@ -386,6 +407,26 @@ function editarProducto(idProducto) {
       prepararCampoNumerico($('#ed-umin', hoja), { decimales: p.decimales ? 3 : 0 });
       prepararCampoNumerico($('#ed-umax', hoja), { decimales: p.decimales ? 3 : 0 });
       $('#ed-presentaciones', hoja).addEventListener('click', () => { control.cerrar(); setTimeout(() => editarPresentaciones(p), 340); });
+      const originales = new Map($$('.cuerpo input', hoja).map(i => [i, i.type === 'checkbox' ? i.checked : i.value]));
+      // Aviso por unidades o por empaques: convierte lo escrito al cambiar.
+      $$('[data-umbral-por]', hoja).forEach(b => b.addEventListener('click', () => {
+        const aEmpaque = b.dataset.umbralPor === 'empaque';
+        if (aEmpaque === umbralPorEmpaque) return;
+        const f = aEmpaque ? 1 / eqMayor.unidades : eqMayor.unidades;
+        const convertir = (x) => formatearNumero(redondearCantidad(parsearNumero(x) * f)).replace(/,/g, '');
+        ['#ed-umin', '#ed-umax'].forEach(id => {
+          const i = $(id, hoja); i.value = convertir(i.value);
+          if (originales.has(i)) originales.set(i, convertir(originales.get(i))); // cambiar de unidad no es un cambio
+          i.parentElement.querySelector('.sufijo').textContent = aEmpaque ? pluralUnidad(nombreEmp, 2) : pluralUnidad(p.unidadBase, 2);
+        });
+        hoja.dispatchEvent(new Event('input'));
+        umbralPorEmpaque = aEmpaque;
+        $$('[data-umbral-por]', hoja).forEach(x => x.setAttribute('aria-checked', String(x === b)));
+      }));
+      // Cualquier cambio pone «Guardar» en naranja (cambio importante).
+      const guardar = $('.acciones .boton-primario', hoja);
+      hoja.addEventListener('input', () => guardar.classList.toggle('boton-aviso', [...originales].some(([i, val]) => (i.type === 'checkbox' ? i.checked : i.value) !== val)));
+      hoja.addEventListener('change', () => hoja.dispatchEvent(new Event('input')));
       pintarIconos(hoja);
     }
   });

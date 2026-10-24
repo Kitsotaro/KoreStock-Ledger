@@ -91,3 +91,13 @@
 /* Leyenda: unidades · valor · % en columnas para que los puntos queden alineados */
 .columnas-leyenda { display: inline-grid; grid-template-columns: 5ch 1ch 10ch 1ch 6.5ch; align-items: baseline; text-align: right; }
 .columnas-leyenda .sep { text-align: center; color: var(--texto-3); }
+/* Leyenda: columnas fijas (los puntos quedan alineados) y encabezados con ⓘ */
+.columnas-leyenda { grid-template-columns: 6.5ch 2ch 10ch 2ch 7ch; }
+.leyenda-cabecera { display: flex; align-items: center; gap: var(--e-1); padding: 0 var(--e-1) var(--e-1) calc(1.1rem + var(--e-2)); border-bottom: 1px solid var(--borde); margin-bottom: var(--e-1); }
+.leyenda-cabecera button { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; border: 0; background: transparent; padding: 0; color: var(--texto-2); font: inherit; font-size: var(--t-xs); font-weight: var(--peso-fuerte); cursor: help; white-space: nowrap; }
+.leyenda-cabecera button .icono { width: 0.85rem; height: 0.85rem; }
+.leyenda-cabecera .columnas-leyenda { font-family: var(--fuente); }
+.fila-migas { margin-bottom: var(--e-1); }
+.boton-paleta { width: 2rem; min-width: 2rem; min-height: 2rem; }
+/* Columnas en rem (no en ch): encabezados y cifras usan fuentes distintas y deben coincidir */
+.columnas-leyenda { grid-template-columns: 4.6rem 1rem 5.6rem 1rem 3.9rem; }
