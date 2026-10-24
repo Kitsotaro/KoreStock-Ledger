@@ -169,7 +169,7 @@ function pintarProductoVenta() {
       <div class="campo">
         <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>
           ${empaquesVenta.length ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">
-            ${Shell.modo === 'bodega' && venta.empaqueVenta ? '' : html`<button type="button" role="radio" data-accion="venta-por" data-clave="u" aria-checked="${String(!venta.empaqueVenta)}">${pluralUnidad(p.unidadBase, 2)}</button>`}
+            <button type="button" role="radio" data-accion="venta-por" data-clave="u" aria-checked="${String(!venta.empaqueVenta)}">${pluralUnidad(p.unidadBase, 2)}</button>
             ${empaquesVenta.map(o => html`<button type="button" role="radio" data-accion="venta-por" data-clave="${o.clave}" aria-checked="${String(!!venta.empaqueVenta && venta.empaqueVenta.clave === o.clave)}">${pluralUnidad(o.empaque, 2)} de ${formatearNumero(o.conNivel ? o.unidades * o.porSub : o.unidades)}</button>`)}
           </span>` : ''}</div>
         <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>

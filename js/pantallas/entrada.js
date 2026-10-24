@@ -325,7 +325,6 @@ function pintarProductoEntradaSinFoco() {
   const error = validarEmpaqueEntrada();
   const empaqueNuevo = !!p && !empaqueRegistradoEntrada();
   const bodega = Shell.modo === 'bodega';
-  if (bodega) entrada.porUnidad = false;
   // Precio por unidad · por empaque (como en la tarjeta de Venta).
   const empReg = p ? opciones.filter(o => o.clave !== 'u')[0] : null;
   const factorReg = empReg ? (empReg.conNivel ? empReg.unidades * empReg.porSub : empReg.unidades) : 1;
@@ -357,8 +356,8 @@ function pintarProductoEntradaSinFoco() {
         <span class="frase-palabra">Compré</span>
         <span class="frase-campo"><span class="control"><input id="entrada-cant" value="${formatearNumero(entrada.cantEmp).replace(/,/g, '')}" aria-label="Cuántos"></span>${nota('Cantidad')}</span>
         ${factor > 1 ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Unidad de compra">
-            <button type="button" role="radio" data-accion="compra-por" data-por="empaque" aria-checked="${String(!entrada.porUnidad)}" ${bodega ? 'disabled' : ''}>${pluralUnidad(nombreEmp.toLowerCase(), 2)}</button>
-            ${bodega ? '' : html`<button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>`}
+            <button type="button" role="radio" data-accion="compra-por" data-por="empaque" aria-checked="${String(!entrada.porUnidad)}">${pluralUnidad(nombreEmp.toLowerCase(), 2)}</button>
+            <button type="button" role="radio" data-accion="compra-por" data-por="unidad" aria-checked="${String(entrada.porUnidad)}">${pluralUnidad(unidad, 2)}</button>
           </span>` : html`<span class="frase-palabra t-fuerte">${pluralUnidad(bodega && nombreEmp ? nombreEmp.toLowerCase() : unidad, entrada.cantEmp)}</span>`}
       </div>
       <p class="t-pequeno t-secundario entrada-total-unidades">= ${formatearNumero(unidades)} ${pluralUnidad(unidad, unidades)}${fc > 1 ? ` (${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreEmp.toLowerCase(), entrada.cantEmp)} de ${formatearNumero(fc)})` : ''}</p>`;
@@ -473,7 +472,7 @@ function resumenEntradaHTML() {
   const cCosto = p && unidades > 0 && Math.abs(costoUnidad - p.costo) > 1 ? 't-aviso' : '';
   const cPrecio = p && entrada.precioNuevo !== null && entrada.precioNuevo !== p.precio ? 't-aviso' : '';
   // Bodega es mayoreo: solo cifras por empaque y de toda la compra.
-  if (Shell.modo === 'bodega' && factor > 1) {
+  if (Shell.modo === 'bodega' && factor > 1 && !entrada.porUnidad) {
     const empaques = redondearCantidad(unidades / factor);
     return html`<div class="tarjeta resumen-compra" aria-label="Resumen de la compra">
       <div class="tarjeta-titulo"><h2>${seguro(icono('factura', 'icono-sm'))} Resumen de la compra</h2></div>
