@@ -17,7 +17,7 @@
 
 const VERSION_ESQUEMA = 3;
 
-const TIPOS_MOV = { ENTRADA: 'ENTRADA', VENTA: 'VENTA', APERTURA: 'APERTURA', REASIGNACION: 'REASIGNACION' };
+const TIPOS_MOV = { ENTRADA: 'ENTRADA', VENTA: 'VENTA', APERTURA: 'APERTURA', REASIGNACION: 'REASIGNACION', AJUSTE: 'AJUSTE' };
 const ESTADOS = {
   MOV_ANULADA: 'ANULADA', GASTO_ANULADO: 'ANULADO',
   // Copias que una base rotada guarda SOLO para seguir los folios (T20); no cuentan para nada.

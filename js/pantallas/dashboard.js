@@ -276,15 +276,15 @@ function filaGrupoHTML(g) {
   const todoAnulado = anuladas === g.lineas.length;
   const cliente = g.idCliente ? Almacen.cliente(g.idCliente) : null;
   const esVenta = g.tipo === TIPOS_MOV.VENTA;
-  const etiquetaTipo = { VENTA: 'Venta', ENTRADA: 'Entrada', APERTURA: 'Apertura', REASIGNACION: 'Sabores' }[g.tipo] || g.tipo;
+  const etiquetaTipo = { VENTA: 'Venta', ENTRADA: 'Entrada', APERTURA: 'Apertura', REASIGNACION: 'Sabores', AJUSTE: 'Ajuste' }[g.tipo] || g.tipo;
   const hayNuevo = g.lineas.some(m => m.productoNuevo === 'SI');
   const nombre1 = (m) => { const p = Almacen.producto(m.idProducto); return p ? nombreProducto(p, { conVariante: false }) : m.sku; };
   return html`<details class="desplegable">
     <summary class="fila-lista ${todoAnulado ? 'anulada' : ''}">
-      <span class="insignia ${esVenta ? 'venta' : 'entrada'}">${etiquetaTipo}</span>
+      <span class="insignia ${esVenta ? 'venta' : g.tipo === TIPOS_MOV.AJUSTE ? 'ajuste' : 'entrada'}">${etiquetaTipo}</span>
       <div class="crece"><div class="titulo recortar">${g.lineas.length === 1 ? nombre1(g.lineas[0]) : `${g.lineas.length} productos`}${hayNuevo ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${g.lineas.some(m => m.bonif > 0) ? html` <span class="insignia">+Bonif.</span>` : ''}</div>
         <div class="sub">${formatearFechaCorta(g.fecha)} ${String(g.timestamp || '').slice(11, 16)} · ${g.clave}${cliente ? html` <span class="cliente-mov">${seguro(icono('persona', 'icono-sm'))}${cliente.nombre}</span>` : ''}${anuladas && !todoAnulado ? html` · ${anuladas} anulada${anuladas > 1 ? 's' : ''}` : ''}</div></div>
-      <span class="monto">${formatearDinero(totalGrupo(g))}</span>
+      <span class="monto">${g.tipo === TIPOS_MOV.AJUSTE ? textoAjusteGrupo(g) : formatearDinero(totalGrupo(g))}</span>
       ${seguro(icono('chevron-abajo', 'icono-sm chevron'))}
     </summary>
     <div class="desplegable-cuerpo">
@@ -329,8 +329,8 @@ function lineaMovHTML(m, esVenta, nombre1) {
         ${meta('recibo', m.folio, 'Folio')}${meta('identificador', m.sku || '—', 'Código')}${capturaOtroDia ? meta('reloj', hora, 'Capturado') : ''}
       </div>
     </div>
-    <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
-    ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
+    <span class="cifra t-pequeno">${m.tipo === TIPOS_MOV.AJUSTE ? (m.cantidad < 0 ? `−${formatearDinero(m.inversion || 0)}` : '$0.00') : formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
+    ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA || m.tipo === TIPOS_MOV.AJUSTE) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
   </div>`;
 }
 
@@ -338,6 +338,13 @@ function lineaMovHTML(m, esVenta, nombre1) {
 function conteoTiposMov(todos) {
   todos = todos || gruposMovimientos({ conTipo: false });
   return { TODO: todos.length, VENTA: todos.filter(g => g.tipo === TIPOS_MOV.VENTA).length, ENTRADA: todos.filter(g => g.tipo === TIPOS_MOV.ENTRADA).length };
+}
+
+// Ajuste por conteo: «−3 botellas · merma $1.25» o «+2 botellas».
+function textoAjusteGrupo(g) {
+  const m = g.lineas[0];
+  const q = Number(m.cantidad || 0), p = Almacen.producto(m.idProducto);
+  return `${q > 0 ? '+' : '−'}${formatearNumero(Math.abs(q))} ${p ? pluralUnidad(p.unidadBase, Math.abs(q)) : ''}${q < 0 && m.inversion ? ` · merma ${formatearDinero(m.inversion)}` : ''}`;
 }
 
 function pintarMovimientosDashboard() {

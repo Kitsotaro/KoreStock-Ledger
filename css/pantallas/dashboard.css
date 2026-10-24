@@ -73,3 +73,4 @@ button.dato-mov .icono { margin-top: 2px; }
   .datos-mov.tenue { margin-top: var(--e-2); }
   .linea-mov + .linea-mov { margin-top: var(--e-3); }
 }
+.desplegable:has(.insignia.ajuste) .linea-mov { border-left-color: var(--precaucion); }

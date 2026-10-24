@@ -83,7 +83,7 @@ function prepararRotacion(hojas, opciones) {
     const k = claveDe(x); if (!k) return mejor;
     return (!mejor || k > claveDe(mejor)) ? x : mejor;
   }, null);
-  ['IN-', 'FAC-', 'RA-'].forEach(pre => {
+  ['IN-', 'FAC-', 'RA-', 'AJ-'].forEach(pre => {
     const u = ultimoDe(movs.filter(m => String(m.folio).startsWith(pre)), m => m.folio);
     if (u && !enVentana.has(u.folio)) copias.set(u.folio, Object.assign(sinFila(u), { estado: ESTADOS.MOV_ARCHIVADA }));
   });
@@ -131,7 +131,7 @@ function prepararRotacion(hojas, opciones) {
 function contadoresDe(hojas) {
   const c = {};
   const subir = (pre, f) => { f = String(f || ''); if (f.startsWith(pre)) c[pre] = Math.max(c[pre] || 0, parseInt(f.slice(pre.length), 10) || 0); };
-  hojas.LOG_TRANS.forEach(m => { ['IN-', 'FAC-', 'RA-'].forEach(p => subir(p, m.folio)); subir('TK-', m.idTicket); });
+  hojas.LOG_TRANS.forEach(m => { ['IN-', 'FAC-', 'RA-', 'AJ-'].forEach(p => subir(p, m.folio)); subir('TK-', m.idTicket); });
   hojas.COSTOS_OPERATIVOS.forEach(g => subir('GO-', g.folio));
   hojas.COSTOS_COMBUSTIBLE.forEach(g => subir('CB-', g.folio));
   return c;

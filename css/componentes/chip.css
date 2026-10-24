@@ -38,3 +38,4 @@
 .chip-compacto[aria-pressed="false"] { gap: 0; }
 /* Chip pequeño dentro de una tarjeta (p. ej. «Costo promedio» en Ganancia) */
 .chip-mini { min-height: 1.75rem; padding: 0 0.4rem; font-size: 0.6875rem; margin-top: var(--e-2); align-self: flex-start; gap: 3px; max-width: 100%; white-space: nowrap; }
+.insignia.ajuste { background: var(--precaucion-suave); color: var(--precaucion); }

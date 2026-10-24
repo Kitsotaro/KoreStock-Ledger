@@ -16,7 +16,7 @@
 // recalcula solo (D36).
 //
 // Expone: prepararVenta, prepararEntrada, operacionGuardarTicket,
-//   operacionAnular, describirCantidad, prepararReasignacion.
+//   operacionAnular, describirCantidad, prepararReasignacion, prepararAjuste.
 // Depende de: esquema.js, almacen.js, calculos.js, cola-escritura.js,
 //   operaciones-catalogo.js, hoja.js, dinero.js, utilidades.js, sesion.js.
 // ============================================================
@@ -179,8 +179,9 @@ function operacionGuardarTicket(prep) {
   const pasoFinal = { nombre: 'copia local', fn: async () => { Almacen.notificar('movimientos'); guardarCacheBase(); } };
   const pasos = [pasoAgregarProductos(prep.productosNuevos), pasoHistorial];
   if (prep.tipo === TIPOS_MOV.ENTRADA) pasos.push(productosNuevosConStock, ...pasosPrecio, pasoEquivalencias);
+  if (prep.tipo === TIPOS_MOV.AJUSTE) pasos.push(productosNuevosConStock, ...pasosPrecio); // el catálogo guarda su stock al día
   pasos.push(pasoFinal);
-  return crearOperacion(prep.tipo === TIPOS_MOV.VENTA ? 'Cobrar y guardar' : 'Guardar entrada', pasos);
+  return crearOperacion(prep.tipo === TIPOS_MOV.VENTA ? 'Cobrar y guardar' : prep.tipo === TIPOS_MOV.AJUSTE ? 'Ajustar stock' : 'Guardar entrada', pasos);
 }
 
 // Anula movimientos (una línea, un ticket o un lote). `accion` opcional
@@ -214,6 +215,31 @@ function operacionAnular(folios, accion) {
   }
   pasos.push({ nombre: 'copia local', fn: async (ctx) => { ctx.resultado = { anulados: movs.length }; Almacen.notificar('anulacion'); guardarCacheBase(); } });
   return crearOperacion('Anular', pasos);
+}
+
+// Ajuste por conteo físico (Kitso, 2026-10-24): una fila AJUSTE (folio AJ-) con
+// la diferencia entre lo contado y lo que dice la app. Faltante = merma: sale a
+// costo promedio (gratis primero) sin ser venta. Sobrante: entra a $0 como gratis.
+// La columna de inversión guarda el valor de la merma, solo para mostrarlo.
+function prepararAjuste(idProducto, contado, nota) {
+  const p = Almacen.producto(idProducto);
+  const e = Almacen.estado(p.idProducto);
+  const dif = redondearCantidad(Number(contado) - e.stock);
+  if (!Number.isFinite(dif) || Number(contado) < 0) throw new Error('Escribe cuánto contaste (0 o más).');
+  if (!dif) throw new Error('Lo contado es igual a lo que dice la app: no hay nada que ajustar.');
+  const gratis = Math.min(Math.max(0, -dif), e.bonifEnBodega || 0);
+  const pagadas = Math.max(0, -dif - gratis);
+  const valor = dif < 0 ? redondearCentavo(multiplicarDinero(e.cpp || 0, Math.min(pagadas, e.unidadesFondo || 0))) : 0;
+  const ahora = obtenerTimestampLocal(), dia = obtenerFechaLocal();
+  const idTicket = Almacen.tomarFolio('TK-');
+  const fila = Object.assign(denormalizado(p), {
+    folio: Almacen.tomarFolio('AJ-'), timestamp: ahora, fecha: dia, tipo: TIPOS_MOV.AJUSTE, variante: '', cantidad: dif, bonif: 0,
+    costoUnit: dif < 0 ? (e.cpp || 0) : 0, precioUnit: 0, inversion: valor, margenUnit: 0, totalVenta: null, utilidad: null, estado: '', idCliente: null,
+    empaqueMov: p.unidadBase, cantEmpaques: Math.abs(dif), unidPorEmpaque: 1, unidadesTotales: Math.abs(dif), idTicket, productoNuevo: '',
+    referencia: String(nota || (dif < 0 ? 'Conteo físico: faltante' : 'Conteo físico: sobrante')).slice(0, 120)
+  });
+  return { tipo: TIPOS_MOV.AJUSTE, idTicket, filas: [fila], productosNuevos: [], cambiados: [p], historicos: [], equivalenciasNuevas: [], equivalenciasUsadas: [],
+    resumen: { unidades: dif, valor } };
 }
 
 // Repartir sabores (T24, §16.2): mueve unidades entre «sin asignar» y un

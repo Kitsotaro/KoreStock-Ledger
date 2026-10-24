@@ -63,7 +63,7 @@ function calcularEstadoProductos(movimientos, opciones) {
     // primero y no entran al fondo. Así siempre: pagadas + gratis − faltante = stock,
     // y «Real» no cuenta unidades que ya salieron.
     const e = r[m.idProducto] || (r[m.idProducto] = {
-      stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, faltante: 0, porVariante: {},
+      stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, faltante: 0, merma: 0, unidadesMerma: 0, porVariante: {},
       ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0
     });
     const cantidad = Number(m.cantidad || 0);
@@ -96,7 +96,16 @@ function calcularEstadoProductos(movimientos, opciones) {
         e.unidadesCompradas += cantidad + bonif;
         if (m.fecha > e.ultimaEntrada) e.ultimaEntrada = m.fecha;
       }
-    } else if (m.tipo === TIPOS_MOV.VENTA) {
+    } else if (m.tipo === TIPOS_MOV.AJUSTE && cantidad > 0) {
+      // Ajuste por conteo, sobrante (Kitso, 2026-10-24): entra a $0 como gratis
+      // (sale primero); antes cubre lo que se debía. No es compra ni inversión.
+      const cubre = Math.min(e.faltante, cantidad);
+      e.faltante = redondearCantidad(e.faltante - cubre);
+      e.bonifEnBodega = redondearCantidad(e.bonifEnBodega + cantidad - cubre);
+    } else if (m.tipo === TIPOS_MOV.VENTA || (m.tipo === TIPOS_MOV.AJUSTE && cantidad < 0)) {
+      // Venta, o ajuste por conteo con faltante (merma): sale igual (gratis primero,
+      // luego pagadas a costo promedio), pero la merma no es venta ni toca la ganancia.
+      const esMerma = m.tipo === TIPOS_MOV.AJUSTE;
       const q = Math.abs(cantidad);
       // 1) Primero salen las gratis (costo $0).
       const gratis = Math.min(q, e.bonifEnBodega);
@@ -113,6 +122,7 @@ function calcularEstadoProductos(movimientos, opciones) {
       }
       const sinCubrir = redondearCantidad(pagadas - Math.min(pagadas, unidadesAntes));
       if (sinCubrir > 0) e.faltante = redondearCantidad(e.faltante + sinCubrir);
+      if (esMerma) { e.merma = sumarDinero(e.merma, salida); e.unidadesMerma = redondearCantidad(e.unidadesMerma + q); continue; }
       if (alSalir) alSalir(m, salida);
       e.unidadesVendidas += q;
       if (m.fecha > e.ultimaVenta) e.ultimaVenta = m.fecha;

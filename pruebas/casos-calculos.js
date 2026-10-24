@@ -51,6 +51,21 @@ prueba('venta antes de su compra: lo vendido de más se cubre con la próxima en
   const v = valorBodega([{ idProducto: 1, costo: dinero(6.75), estado: ESTADOS.ACTIVO }], { 1: e });
   verdadero(v.real <= v.bruto, 'el real nunca supera al neto sin gratis de por medio');
 });
+prueba('ajuste por conteo: la merma sale a costo promedio sin ser venta; el sobrante entra a $0 como gratis (Kitso 2026-10-24)', () => {
+  // 10 a $1.00 con 2 gratis → 12. Conteo físico: 9 → merma de 3 (salen 2 gratis y 1 pagada = $1.00).
+  const base = [mov('ENTRADA', 1, 10, { inversion: 10, bonif: 2 })];
+  const salidas = [];
+  const e = calcularEstadoProductos(base.concat([mov('AJUSTE', 1, -3)]), { alSalir: (m, x) => salidas.push(x) })[1];
+  igual(e.stock, 9); igual(e.bonifEnBodega, 0); igual(e.unidadesFondo, 9);
+  igual(formatearDinero(e.merma), '$1.00'); igual(e.unidadesMerma, 3);
+  igual(e.unidadesVendidas, 0, 'no cuenta como venta'); igual(salidas.length, 0, 'no entra al costo de lo vendido');
+  // Conteo físico: 14 → sobran 2: entran a $0 como gratis; el fondo no cambia.
+  const s2 = calcularEstadoProductos(base.concat([mov('AJUSTE', 1, 2)]))[1];
+  igual(s2.stock, 14); igual(s2.bonifEnBodega, 4); igual(formatearDinero(s2.fondo), '$10.00'); igual(s2.unidadesCompradas, 12, 'el sobrante no cuenta como compra');
+  // Ninguno toca ventas, ganancia ni inversión del período.
+  const r = calcularResumenPeriodo(base.concat([mov('AJUSTE', 1, -3), mov('AJUSTE', 1, 2)]), null, null);
+  igual(formatearDinero(r.ventas), '$0.00'); igual(formatearDinero(r.inversion), '$10.00');
+});
 prueba('el fondo de costo no pierde centavos al vender en partes', () => {
   const movs = [mov('ENTRADA', 1, 3, { inversion: 10 })];
   for (let i = 0; i < 3; i++) movs.push(mov('VENTA', 1, 1));

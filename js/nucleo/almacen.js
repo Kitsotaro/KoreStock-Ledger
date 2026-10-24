@@ -38,7 +38,7 @@ function pluralUnidad(palabra, cantidad) {
   return p + 'es';
 }
 
-const PREFIJOS_FOLIO = { ENTRADA: 'IN-', VENTA: 'FAC-', GASTO: 'GO-', COMBUSTIBLE: 'CB-', TICKET: 'TK-', ACCION: 'AC-', APERTURA: 'AP-', REASIGNACION: 'RA-' };
+const PREFIJOS_FOLIO = { ENTRADA: 'IN-', VENTA: 'FAC-', GASTO: 'GO-', COMBUSTIBLE: 'CB-', TICKET: 'TK-', ACCION: 'AC-', APERTURA: 'AP-', REASIGNACION: 'RA-', AJUSTE: 'AJ-' };
 
 const Almacen = {
   baseId: null,
@@ -101,7 +101,7 @@ const Almacen = {
   productosVisibles() { return this.productos.filter(p => p.idProducto && p.estado !== ESTADOS.FUSIONADO); },
   productosActivos() { return this.productos.filter(p => p.idProducto && p.estado === ESTADOS.ACTIVO); },
   estado(id) {
-    return this.estados[id] || { stock: 0, bonif: 0, bonifEnBodega: 0, faltante: 0, fondo: 0, unidadesFondo: 0, cpp: 0, porVariante: {}, ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0 };
+    return this.estados[id] || { stock: 0, bonif: 0, bonifEnBodega: 0, faltante: 0, merma: 0, unidadesMerma: 0, fondo: 0, unidadesFondo: 0, cpp: 0, porVariante: {}, ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0 };
   },
   stock(id) { return this.estado(id).stock; },
 
@@ -231,7 +231,7 @@ const Almacen = {
       if (!c[prefijo] || n > c[prefijo]) c[prefijo] = n;
     };
     this.movimientos.forEach(m => {
-      ['IN-', 'FAC-', 'AP-', 'RA-'].forEach(p => subir(p, m.folio));
+      ['IN-', 'FAC-', 'AP-', 'RA-', 'AJ-'].forEach(p => subir(p, m.folio));
       subir('TK-', m.idTicket);
     });
     this.hojas.COSTOS_OPERATIVOS.forEach(g => subir('GO-', g.folio));

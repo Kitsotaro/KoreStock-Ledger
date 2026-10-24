@@ -240,6 +240,22 @@ function tablaPreciosStock(p, e, eq, presentaciones) {
   ${otras.map(x => html`<div class="par-dato con-icono">${seguro(icono('precio', 'icono-sm'))}<span class="crece">${x.etiqueta}</span><strong class="cifra">${formatearDinero(x.precio)}</strong></div>`)}`;
 }
 
+// Conteo físico escrito en Editar producto (empaques completos × N + sueltas), o null.
+function conteoEscrito(raiz) {
+  const emp = $('#ed-conteo-emp', raiz), uni = $('#ed-conteo-uni', raiz);
+  const ve = emp ? emp.value.trim() : '', vu = uni ? uni.value.trim() : '';
+  if (ve === '' && vu === '') return null;
+  const eq = emp ? Number(emp.dataset.unidades || 0) : 0;
+  return redondearCantidad((ve ? parsearNumero(ve) : 0) * eq + (vu ? parsearNumero(vu) : 0));
+}
+function textoDiferenciaConteo(p, dif) {
+  const e = Almacen.estado(p.idProducto);
+  if (dif > 0) return `Sobran ${describirCantidad(p.idProducto, dif)}: entran a $0, como gratis (salen primero al vender).`;
+  const q = -dif, gratis = Math.min(q, e.bonifEnBodega || 0);
+  const valor = redondearCentavo(multiplicarDinero(e.cpp || 0, Math.min(q - gratis, e.unidadesFondo || 0)));
+  return `Faltan ${describirCantidad(p.idProducto, q)}: merma de ${formatearDinero(valor)} a costo promedio. No toca tus ventas ni tu ganancia.`;
+}
+
 function pintarListaStock() {
   const lista = productosFiltradosStock();
   $('#stock-conteo', stockUI.el).textContent = `${formatearNumero(lista.length)} ${pluralizar(lista.length, 'producto')}`;
@@ -426,7 +442,18 @@ function editarProducto(idProducto) {
       <div class="rejilla-campos">${campo('ed-categoria', 'Categoría', p.categoria, { lista: 'ed-cats' })}${campo('ed-empaque', 'Tipo de empaque', p.tipoEmpaque, { lista: 'ed-empaques' })}</div>
       <datalist id="ed-cats">${Almacen.categorias().map(c => html`<option value="${c}"></option>`)}</datalist>
       <label class="casilla" data-solo-modo="tienda pro"><input type="checkbox" id="ed-decimales" ${p.decimales ? 'checked' : ''}> Se vende por peso o medida (permite decimales)</label>
-      <button type="button" class="boton boton-texto boton-sm" id="ed-presentaciones" data-solo-modo="tienda pro" style="justify-self:start">${seguro(icono('precio', 'icono-sm'))}Precios por presentación</button>`,
+      <button type="button" class="boton boton-texto boton-sm" id="ed-presentaciones" data-solo-modo="tienda pro" style="justify-self:start">${seguro(icono('precio', 'icono-sm'))}Precios por presentación</button>
+      <details class="desplegable conteo-fisico">
+        <summary class="fila t-pequeno">${seguro(icono('lista', 'icono-sm'))}<span class="crece t-fuerte">Ajustar con conteo físico</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
+        <div class="columna" style="padding-top:var(--e-2)">
+          <p class="t-pequeno t-secundario">La app dice: <strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong>. Escribe lo que contaste en bodega; al guardar se crea un ajuste (folio AJ-) por la diferencia.</p>
+          <div class="rejilla-campos">
+            ${eqMayor ? campo('ed-conteo-emp', `${pluralUnidad(nombreEmp, 2).replace(/^./, c => c.toUpperCase())} completas`, '', { sufijo: `de ${formatearNumero(eqMayor.unidades)}` }) : ''}
+            ${campo('ed-conteo-uni', eqMayor ? `${pluralUnidad(p.unidadBase, 2).replace(/^./, c => c.toUpperCase())} sueltas` : 'Contaste', '', { sufijo: pluralUnidad(p.unidadBase, 2) })}
+          </div>
+          <span class="franja" id="ed-conteo-dif" hidden></span>
+        </div>
+      </details>`,
     acciones: [{ texto: 'Cancelar', fn: (c) => c.cerrar() }, { texto: 'Guardar', clase: 'boton-primario', fn: async (c) => {
       const v = (id) => $(id, c.el).value.trim();
       const cambios = {
@@ -446,10 +473,20 @@ function editarProducto(idProducto) {
       if (cat) cambios.categoria = cat;
       const identidad = claveIdentidadProducto(Object.assign({}, p, cambios)) !== claveIdentidadProducto(p);
       if (identidad && !(await confirmar({ titulo: 'Dato sensible', mensaje: 'Cambiar marca, producto, presentación o contenido cambia el código (SKU) del producto. Su historial se conserva por su identificador interno. ¿Continuar?', textoConfirmar: 'Sí, cambiar' }))) return;
+      const contado = conteoEscrito(c.el);
+      const dif = contado === null ? 0 : redondearCantidad(contado - Almacen.stock(p.idProducto));
+      if (dif && !(await confirmar({ titulo: 'Ajustar con conteo físico', mensaje: `${textoDiferenciaConteo(p, dif)}\n\nSe registra como ajuste (no es venta ni compra) y se puede anular desde Dashboard.`, textoConfirmar: 'Sí, ajustar' }))) return;
       let op;
       try { op = operacionActualizarProducto(p.idProducto, cambios); } catch (e) { mostrarDialogo({ titulo: 'No se puede guardar', mensaje: e.message }); return; }
       const r = await ejecutarOperacion(op, { boton: $('.acciones .boton-primario', c.el) });
-      if (r) { c.cerrar(); avisar(r.skuCambio ? `Guardado. Código nuevo: ${r.producto.sku}` : 'Producto guardado.'); }
+      if (!r) return;
+      if (dif) {
+        let prep;
+        try { prep = prepararAjuste(p.idProducto, contado); } catch (e) { mostrarDialogo({ titulo: 'No se puede ajustar', mensaje: e.message }); return; }
+        const ra = await ejecutarOperacion(operacionGuardarTicket(prep), { boton: $('.acciones .boton-primario', c.el) });
+        if (!ra) return;
+      }
+      c.cerrar(); avisar(dif ? `Guardado y ajustado: ${dif > 0 ? '+' : '−'}${describirCantidad(p.idProducto, Math.abs(dif))}.` : r.skuCambio ? `Guardado. Código nuevo: ${r.producto.sku}` : 'Producto guardado.');
     } }],
     alMontar: (hoja) => {
       prepararCampoNumerico($('#ed-costo', hoja), { decimales: 5 });
@@ -490,6 +527,17 @@ function editarProducto(idProducto) {
         $$('[data-precios-por]', hoja).forEach(x => x.setAttribute('aria-checked', String(x === b)));
         hoja.dispatchEvent(new Event('input'));
       }));
+      // Conteo físico: muestra la diferencia mientras se escribe.
+      ['#ed-conteo-emp', '#ed-conteo-uni'].forEach(id => { const i = $(id, hoja); if (i) prepararCampoNumerico(i, { decimales: p.decimales ? 3 : 0 }); });
+      if ($('#ed-conteo-emp', hoja)) $('#ed-conteo-emp', hoja).dataset.unidades = eqMayor.unidades;
+      hoja.addEventListener('input', (ev) => {
+        if (!ev.target || !ev.target.id || !ev.target.id.startsWith('ed-conteo')) return;
+        const caja = $('#ed-conteo-dif', hoja), contado = conteoEscrito(hoja);
+        const dif = contado === null ? 0 : redondearCantidad(contado - Almacen.stock(p.idProducto));
+        caja.hidden = contado === null;
+        caja.className = `franja ${dif ? 'aviso-color' : ''}`;
+        caja.textContent = contado === null ? '' : dif ? textoDiferenciaConteo(p, dif) : 'Coincide con la app: no hay nada que ajustar.';
+      });
       // Cualquier cambio pone «Guardar» en naranja (cambio importante).
       const guardar = $('.acciones .boton-primario', hoja);
       hoja.addEventListener('input', () => guardar.classList.toggle('boton-aviso', [...originales].some(([i, val]) => (i.type === 'checkbox' ? i.checked : i.value) !== val)));
