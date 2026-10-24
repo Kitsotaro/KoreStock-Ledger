@@ -41,6 +41,16 @@ prueba('bonificaciones primero: suman stock, no bajan el CPP de lo pagado y sale
   igual(formatearDinero(salidas[0]), '$1.10'); igual(d.bonifEnBodega, 0); igual(d.stock, 19);
   igual(formatearDinero(d.fondo), '$20.90'); igual(formatearDinero(d.cpp, { decimales: 5 }), '$1.10000');
 });
+prueba('venta antes de su compra: lo vendido de más se cubre con la próxima entrada y «Real» no se infla (Kitso 2026-10-24)', () => {
+  // Vende 8 sin stock; luego compra 13 a $6.75 c/u con 2 gratis; luego compra 15 más.
+  const movs = [mov('VENTA', 1, 8), mov('ENTRADA', 1, 13, { inversion: 87.75, bonif: 2 }), mov('ENTRADA', 1, 15, { inversion: 101.25 })];
+  const e = calcularEstadoProductos(movs)[1];
+  igual(e.stock, 22); igual(e.faltante, 0);
+  igual(e.unidadesFondo + e.bonifEnBodega, 22, 'pagadas + gratis = stock');
+  igual(formatearDinero(e.fondo), '$135.00', '20 pagadas × $6.75 (las 2 gratis van aparte)');
+  const v = valorBodega([{ idProducto: 1, costo: dinero(6.75), estado: ESTADOS.ACTIVO }], { 1: e });
+  verdadero(v.real <= v.bruto, 'el real nunca supera al neto sin gratis de por medio');
+});
 prueba('el fondo de costo no pierde centavos al vender en partes', () => {
   const movs = [mov('ENTRADA', 1, 3, { inversion: 10 })];
   for (let i = 0; i < 3; i++) movs.push(mov('VENTA', 1, 1));

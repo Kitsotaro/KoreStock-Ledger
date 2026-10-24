@@ -58,8 +58,12 @@ function calcularEstadoProductos(movimientos, opciones) {
     // (bonifEnBodega, costo $0) y cada venta las saca ANTES que las pagadas. El fondo
     // de costo (fondo / unidadesFondo) es solo de las unidades pagadas que quedan.
     // `bonif` sigue siendo el total recibido en la historia (STOCK_BONIFICADO).
+    // Faltante (Kitso, 2026-10-24): si se vende más de lo que hay (venta registrada
+    // antes que su compra), esas unidades se deben; la próxima entrada las cubre
+    // primero y no entran al fondo. Así siempre: pagadas + gratis − faltante = stock,
+    // y «Real» no cuenta unidades que ya salieron.
     const e = r[m.idProducto] || (r[m.idProducto] = {
-      stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, porVariante: {},
+      stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, faltante: 0, porVariante: {},
       ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0
     });
     const cantidad = Number(m.cantidad || 0);
@@ -70,9 +74,24 @@ function calcularEstadoProductos(movimientos, opciones) {
 
     if (m.tipo === TIPOS_MOV.ENTRADA || m.tipo === TIPOS_MOV.APERTURA) {
       e.bonif += bonif;
-      e.bonifEnBodega = redondearCantidad(e.bonifEnBodega + bonif);
-      e.fondo = sumarDinero(e.fondo, m.inversion);
-      e.unidadesFondo = redondearCantidad(e.unidadesFondo + cantidad);
+      let pagadasEntran = cantidad, gratisEntran = bonif, inversion = m.inversion || 0;
+      if (e.faltante > 0) {
+        // Primero se cubre lo que ya se había vendido: con las pagadas (su costo sale con ellas)…
+        const cubre = Math.min(e.faltante, Math.max(0, pagadasEntran));
+        if (cubre > 0) {
+          const costoCubre = cubre >= pagadasEntran ? inversion : dividirDinero(multiplicarDinero(inversion, cubre), pagadasEntran);
+          inversion = restarDinero(inversion, costoCubre);
+          pagadasEntran = redondearCantidad(pagadasEntran - cubre);
+          e.faltante = redondearCantidad(e.faltante - cubre);
+        }
+        // …y si no alcanzan, con las gratis.
+        const cubreGratis = Math.min(e.faltante, Math.max(0, gratisEntran));
+        gratisEntran = redondearCantidad(gratisEntran - cubreGratis);
+        e.faltante = redondearCantidad(e.faltante - cubreGratis);
+      }
+      e.bonifEnBodega = redondearCantidad(e.bonifEnBodega + gratisEntran);
+      e.fondo = sumarDinero(e.fondo, inversion);
+      e.unidadesFondo = redondearCantidad(e.unidadesFondo + pagadasEntran);
       if (m.tipo === TIPOS_MOV.ENTRADA) {
         e.unidadesCompradas += cantidad + bonif;
         if (m.fecha > e.ultimaEntrada) e.ultimaEntrada = m.fecha;
@@ -84,6 +103,7 @@ function calcularEstadoProductos(movimientos, opciones) {
       e.bonifEnBodega = redondearCantidad(e.bonifEnBodega - gratis);
       // 2) El resto, de las pagadas a su costo promedio.
       const pagadas = redondearCantidad(q - gratis);
+      const unidadesAntes = e.unidadesFondo;
       let salida = 0;
       if (pagadas > 0 && e.unidadesFondo > 0) {
         salida = pagadas >= e.unidadesFondo ? e.fondo : dividirDinero(multiplicarDinero(e.fondo, pagadas), e.unidadesFondo);
@@ -91,6 +111,8 @@ function calcularEstadoProductos(movimientos, opciones) {
         e.unidadesFondo = redondearCantidad(e.unidadesFondo - pagadas);
         if (e.unidadesFondo <= 0) { e.unidadesFondo = 0; e.fondo = 0; }
       }
+      const sinCubrir = redondearCantidad(pagadas - Math.min(pagadas, unidadesAntes));
+      if (sinCubrir > 0) e.faltante = redondearCantidad(e.faltante + sinCubrir);
       if (alSalir) alSalir(m, salida);
       e.unidadesVendidas += q;
       if (m.fecha > e.ultimaVenta) e.ultimaVenta = m.fecha;
