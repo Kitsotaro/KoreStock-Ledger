@@ -20,7 +20,7 @@
 const venta = {
   el: null, selector: null,
   producto: null, cantidad: 0, total: 0, totalEditado: false, cobroExtra: false, variante: '', etiqueta: '',
-  carrito: [], idCliente: null, fecha: '', empaqueVenta: null,
+  carrito: [], idCliente: null, fecha: '', empaqueVenta: null, verMayoreo: false,
 };
 
 registrarPantalla('venta', {
@@ -38,6 +38,7 @@ registrarPantalla('venta', {
         <div id="venta-selector"></div>
         <div id="venta-producto"></div>
         <div id="venta-carrito"></div>
+        <div id="venta-pie" class="pie-registro"></div>
         <details class="tarjeta desplegable-simple" id="venta-cliente">
           <summary>${seguro(icono('persona', 'icono-sm'))}<span class="crece">Cliente <span class="t-tenue t-pequeno">(opcional)</span></span><span class="t-pequeno t-secundario" id="venta-cliente-nombre"></span>${seguro(icono('chevron-abajo', 'icono-sm icono-giro'))}</summary>
           <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="venta-cliente-buscar" type="search" placeholder="Buscar o agregar cliente" autocomplete="off"></div></div>
@@ -93,11 +94,12 @@ function elegirProductoVenta(p) {
   venta.empaqueVenta = Shell.modo !== 'tienda' && empaques.length ? empaques[0] : null;
   venta.variante = '';
   venta.etiqueta = '';
+  venta.verMayoreo = false;
   venta.totalEditado = false;
   venta.cobroExtra = false;
   recalcularTotalVenta();
   pintarProductoVenta();
-  setTimeout(() => { const c = $('#venta-cantidad', venta.el); if (c) { c.focus(); c.select(); } }, 50);
+  setTimeout(() => { const c = $('#venta-cantidad', venta.el); if (c) c.focus(); }, 50);
 }
 
 function recalcularTotalVenta() {
@@ -127,8 +129,9 @@ function actualizarClienteVenta() {
   if (!cli) return;
   cli.hidden = !(venta.producto || venta.carrito.length);
   // El cliente va justo antes del botón «Cobrar» (se mueve el mismo elemento, no se copia).
-  const cobrar = $('#venta-cobrar-carrito', venta.el) || $('#venta-producto [data-accion="cobrar"]', venta.el);
-  if (cobrar && cobrar.previousElementSibling !== cli) cobrar.before(cli);
+  // Va justo antes de «Agregar otro producto» (o de «Cobrar» si no hay producto en pantalla).
+  const ancla = $('#venta-pie [data-accion="agregar-carrito"]', venta.el) || $('#venta-pie [data-accion="cobrar"]', venta.el);
+  if (ancla && ancla.previousElementSibling !== cli) ancla.before(cli);
 }
 
 function pintarProductoVenta() {
@@ -137,7 +140,7 @@ function pintarProductoVenta() {
   rescatarClienteVenta();
   if (!p) {
     cont.innerHTML = venta.carrito.length ? '' : html`<div class="vacio">${seguro(icono('carrito', 'icono-xl'))}<strong>¿Qué vendiste?</strong><p>Busca el producto o toca uno de los más vendidos.</p>${Almacen.productosVisibles().length ? '' : html`<button type="button" class="boton boton-entrada" data-accion="producto-nuevo-en-entrada">${seguro(icono('etiqueta-nueva', 'icono-sm'))}Crear un producto en Entrada</button>`}</div>`.texto;
-    actualizarClienteVenta();
+    pintarPieVenta();
     return;
   }
   const e = Almacen.estado(p.idProducto);
@@ -148,17 +151,27 @@ function pintarProductoVenta() {
   const sugerido = sugerirPrecioTotal(p.idProducto, venta.cantidad);
   const excede = venta.cantidad > disponible;
   const empaquesVenta = empaquesRegistrados(p).filter(o => o.clave !== 'u');
-  const factorEmp = empaquesVenta.length ? (empaquesVenta[0].conNivel ? empaquesVenta[0].unidades * empaquesVenta[0].porSub : empaquesVenta[0].unidades) : 1;
-  const nombreEmpaqueVenta = empaquesVenta.length ? empaquesVenta[0].empaque : '';
   const factor = factorVenta();
   const cantVista = factor > 1 ? redondearCantidad(venta.cantidad / factor) : venta.cantidad;
+  // Modos (Kitso 2026-10-24): Bodega prioriza el mayoreo (empaques primero, cifras grandes en cajas);
+  // Tienda, las unidades (el mayoreo aparece al pedirlo); Pro lo muestra todo.
+  const bodega = Shell.modo === 'bodega', tienda = Shell.modo === 'tienda';
+  const soloUnidad = tienda && !venta.verMayoreo && !venta.empaqueVenta;
+  const unidadOpc = { clave: 'u', texto: pluralUnidad(p.unidadBase, 2), marcada: !venta.empaqueVenta };
+  const empaqueOpc = empaquesVenta.map(o => ({ clave: o.clave, texto: `${pluralUnidad(o.empaque, 2)} de ${formatearNumero(o.conNivel ? o.unidades * o.porSub : o.unidades)}`, marcada: !!venta.empaqueVenta && venta.empaqueVenta.clave === o.clave }));
+  const opcionesVenta = bodega ? empaqueOpc.concat(unidadOpc) : [unidadOpc].concat(empaqueOpc);
+  const selectorUnidad = !empaquesVenta.length || soloUnidad ? ''
+    : opcionesVenta.length > 3
+      ? html`<div class="fila-chips chips-empaque" role="group" aria-label="Vender por">${opcionesVenta.map(o => html`<button type="button" class="chip" data-accion="venta-por" data-clave="${o.clave}" aria-pressed="${String(o.marcada)}">${o.texto}</button>`)}</div>`
+      : html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">${opcionesVenta.map(o => html`<button type="button" role="radio" data-accion="venta-por" data-clave="${o.clave}" aria-checked="${String(o.marcada)}">${o.texto}</button>`)}</span>`;
+  const empCifra = venta.empaqueVenta || empaquesVenta[0] || null;
   cont.innerHTML = html`
     <div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('precio', 'icono-sm'))}Precio <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}/${nombreEmpaqueVenta}` : ''}</strong></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('panorama', 'icono-sm'))}Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span>${seguro(stockPorModoHTML(p, disponible))}</div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('precio', 'icono-sm'))}Precio <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span>${seguro(dineroPorModoHTML(p.precio, p, empCifra, false))}</div>
+      <div class="dato" data-solo-modo="tienda pro"><span class="etiqueta-dato">${seguro(icono('panorama', 'icono-sm'))}Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
         ${presentaciones.map(x => html`<button type="button" class="chip" data-accion="usar-presentacion" data-cantidad="${x.cantidad}" data-precio="${x.precio}" data-etiqueta="${x.etiqueta}">${x.etiqueta} · ${formatearDinero(x.precio)}</button>`)}
@@ -167,14 +180,11 @@ function pintarProductoVenta() {
     </div>
     <div class="tarjeta columna">
       <div class="campo">
-        <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>
-          ${empaquesVenta.length ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">
-            <button type="button" role="radio" data-accion="venta-por" data-clave="u" aria-checked="${String(!venta.empaqueVenta)}">${pluralUnidad(p.unidadBase, 2)}</button>
-            ${empaquesVenta.map(o => html`<button type="button" role="radio" data-accion="venta-por" data-clave="${o.clave}" aria-checked="${String(!!venta.empaqueVenta && venta.empaqueVenta.clave === o.clave)}">${pluralUnidad(o.empaque, 2)} de ${formatearNumero(o.conNivel ? o.unidades * o.porSub : o.unidades)}</button>`)}
-          </span>` : ''}</div>
+        <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>${selectorUnidad}</div>
         <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>
         ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
+        ${soloUnidad && empaquesVenta.length ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="ver-mayoreo-venta" style="justify-self:start">${seguro(icono('caja', 'icono-sm'))}Vender por caja o mayoreo…</button>` : ''}
       </div>
       <div class="campo campo-total">
         <label for="venta-total">Total cobrado</label>
@@ -186,22 +196,18 @@ function pintarProductoVenta() {
             : html`<span class="t-tenue">${sugerido.desglose.length > 1 ? sugerido.desglose.map(d => `${formatearNumero(d.veces)} × ${d.etiqueta}`).join(' + ') : 'Sugerido'}</span>`}
         </div>
       </div>
-      <details class="desplegable" ${variantes.length ? 'open' : ''}>
-        <summary class="fila t-pequeno">${seguro(icono('sabor', 'icono-sm'))}<span class="crece">Sabor <span class="t-tenue">(opcional)</span></span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
+      <details class="desplegable" ${venta.variante ? 'open' : ''}>
+        <summary class="fila t-pequeno">${seguro(icono('sabor', 'icono-sm'))}<span class="crece">Sabor o variante <span class="t-tenue">(opcional)</span></span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
         <div class="columna" style="padding-top:var(--e-2)">
           ${variantes.length ? html`<div class="fila-chips">${variantes.map(v => html`<button type="button" class="chip" data-accion="elegir-sabor" data-sabor="${v}" aria-pressed="${String(normalizarIdentidad(v) === normalizarIdentidad(venta.variante))}">${v}</button>`)}</div>` : ''}
-          <div class="control"><input id="venta-sabor" placeholder="Escribe el sabor o déjalo vacío" value="${venta.variante}" autocomplete="off"></div>
+          <div class="control"><input id="venta-sabor" placeholder="Escribe el sabor o variante, o déjalo vacío" value="${venta.variante}" autocomplete="off"></div>
         </div>
       </details>
       <label class="interruptor interruptor-cobro" title="Actívalo si cobraste distinto al precio sugerido."><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
           <span><strong>¿Cobro extraordinario?</strong>${venta.cobroExtra ? html`<span class="t-pequeno t-secundario" style="display:block">Escribe el precio real con el que cobraste.</span>` : ''}</span></label>
-      <div class="grupo-botones">
-        <button type="button" class="boton boton-secundario" data-accion="agregar-carrito" ${excede || !venta.cantidad ? 'disabled' : ''}>${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>
-      </div>
-    </div>
-    ${venta.carrito.length ? '' : html`<button type="button" class="boton boton-venta boton-grande boton-bloque" data-accion="cobrar" ${excede || !venta.cantidad ? 'disabled' : ''}>${seguro(icono('billete'))}Cobrar ${formatearDinero(venta.total)}</button>`}`.texto;
+    </div>`.texto;
   pintarIconos(cont);
-  actualizarClienteVenta();
+  pintarPieVenta();
 
   const inCantidad = $('#venta-cantidad', cont);
   prepararCampoNumerico(inCantidad, { decimales: p.decimales ? 3 : 0 });
@@ -216,7 +222,7 @@ function pintarProductoVenta() {
   prepararCampoNumerico(inTotal, { decimales: 2 });
   inTotal.addEventListener('input', () => { venta.total = leerDineroCampo(inTotal); venta.totalEditado = true; actualizarCifrasVenta(); });
   inTotal.addEventListener('change', () => pintarProductoVenta());
-  inTotal.addEventListener('focus', () => inTotal.select());
+ 
   const inSabor = $('#venta-sabor', cont);
   inSabor.addEventListener('input', () => { venta.variante = inSabor.value.trim(); });
 }
@@ -235,8 +241,9 @@ function actualizarCifrasVenta() {
   const equivale = $('.venta-equivale', cont); if (equivale) equivale.textContent = `= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}`;
   const disponible = redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto));
   const valido = venta.cantidad > 0 && venta.cantidad <= disponible;
-  $$('[data-accion="cobrar"], [data-accion="agregar-carrito"]', cont).forEach(b => { b.disabled = !valido; });
-  const cobrar = $('[data-accion="cobrar"]', cont);
+  const pie = $('#venta-pie', venta.el);
+  $$('[data-accion="agregar-carrito"], [data-accion="cobrar"]:not(#venta-cobrar-carrito)', pie).forEach(b => { b.disabled = !valido; });
+  const cobrar = $('[data-accion="cobrar"]:not(#venta-cobrar-carrito)', pie);
   if (cobrar) cobrar.lastChild.textContent = `Cobrar ${formatearDinero(venta.total)}`;
   const barra = $('#venta-cobrar-carrito', venta.el);
   if (barra) barra.lastChild.textContent = `Cobrar ${formatearDinero(totalTicketVenta())}`;
@@ -256,7 +263,7 @@ function totalTicketVenta() {
 function pintarCarritoVenta() {
   const cont = $('#venta-carrito', venta.el);
   rescatarClienteVenta();
-  if (!venta.carrito.length) { cont.innerHTML = ''; actualizarClienteVenta(); return; }
+  if (!venta.carrito.length) { cont.innerHTML = ''; pintarPieVenta(); return; }
   const total = totalTicketVenta();
   cont.innerHTML = html`
     <div class="tarjeta">
@@ -269,8 +276,23 @@ function pintarCarritoVenta() {
             <span class="monto">${formatearDinero(l.totalCobrado)}</span>
             <button type="button" class="boton boton-icono" data-accion="quitar-linea" data-i="${i}" aria-label="Quitar">${seguro(icono('cerrar', 'icono-sm'))}</button></li>`; })}
       </ul>
-    </div>
-    <button type="button" class="boton boton-venta boton-grande boton-bloque" id="venta-cobrar-carrito" data-accion="cobrar">${seguro(icono('billete'))}<span>Cobrar ${formatearDinero(total)}</span></button>`.texto;
+    </div>`.texto;
+  pintarPieVenta();
+}
+
+// Pie de la pantalla: «Agregar otro producto» siempre al final, justo antes de «Cobrar» (Kitso 2026-10-24).
+// Con el ticket ya armado, «Cobrar» es de todo el ticket y siempre está activo.
+function pintarPieVenta() {
+  rescatarClienteVenta();
+  const pie = $('#venta-pie', venta.el); if (!pie) return;
+  const p = venta.producto;
+  if (!p && !venta.carrito.length) { pie.innerHTML = ''; actualizarClienteVenta(); return; }
+  const valido = !!p && venta.cantidad > 0 && venta.cantidad <= redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto));
+  const cobrar = venta.carrito.length
+    ? html`<button type="button" class="boton boton-venta boton-grande boton-bloque" id="venta-cobrar-carrito" data-accion="cobrar">${seguro(icono('billete'))}<span>Cobrar ${formatearDinero(totalTicketVenta())}</span></button>`
+    : html`<button type="button" class="boton boton-venta boton-grande boton-bloque" data-accion="cobrar" ${valido ? '' : 'disabled'}>${seguro(icono('billete'))}Cobrar ${formatearDinero(venta.total)}</button>`;
+  pie.innerHTML = html`${p ? html`<button type="button" class="boton boton-secundario boton-bloque" data-accion="agregar-carrito" ${valido ? '' : 'disabled'}>${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>` : ''}${cobrar}`.texto;
+  pintarIconos(pie);
   actualizarClienteVenta();
 }
 
@@ -298,6 +320,11 @@ const accionesVenta = {
     venta.cantidad = redondearCantidad((factorAntes > 1 ? unidadesAntes / factorAntes : unidadesAntes) * factorVenta());
     venta.totalEditado = false; recalcularTotalVenta(); pintarProductoVenta();
   },
+  'ver-mayoreo-venta': () => {
+    venta.verMayoreo = true;
+    const o = empaquesRegistrados(venta.producto).find(x => x.clave !== 'u');
+    if (o) accionesVenta['venta-por']({ dataset: { clave: o.clave } });
+  },
   'usar-presentacion': (b) => {
     venta.cantidad = Number(b.dataset.cantidad);
     venta.totalEditado = false;
@@ -310,7 +337,7 @@ const accionesVenta = {
     venta.cobroExtra = b.checked;
     if (!venta.cobroExtra) { venta.totalEditado = false; recalcularTotalVenta(); }
     pintarProductoVenta();
-    if (venta.cobroExtra) setTimeout(() => { const i = $('#venta-total', venta.el); if (i) { i.focus(); i.select(); } }, 30);
+    if (venta.cobroExtra) setTimeout(() => { const i = $('#venta-total', venta.el); if (i) i.focus(); }, 30);
   },
   'elegir-sabor': (b) => { venta.variante = normalizarIdentidad(venta.variante) === normalizarIdentidad(b.dataset.sabor) ? '' : b.dataset.sabor; pintarProductoVenta(); },
   'cambiar-precio': () => editarPrecioProducto(venta.producto, () => { recalcularTotalVenta(); pintarProductoVenta(); }),
@@ -385,7 +412,7 @@ function editarPrecioProducto(p, alGuardar) {
       }
     }],
     alMontar: (hoja) => {
-      const i = $('#precio-nuevo', hoja); prepararCampoNumerico(i, { decimales: 2 }); i.addEventListener('focus', () => i.select());
+      const i = $('#precio-nuevo', hoja); prepararCampoNumerico(i, { decimales: 2 }); 
       // Cambio importante: el precio y «Guardar precio» se marcan en naranja si el valor cambió.
       const boton = $('.acciones .boton-primario', hoja);
       i.addEventListener('input', () => { const cambia = leerDineroCampo(i) !== p.precio; i.parentElement.classList.toggle('precio-cambiado', cambia); boton.classList.toggle('boton-aviso', cambia); });
