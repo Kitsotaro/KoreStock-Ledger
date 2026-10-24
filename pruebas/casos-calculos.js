@@ -29,11 +29,17 @@ prueba('anular un movimiento recalcula el stock sin tocar nada más', () => {
   movs[1].estado = 'ANULADA';
   igual(calcularEstadoProductos(movs)[1].stock, 10);
 });
-prueba('la bonificación suma unidades y baja el CPP (fórmula v2)', () => {
-  const e = calcularEstadoProductos([mov('ENTRADA', 1, 10, { inversion: 10 }), mov('ENTRADA', 1, 10, { inversion: 12, bonif: 2 })])[1];
-  igual(e.stock, 22);
-  igual(e.bonif, 2);
-  igual(formatearDinero(e.cpp, { decimales: 5 }), '$1.00000');
+prueba('bonificaciones primero: suman stock, no bajan el CPP de lo pagado y salen antes al vender (Kitso 2026-10-24)', () => {
+  // 10 a $1.00 + 10 a $1.20 con 2 gratis → 22 en bodega; pagadas 20 por $22.00 → CPP $1.10.
+  const compras = [mov('ENTRADA', 1, 10, { inversion: 10 }), mov('ENTRADA', 1, 10, { inversion: 12, bonif: 2 })];
+  const e = calcularEstadoProductos(compras)[1];
+  igual(e.stock, 22); igual(e.bonif, 2); igual(e.bonifEnBodega, 2);
+  igual(formatearDinero(e.cpp, { decimales: 5 }), '$1.10000');
+  // Vender 3: salen las 2 gratis ($0) y 1 pagada ($1.10).
+  const salidas = [];
+  const d = calcularEstadoProductos(compras.concat([mov('VENTA', 1, 3, { cobrado: 4.5, utilidad: 0 })]), { alSalir: (m, x) => salidas.push(x) })[1];
+  igual(formatearDinero(salidas[0]), '$1.10'); igual(d.bonifEnBodega, 0); igual(d.stock, 19);
+  igual(formatearDinero(d.fondo), '$20.90'); igual(formatearDinero(d.cpp, { decimales: 5 }), '$1.10000');
 });
 prueba('el fondo de costo no pierde centavos al vender en partes', () => {
   const movs = [mov('ENTRADA', 1, 3, { inversion: 10 })];
@@ -172,13 +178,16 @@ prueba('vale el último color de cada nivel y nombre; vacío vuelve al automáti
 });
 
 grupo('Decisiones de Kitso 2026-10-23: valor de bodega y comparación');
-prueba('valor neto incluye lo gratis; valor real = lo pagado por lo que queda', () => {
-  // 10 pagadas a $1 + 10 gratis; se venden 15 → quedan 5 y el fondo $2.50 (la mitad eran gratis).
+prueba('valor neto incluye lo gratis; real = pagadas que quedan; bonificación = gratis que quedan', () => {
+  // 10 pagadas a $1 + 10 gratis; se venden 15 → salen las 10 gratis y 5 pagadas: quedan 5 pagadas ($5).
   const movs = [mov('ENTRADA', 1, 10, { inversion: 10, bonif: 10 }), mov('VENTA', 1, 15, { cobrado: 30, utilidad: 15 })];
-  const estados = calcularEstadoProductos(movs);
-  const v = valorBodega([{ idProducto: 1, costo: dinero(1) }], estados);
+  const v = valorBodega([{ idProducto: 1, costo: dinero(1) }], calcularEstadoProductos(movs));
   igual(formatearDinero(v.bruto), '$5.00', '5 en bodega × $1');
-  igual(formatearDinero(v.real), '$2.50', 'antes daba $0: restaba las 10 gratis de toda la historia');
+  igual(formatearDinero(v.real), '$5.00', 'las gratis salieron primero');
+  igual(formatearDinero(v.bonificacion), '$0.00');
+  // Si solo se venden 4: quedan 6 gratis y 10 pagadas → real $10, bonificación 6 × $1 = $6.
+  const w = valorBodega([{ idProducto: 1, costo: dinero(1) }], calcularEstadoProductos([movs[0], mov('VENTA', 1, 4, { cobrado: 8, utilidad: 4 })]));
+  igual(formatearDinero(w.bruto), '$16.00'); igual(formatearDinero(w.real), '$10.00'); igual(formatearDinero(w.bonificacion), '$6.00');
 });
 prueba('«Este mes» en curso se compara con los mismos días del mes anterior', () => {
   const p = periodoComparable('2026-10-01', '2026-10-31', 'MES', '2026-10-23');

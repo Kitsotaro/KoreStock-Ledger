@@ -33,7 +33,7 @@ function detalleProProductoHTML(p, opciones) {
     ${dato(`Precio de venta por ${p.unidadBase}`, formatearDinero(p.precio))}
     ${dato('Empaques', empaques || `solo por ${p.unidadBase}`)}
     ${sabores.length ? dato('Sabores en stock', sabores.map(([s, u]) => `${s} ${formatearNumero(u)}`).join(' · ')) : ''}
-    ${e.bonif ? dato('Bonificadas recibidas', `${formatearNumero(e.bonif)} ${pluralUnidad(p.unidadBase, e.bonif)}`) : ''}
+    ${e.bonifEnBodega > 0 ? dato('Bonificación en bodega (sale primero)', describirCantidad(p.idProducto, e.bonifEnBodega)) : ''}
     ${conAviso ? dato('Avisar con', `${typeof textoUmbral === 'function' ? textoUmbral(p, p.umbralMin || 0) : formatearNumero(p.umbralMin || 0)} o menos (ideal ${typeof textoUmbral === 'function' ? textoUmbral(p, p.umbralMax || 0) : formatearNumero(p.umbralMax || 0)})`) : ''}
     ${e.ultimaEntrada || e.ultimaVenta ? dato('Última compra · venta', `${e.ultimaEntrada ? formatearFechaCorta(e.ultimaEntrada) : '—'} · ${e.ultimaVenta ? formatearFechaCorta(e.ultimaVenta) : '—'}`) : ''}
   </div>`;

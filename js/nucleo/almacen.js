@@ -101,7 +101,7 @@ const Almacen = {
   productosVisibles() { return this.productos.filter(p => p.idProducto && p.estado !== ESTADOS.FUSIONADO); },
   productosActivos() { return this.productos.filter(p => p.idProducto && p.estado === ESTADOS.ACTIVO); },
   estado(id) {
-    return this.estados[id] || { stock: 0, bonif: 0, fondo: 0, unidadesFondo: 0, cpp: 0, porVariante: {}, ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0 };
+    return this.estados[id] || { stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, cpp: 0, porVariante: {}, ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0 };
   },
   stock(id) { return this.estado(id).stock; },
 

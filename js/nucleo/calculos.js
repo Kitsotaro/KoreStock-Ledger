@@ -54,8 +54,12 @@ function calcularEstadoProductos(movimientos, opciones) {
     if (hasta && m.fecha > hasta) continue;
     if (filtro && !filtro(m)) continue;
     if (m.tipo === TIPOS_MOV.APERTURA && ignorarApertura) continue;
+    // Bonificaciones primero (Kitso, 2026-10-24): las gratis van en su propia bolsa
+    // (bonifEnBodega, costo $0) y cada venta las saca ANTES que las pagadas. El fondo
+    // de costo (fondo / unidadesFondo) es solo de las unidades pagadas que quedan.
+    // `bonif` sigue siendo el total recibido en la historia (STOCK_BONIFICADO).
     const e = r[m.idProducto] || (r[m.idProducto] = {
-      stock: 0, bonif: 0, fondo: 0, unidadesFondo: 0, porVariante: {},
+      stock: 0, bonif: 0, bonifEnBodega: 0, fondo: 0, unidadesFondo: 0, porVariante: {},
       ultimaEntrada: '', ultimaVenta: '', unidadesVendidas: 0, unidadesCompradas: 0
     });
     const cantidad = Number(m.cantidad || 0);
@@ -64,23 +68,27 @@ function calcularEstadoProductos(movimientos, opciones) {
     e.stock += cantidad + bonif;
     e.porVariante[variante] = (e.porVariante[variante] || 0) + cantidad + bonif;
 
-    if (m.tipo === TIPOS_MOV.ENTRADA) {
+    if (m.tipo === TIPOS_MOV.ENTRADA || m.tipo === TIPOS_MOV.APERTURA) {
       e.bonif += bonif;
+      e.bonifEnBodega = redondearCantidad(e.bonifEnBodega + bonif);
       e.fondo = sumarDinero(e.fondo, m.inversion);
-      e.unidadesFondo += cantidad + bonif;
-      e.unidadesCompradas += cantidad + bonif;
-      if (m.fecha > e.ultimaEntrada) e.ultimaEntrada = m.fecha;
-    } else if (m.tipo === TIPOS_MOV.APERTURA) {
-      e.bonif += bonif;
-      e.fondo = sumarDinero(e.fondo, m.inversion);
-      e.unidadesFondo += cantidad + bonif;
+      e.unidadesFondo = redondearCantidad(e.unidadesFondo + cantidad);
+      if (m.tipo === TIPOS_MOV.ENTRADA) {
+        e.unidadesCompradas += cantidad + bonif;
+        if (m.fecha > e.ultimaEntrada) e.ultimaEntrada = m.fecha;
+      }
     } else if (m.tipo === TIPOS_MOV.VENTA) {
       const q = Math.abs(cantidad);
+      // 1) Primero salen las gratis (costo $0).
+      const gratis = Math.min(q, e.bonifEnBodega);
+      e.bonifEnBodega = redondearCantidad(e.bonifEnBodega - gratis);
+      // 2) El resto, de las pagadas a su costo promedio.
+      const pagadas = redondearCantidad(q - gratis);
       let salida = 0;
-      if (e.unidadesFondo > 0) {
-        salida = q >= e.unidadesFondo ? e.fondo : dividirDinero(multiplicarDinero(e.fondo, q), e.unidadesFondo);
+      if (pagadas > 0 && e.unidadesFondo > 0) {
+        salida = pagadas >= e.unidadesFondo ? e.fondo : dividirDinero(multiplicarDinero(e.fondo, pagadas), e.unidadesFondo);
         e.fondo = restarDinero(e.fondo, salida);
-        e.unidadesFondo = redondearCantidad(e.unidadesFondo - q);
+        e.unidadesFondo = redondearCantidad(e.unidadesFondo - pagadas);
         if (e.unidadesFondo <= 0) { e.unidadesFondo = 0; e.fondo = 0; }
       }
       if (alSalir) alSalir(m, salida);
@@ -92,6 +100,7 @@ function calcularEstadoProductos(movimientos, opciones) {
   Object.values(r).forEach(e => {
     e.stock = redondearCantidad(e.stock);
     e.bonif = redondearCantidad(e.bonif);
+    // Costo promedio de las unidades PAGADAS que quedan (lo gratis no lo baja: sale primero).
     e.cpp = e.unidadesFondo > 0 ? dividirDinero(e.fondo, e.unidadesFondo) : 0;
     Object.keys(e.porVariante).forEach(k => { e.porVariante[k] = redondearCantidad(e.porVariante[k]); });
   });
@@ -108,20 +117,21 @@ function stockDerivadoPorProducto(movimientos, opciones) {
 // Valor de bodega (DATOS §2; Kitso 2026-10-23, como la app original):
 //   bruto = Σ stock × costo vigente, CON lo que llegó gratis → capital que vale
 //           la bodega (en pantalla: «neto», el de por defecto).
-//   real  = Σ fondo de costo → dinero que de verdad pagaste por lo que queda
-//           (lo gratis entró con costo 0). Antes se restaba el total histórico
+//   real  = Σ fondo de costo → lo que pagaste por las unidades PAGADAS que quedan.
+//   bonificacion = Σ gratis que siguen en bodega × costo vigente (salen primero). Antes se restaba el total histórico
 //           de bonificadas al stock, lo que daba $0 si ya se habían vendido.
 function valorBodega(productos, estados) {
-  let bruto = 0, real = 0, unidades = 0;
+  let bruto = 0, real = 0, bonificacion = 0, unidades = 0;
   productos.forEach(p => {
     const e = estados[p.idProducto];
     const stock = e ? e.stock : 0;
     if (stock <= 0) return;
     bruto = sumarDinero(bruto, multiplicarDinero(p.costo, stock));
     real = sumarDinero(real, Math.max(0, e.fondo || 0));
+    bonificacion = sumarDinero(bonificacion, multiplicarDinero(p.costo, Math.min(e.bonifEnBodega || 0, stock)));
     unidades += stock;
   });
-  return { bruto: redondearCentavo(bruto), real: redondearCentavo(real), unidades: redondearCantidad(unidades) };
+  return { bruto: redondearCentavo(bruto), real: redondearCentavo(real), bonificacion: redondearCentavo(bonificacion), unidades: redondearCantidad(unidades) };
 }
 
 // Semáforo con el umbral PROPIO del producto (V3 §15.2).
@@ -326,7 +336,8 @@ function construirAperturas(estados, productos, fecha, timestamp, folioDesde) {
     if (!e || (e.stock === 0 && e.fondo === 0)) return;
     let variantes = Object.entries(e.porVariante).filter(([, q]) => q !== 0);
     if (!variantes.length) variantes = [['', 0]];
-    let bonif = Math.max(0, Math.min(e.bonif, e.stock));
+    // Las gratis que siguen en bodega pasan como bonificadas (salen primero también en la base nueva).
+    const bonif = Math.max(0, Math.min(e.bonifEnBodega || 0, e.stock));
     variantes.forEach(([variante, q], i) => {
       const primera = i === 0;
       filas.push({
