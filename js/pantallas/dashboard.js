@@ -17,7 +17,7 @@
 //   operaciones-movimientos.js, cargador.js (Chart).
 // ============================================================
 
-const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'MOVIMIENTOS', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false });
+const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'MOVIMIENTOS', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false, unidadesPor: 'unidad' });
 const dashUI = { el: null, filtros: null, grafico: null };
 
 registrarPantalla('dashboard', {
@@ -145,8 +145,9 @@ function pintarResumenDashboard() {
     ${notaHistoricosHTML(est.inicio)}
     <div class="cifras">
       <div class="cifra-tarjeta"><div class="etiqueta">Ventas ${botonInfo('Ventas', 'Suma de lo que cobraste en las ventas del período (lo cobrado es el dato, aunque hayas hecho rebaja). No incluye anuladas.'+' El porcentaje compara con los mismos días del período anterior (si el período va en curso, hasta hoy); deja el cursor sobre él para ver ese monto.')}</div><div class="valor">${formatearDinero(r.ventas)}</div>${comparacionHTML(r.ventas, ra.ventas, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesVendidas)} ${pluralizar(r.unidadesVendidas, 'vendida', 'vendidas')}</div></div>
-      <div class="cifra-tarjeta"><div class="etiqueta">Ganancia ${botonInfo('Ganancia', '**La utilidad es lo que ganaste**: lo cobrado menos lo que te costó cada producto.\n\n- **Último costo** (por defecto): el costo de tu compra más reciente al momento de vender, como lo calcularías a mano.\n- **Costo promedio** (chip de la tarjeta): el promedio de todo lo que tienes en bodega.\n\nNo incluye anuladas.'+' El porcentaje compara con los mismos días del período anterior (si el período va en curso, hasta hoy); deja el cursor sobre él para ver ese monto.')}</div><div class="valor ${ganancia < 0 ? 't-peligro' : ''}">${formatearDinero(ganancia)}</div>${comparacionHTML(ganancia, gananciaAnt, true)}
-        <button type="button" class="chip chip-mini" data-accion="ver-costo-promedio" aria-pressed="${String(!!est.verCostoPromedio)}">${seguro(icono(est.verCostoPromedio ? 'check' : 'intercambiar', 'icono-sm'))}Costo promedio</button></div>
+      <div class="cifra-tarjeta"><div class="etiqueta">Ganancia ${botonInfo('Ganancia', '**La utilidad es lo que ganaste**: lo cobrado menos lo que te costó cada producto.\n\n- **Último costo** (por defecto): el costo de tu compra más reciente al momento de vender, como lo calcularías a mano.\n- **Costo promedio** (chip de la tarjeta): el promedio de todo lo que tienes en bodega.\n\n**Margen** (abajo a la derecha) = ganancia ÷ ventas × 100: de cada $100 vendidos, cuánto queda de ganancia. Sigue el costo elegido.\n\nNo incluye anuladas.'+' El porcentaje compara con los mismos días del período anterior (si el período va en curso, hasta hoy); deja el cursor sobre él para ver ese monto.')}</div><div class="valor ${ganancia < 0 ? 't-peligro' : ''}">${formatearDinero(ganancia)}</div>${comparacionHTML(ganancia, gananciaAnt, true)}
+        <div class="fila-margen"><button type="button" class="chip chip-mini" data-accion="ver-costo-promedio" aria-pressed="${String(!!est.verCostoPromedio)}">${seguro(icono(est.verCostoPromedio ? 'check' : 'intercambiar', 'icono-sm'))}Costo promedio</button>
+          ${r.ventas > 0 ? html`<span class="margen-bruto" title="Margen bruto = ganancia ÷ ventas × 100">Margen ${formatearNumero(Math.round(porcentajeDe(ganancia, r.ventas) * 10) / 10)}%</span>` : ''}</div></div>
       <div class="cifra-tarjeta"><div class="etiqueta">Invertido ${botonInfo('Invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.'+' El porcentaje compara con los mismos días del período anterior (si el período va en curso, hasta hoy); deja el cursor sobre él para ver ese monto.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'ingresada', 'ingresadas')}</div></div>
     </div>
     ${tarjetaUnidadesHTML(movs, est, filtro)}
@@ -167,17 +168,38 @@ function pintarResumenDashboard() {
 // Una sola pasada por los movimientos del período (barato aun con el año completo).
 function tarjetaUnidadesHTML(movs, est, filtro) {
   const entra = new Map(), sale = new Map();
+  const porEmpaque = est.unidadesPor === 'empaque';
+  // Por empaque: las unidades de cada producto se agrupan en su empaque mayor (cajas
+  // completas) y lo que no alcanza una caja queda como unidad suelta.
+  const sumar = (mapa, p, cant) => {
+    const eq = porEmpaque ? Almacen.empaqueMayor(p.idProducto) : null;
+    if (eq) {
+      const n = Math.floor(cant / eq.unidades);
+      if (n > 0) mapa.set(eq.nombre, redondearCantidad((mapa.get(eq.nombre) || 0) + n));
+      cant = redondearCantidad(cant - n * eq.unidades);
+    }
+    if (cant > 0) mapa.set(p.unidadBase, redondearCantidad((mapa.get(p.unidadBase) || 0) + cant));
+  };
+  // Se suma primero por producto y después se reparte: así «2 + 4 botellas» de dos
+  // movimientos cuentan como una caja de 6, no como dos sueltas.
+  const totales = { e: new Map(), s: new Map() };
   movs.forEach(m => {
     if (!esMovValido(m) || !enPeriodo(m.fecha, est.inicio, est.fin) || (filtro && !filtro(m))) return;
-    const p = Almacen.producto(Almacen.idEfectivo(m.idProducto));
+    const id = Almacen.idEfectivo(m.idProducto);
+    const p = Almacen.producto(id);
     if (!p) return;
-    if (m.tipo === TIPOS_MOV.ENTRADA) entra.set(p.unidadBase, redondearCantidad((entra.get(p.unidadBase) || 0) + (m.cantidad || 0) + (m.bonif || 0)));
-    else if (m.tipo === TIPOS_MOV.VENTA) sale.set(p.unidadBase, redondearCantidad((sale.get(p.unidadBase) || 0) + Math.abs(m.cantidad || 0)));
+    if (m.tipo === TIPOS_MOV.ENTRADA) totales.e.set(id, redondearCantidad((totales.e.get(id) || 0) + (m.cantidad || 0) + (m.bonif || 0)));
+    else if (m.tipo === TIPOS_MOV.VENTA) totales.s.set(id, redondearCantidad((totales.s.get(id) || 0) + Math.abs(m.cantidad || 0)));
   });
+  totales.e.forEach((c, id) => sumar(entra, Almacen.producto(id), c));
+  totales.s.forEach((c, id) => sumar(sale, Almacen.producto(id), c));
   if (!entra.size && !sale.size) return '';
   const chips = (mapa) => [...mapa.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`);
   const fila = (ic, texto, mapa) => mapa.size ? html`<div class="fila-total"><span class="t-mini t-secundario">${seguro(icono(ic, 'icono-sm'))}${texto}</span><span class="chips-total">${chips(mapa)}</span></div>` : '';
-  return html`<div class="cifra-tarjeta tarjeta-unidades"><div class="etiqueta">Unidades del período ${botonInfo('Unidades del período', 'Cuántas unidades **entraron** (compras, con las bonificadas) y cuántas **se vendieron** en el período, separadas por tipo de unidad: sumar botellas con bolsas en un solo número no ayuda a decidir.\n\nRespeta el período y los filtros. No incluye anuladas.')}</div>
+  const conmutador = html`<span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Ver las unidades en">
+      <button type="button" role="radio" data-accion="unidades-por" data-por="unidad" aria-checked="${String(!porEmpaque)}">Unidades</button>
+      <button type="button" role="radio" data-accion="unidades-por" data-por="empaque" aria-checked="${String(porEmpaque)}">Empaques</button></span>`;
+  return html`<div class="cifra-tarjeta tarjeta-unidades"><div class="etiqueta">Unidades del período ${botonInfo('Unidades del período', 'Cuántas unidades **entraron** (compras, con las bonificadas) y cuántas **se vendieron** en el período, separadas por tipo de unidad: sumar botellas con bolsas en un solo número no ayuda a decidir.\n\n**Empaques** agrupa en cajas, fardos… lo que alcanza para uno completo; el resto queda como unidades sueltas.\n\nRespeta el período y los filtros. No incluye anuladas.')}${conmutador}</div>
     ${fila('entrada', 'Ingresadas', entra)}${fila('carrito', 'Vendidas', sale)}</div>`;
 }
 
@@ -438,6 +460,7 @@ async function anularConConfirmacion(folios, accion) {
 const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
   'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
+  'unidades-por': (b) => { estadoDashboard.unidadesPor = b.dataset.por === 'empaque' ? 'empaque' : 'unidad'; pintarDashboard(); },
   'ver-costo-promedio': () => { estadoDashboard.verCostoPromedio = !estadoDashboard.verCostoPromedio; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
   'significado': (b) => avisar(b.dataset.texto, { duracion: 2500 }),
