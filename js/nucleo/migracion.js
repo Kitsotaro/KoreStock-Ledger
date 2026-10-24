@@ -24,7 +24,8 @@
 //
 // Expone: detectarVersionEsquema, leerBaseV2, proponerFusiones,
 //   convertirAV3, verificarMigracion, compararReleida, migrarBaseV2,
-//   HOJAS_V2, sugerirUnidadBase, MODOS_UNIDAD, unidadesPorDefecto, nombreUnidadV2.
+//   HOJAS_V2, sugerirUnidadBase, MODOS_UNIDAD, unidadesPorDefecto, nombreUnidadV2,
+//   crearEnlazadorV2, movimientosSinProducto.
 // Depende de: hoja.js, esquema.js, base-datos.js, dinero.js,
 //   utilidades.js, calculos.js.
 // ============================================================
@@ -140,10 +141,62 @@ function nombreUnidadV2(p, modo) {
   return t || 'unidad';
 }
 
+// Enlaza cada movimiento viejo (que solo trae SKU y datos copiados) con su
+// producto. El SKU podía repetirse en la v2, así que primero se busca por
+// identidad completa. Si no hay coincidencia exacta, se intenta sin el sabor
+// (la v2 guardaba el sabor del catálogo, p. ej. «uva», pero el movimiento podía
+// venir vacío) cuando hay UN solo producto con esa marca, producto, presentación
+// y contenido. Devuelve null si no encuentra (p. ej. un SKU mal escrito).
+function crearEnlazadorV2(catalogo) {
+  const claveIdentidad = (x) => [x.marca, x.linea, x.presentacion, x.volumen, x.variante].map(normalizarIdentidad).join('|');
+  const claveSinSabor = (x) => [x.marca, x.linea, x.presentacion, x.volumen].map(normalizarIdentidad).join('|');
+  const porIdentidad = new Map(), porSku = new Map(), porSinSabor = new Map();
+  catalogo.forEach(p => {
+    porIdentidad.set(claveIdentidad(p), p);
+    if (!porSku.has(p.sku)) porSku.set(p.sku, []);
+    porSku.get(p.sku).push(p);
+    if (!porSinSabor.has(claveSinSabor(p))) porSinSabor.set(claveSinSabor(p), []);
+    porSinSabor.get(claveSinSabor(p)).push(p);
+  });
+  const productoDeMov = (m) => {
+    const ident = porIdentidad.get(claveIdentidad(m));
+    if (ident && ident.sku === m.sku) return ident;
+    const conSku = porSku.get(m.sku) || [];
+    if (conSku.length === 1 && claveSinSabor(conSku[0]) === claveSinSabor(m)) return conSku[0];
+    if (ident) return ident;
+    const sinSabor = porSinSabor.get(claveSinSabor(m)) || [];
+    if (sinSabor.length === 1) return sinSabor[0];
+    return conSku[0] || null;
+  };
+  return { productoDeMov, porSku };
+}
+
+// Movimientos que no encuentran su producto, agrupados por cómo vienen escritos
+// (Kitso, 2026-10-24: una entrada con el código AGBO-001 mal escrito dejó el
+// stock de Agua Fría en negativo). El asistente pregunta a cuál unir cada grupo;
+// `sugerido` = el único producto activo de esa marca, si lo hay.
+function movimientosSinProducto(datos) {
+  const { productoDeMov } = crearEnlazadorV2(datos.CATALOGO);
+  const grupos = new Map();
+  datos.LOG_TRANS.forEach(m => {
+    if (productoDeMov(m)) return;
+    const clave = [m.sku, m.marca, m.linea, m.presentacion, m.volumen].map(normalizarIdentidad).join('|');
+    if (!grupos.has(clave)) {
+      const deMarca = datos.CATALOGO.filter(p => p.idProducto && normalizarIdentidad(p.marca) === normalizarIdentidad(m.marca) && p.estado !== ESTADOS.OBSOLETO);
+      grupos.set(clave, { clave, sku: m.sku, descripcion: nombreProductoV2(m), folios: [], unidades: 0, sugerido: deMarca.length === 1 ? deMarca[0].idProducto : null });
+    }
+    const g = grupos.get(clave);
+    g.folios.push(m.folio);
+    g.unidades += Number(m.cantidad || 0) + Number(m.bonif || 0);
+  });
+  return [...grupos.values()];
+}
+
 // Conversión PURA v2 → v3. `fusiones` = propuestas con aceptada === true.
 // opciones.unidades = { [idProducto]: { modo, unidades } } (ver MODOS_UNIDAD).
+// opciones.enlaces = { [folio]: idProducto } para movimientos sin producto.
 function convertirAV3(datos, fusiones, opciones) {
-  const { actor = '', ahora = obtenerTimestampLocal(), unidades = {} } = opciones || {};
+  const { actor = '', ahora = obtenerTimestampLocal(), unidades = {}, enlaces = {} } = opciones || {};
   const aceptadas = (fusiones || []).filter(f => f.aceptada);
   const avisos = [];
 
@@ -170,32 +223,11 @@ function convertirAV3(datos, fusiones, opciones) {
     modoDe.set(p.idProducto, modo);
   });
 
-  // Índices para enlazar cada movimiento viejo (que solo trae SKU y datos
-  // copiados) con su producto. El SKU podía repetirse en la v2, así que
-  // primero se busca por identidad completa.
-  // Si no hay coincidencia exacta, se intenta sin el sabor (la v2 guardaba el
-  // sabor del catálogo, p. ej. «uva», pero el movimiento podía venir vacío)
-  // cuando hay UN solo producto con esa marca, producto, presentación y contenido.
-  const claveIdentidad = (x) => [x.marca, x.linea, x.presentacion, x.volumen, x.variante].map(normalizarIdentidad).join('|');
-  const claveSinSabor = (x) => [x.marca, x.linea, x.presentacion, x.volumen].map(normalizarIdentidad).join('|');
-  const porIdentidad = new Map(), porSku = new Map(), porSinSabor = new Map();
-  datos.CATALOGO.forEach(p => {
-    porIdentidad.set(claveIdentidad(p), p);
-    if (!porSku.has(p.sku)) porSku.set(p.sku, []);
-    porSku.get(p.sku).push(p);
-    if (!porSinSabor.has(claveSinSabor(p))) porSinSabor.set(claveSinSabor(p), []);
-    porSinSabor.get(claveSinSabor(p)).push(p);
-  });
-  const productoDeMov = (m) => {
-    const ident = porIdentidad.get(claveIdentidad(m));
-    if (ident && ident.sku === m.sku) return ident;
-    const conSku = porSku.get(m.sku) || [];
-    if (conSku.length === 1 && claveSinSabor(conSku[0]) === claveSinSabor(m)) return conSku[0];
-    if (ident) return ident;
-    const sinSabor = porSinSabor.get(claveSinSabor(m)) || [];
-    if (sinSabor.length === 1) return sinSabor[0];
-    return conSku[0] || null;
-  };
+  // Enlace de movimientos (ver crearEnlazadorV2); los que no se encuentran
+  // usan el producto que eligió el usuario en el asistente (si eligió).
+  const enlazador = crearEnlazadorV2(datos.CATALOGO);
+  const porSku = enlazador.porSku;
+  const productoDeMov = (m) => enlazador.productoDeMov(m) || (enlaces[m.folio] ? porId.get(Number(enlaces[m.folio])) || null : null);
 
   const umbralDe = (p) => {
     const u = datos.UMBRALES.find(x => normalizarTexto(x.clave) === normalizarTexto(p.tipoEmpaque)) ||
@@ -213,6 +245,8 @@ function convertirAV3(datos, fusiones, opciones) {
     if (!p || !p.idProducto) { sinProducto++; n.idProducto = null; log.push(n); return; }
     const idDestino = destinoDe.get(p.idProducto) || p.idProducto;
     n.idProducto = idDestino;
+    // Unido a mano en el asistente: toma el código del producto y guarda el que traía.
+    if (enlaces[m.folio] && m.sku !== p.sku) { n.referencia = m.sku; n.sku = p.sku; }
     const fusion = fusionDe.get(p.idProducto);
     if (fusion) {
       const destino = porId.get(idDestino);
@@ -468,7 +502,7 @@ async function migrarBaseV2(idViejo, fusiones, alProgreso, opciones) {
   avisar(2, 'Preparando la estructura nueva…');
   let actor = '';
   try { actor = await Hoja.correoUsuario(); } catch (e) { /* sin correo: se deja vacío */ }
-  const resultado = convertirAV3(datos, fusiones, { actor, unidades: (opciones && opciones.unidades) || {} });
+  const resultado = convertirAV3(datos, fusiones, { actor, unidades: (opciones && opciones.unidades) || {}, enlaces: (opciones && opciones.enlaces) || {} });
   avisar(3, 'Comprobando que todo cuadre…');
   const verificacion = verificarMigracion(datos, resultado);
   if (!verificacion.ok) return { ok: false, etapa: 'verificacion', verificacion };

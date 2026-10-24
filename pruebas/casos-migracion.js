@@ -215,3 +215,32 @@ prueba('sabores unidos: «fardo de N» del que queda convierte a todos los sabor
   igual(eqs.length, 1, 'un solo empaque, en el que queda');
   igual(eqs[0].idProducto, union.destino); igual(eqs[0].unidades, N);
 });
+
+// Movimiento con el código mal escrito (Kitso, 2026-10-24): el asistente lo
+// muestra y, si se une al producto correcto, el stock cuadra sin negativos.
+prueba('movimiento sin producto: se ofrece unirlo y con la unión el stock cuadra', async () => {
+  DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo);
+  const encCat = ['SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'STOCK_ACTUAL', 'ESTADO_ITEM', 'ULTIMA_MODIF', 'TIPO_EMPAQUE', 'ID_PRODUCTO', 'FECHA_CREACION', 'MODIFICACION_ANTERIOR', 'STOCK_BONIFICADO'];
+  const encLog = ['TRANS_ID', 'TIMESTAMP_LOG', 'FECHA_MOV', 'TIPO_MOV', 'SKU_ITEM', 'MARCA', 'LINEA_PROD', 'PRESENTACION', 'VOLUMEN', 'VARIANTE', 'CANTIDAD', 'UNID_BONIF', 'P_DISTRIBUIDOR', 'P_CONSUMIDOR', 'TOTAL_INVERSION', 'MARGEN_UNIT', 'TOTAL_VENTA', 'UTILIDAD_NETA', 'TIPO_EMPAQUE', 'ESTADO_MOV'];
+  const id = DriveDemo.crearDesdeDatos('StockCentral_DB', {
+    CATALOGO: [encCat, ['AGFA-001', 'Agua Fría', 'Fardo', 'Bolsa', '100', '', 0.75, 1, 68, 'ACTIVO', 46299, '', 1, 46275, '', 0]],
+    LOG_TRANS: [encLog,
+      ['IN-000001', 46275.3, 46275, 'ENTRADA', 'AGBO-001', 'Agua Fría', 'Bolsa', 'Fardo', '355 ml', '', 100, 0, '0,75', '1', '75', '0,25', '', '', '', ''],
+      ['FAC-000001', 46276.3, 46276, 'VENTA', 'AGFA-001', 'Agua Fría', 'Fardo', 'Bolsa', '100', '', -32, 0, '0,75', '1', '24', '0,25', '32', '8', '', '']],
+    LOG_HISTORICO_PRECIOS: [['ID_LOG', 'SKU_ITEM', 'P_DIST_ANT', 'P_DIST_NUEVO', 'P_CONS_ANT', 'P_CONS_NUEVO', 'FECHA_CAMBIO', 'USUARIO']],
+    UMBRALES: [['TIPO_EMPAQUE', 'STOCK_MIN', 'STOCK_MAX'], ['TODOS', 4, 7]],
+    COSTOS_OPERATIVOS: [['ID_GASTO', 'TIMESTAMP_LOG', 'FECHA_GASTO', 'CATEGORIA', 'MONTO', 'DESCRIPCION', 'ESTADO']],
+    VEHICULOS: [['PLACA', 'MARCA', 'MODELO', 'COLOR', 'TIPO_COMBUSTIBLE', 'ESTADO']],
+    COSTOS_COMBUSTIBLE: [['ID_GASTO', 'TIMESTAMP_LOG', 'FECHA_MOV', 'PLACA', 'ODOMETRO', 'GALONES', 'MONTO_PAGADO', 'ESTADO']]
+  });
+  const sin = movimientosSinProducto(await leerBaseV2(id));
+  igual(sin.length, 1); igual(sin[0].folios.join(), 'IN-000001'); igual(sin[0].sugerido, 1, 'único producto de esa marca');
+  const solo = await migrarBaseV2(id, []);
+  igual(solo.etapa, 'diferencias', 'sin unir: el stock no cuadra (68 guardado, −32 historial)');
+  const r = await migrarBaseV2(id, [], null, { enlaces: { 'IN-000001': 1 } });
+  verdadero(r.ok, JSON.stringify(r.verificacion));
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  igual(v3.CATALOGO[0].stockCache, 68);
+  const entrada = v3.LOG_TRANS.find(m => m.folio === 'IN-000001');
+  igual(entrada.idProducto, 1); igual(entrada.sku, 'AGFA-001'); igual(entrada.referencia, 'AGBO-001', 'guarda el código con que venía');
+});

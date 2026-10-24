@@ -14,10 +14,10 @@
 // Depende de: shell.js, componentes.js, migracion.js (núcleo).
 // ============================================================
 
-let _migracion = { idViejo: null, propuestas: [], alTerminar: null, unidades: {} };
+let _migracion = { idViejo: null, propuestas: [], alTerminar: null, unidades: {}, sinProducto: [], enlaceDe: {} };
 
 async function iniciarMigracion(idViejo, alTerminar) {
-  _migracion = { idViejo, propuestas: [], alTerminar, datos: null, unidades: {} };
+  _migracion = { idViejo, propuestas: [], alTerminar, datos: null, unidades: {}, sinProducto: [], enlaceDe: {} };
   Shell.ir('migracion');
 }
 
@@ -30,6 +30,9 @@ registrarPantalla('migracion', {
       _migracion.datos = await leerBaseV2(_migracion.idViejo);
       _migracion.propuestas = proponerFusiones(_migracion.datos);
       _migracion.unidades = unidadesPorDefecto(_migracion.datos);
+      // Movimientos sin producto: por grupo, el sugerido (si lo hay) ya elegido.
+      _migracion.sinProducto = movimientosSinProducto(_migracion.datos);
+      _migracion.sinProducto.forEach(g => { _migracion.enlaceDe[g.clave] = g.sugerido || ''; });
     } catch (e) {
       el.innerHTML = html`<div class="vacio">${seguro(icono('peligro'))}<strong>No se pudo leer tu base</strong><p>${e.message}</p></div>`.texto;
       return;
@@ -68,6 +71,17 @@ function pintarAsistenteMigracion(el) {
             </div>`)}
         </div>
       </div>` : ''}
+      ${_migracion.sinProducto.length ? html`
+      <div class="tarjeta columna" id="migracion-sin-producto">
+        <h3>${seguro(icono('advertencia', 'icono-sm'))} Movimientos sin producto</h3>
+        <p class="t-pequeno t-secundario">Estos movimientos no coinciden con ningún producto de tu catálogo (por ejemplo, un código mal escrito). Si no los unes, se copian sin producto y el stock puede quedar en negativo. Elige a cuál pertenecen.</p>
+        ${_migracion.sinProducto.map(g => html`<div class="fila-unidad">
+          <div class="crece"><div class="titulo">${g.descripcion || g.sku}</div>
+            <div class="sub">Código ${g.sku || '—'} · ${formatearNumero(g.folios.length)} ${pluralizar(g.folios.length, 'movimiento')} (${g.folios.slice(0, 3).join(', ')}${g.folios.length > 3 ? '…' : ''}) · ${g.unidades >= 0 ? '+' : ''}${formatearNumero(g.unidades)}</div></div>
+          <div class="control"><input data-enlace="${g.clave}" list="migracion-productos" value="${g.sugerido ? etiquetaProductoMigracion(_migracion.datos.CATALOGO.find(p => p.idProducto === g.sugerido)) : ''}" placeholder="No unir (se copia sin producto)" autocomplete="off" aria-label="Producto al que pertenece"></div>
+        </div>`)}
+        <datalist id="migracion-productos">${_migracion.datos.CATALOGO.filter(p => p.idProducto).map(p => html`<option value="${etiquetaProductoMigracion(p)}"></option>`)}</datalist>
+      </div>` : ''}
       <div class="tarjeta columna" id="migracion-unidades">
         <h3>¿Cómo cuentas cada producto?</h3>
         <p class="t-pequeno t-secundario">Revisa con el costo y el precio de cada uno: si pagas $8.50 por una «botella» de 3 litros, en realidad la registrabas por caja. Elige «Por empaque» y escribe cuántas unidades trae: el historial pasa a unidades y el empaque queda como compra por mayoreo, para comprar y vender por caja o por unidad.</p>
@@ -95,6 +109,12 @@ function pintarAsistenteMigracion(el) {
     }
   });
   el.addEventListener('input', (e) => {
+    const enl = e.target.closest('[data-enlace]');
+    if (enl) {
+      const p = _migracion.datos.CATALOGO.find(x => x.idProducto && etiquetaProductoMigracion(x) === enl.value.trim());
+      _migracion.enlaceDe[enl.dataset.enlace] = p ? p.idProducto : '';
+      return;
+    }
     const i = e.target.closest('[data-unidades-de]');
     if (!i) return;
     const id = i.dataset.unidadesDe, n = Math.round(parsearNumero(i.value)) || '';
@@ -103,6 +123,15 @@ function pintarAsistenteMigracion(el) {
     if (ayuda) ayuda.textContent = textoConversionMigracion(_migracion.datos.CATALOGO.find(p => String(p.idProducto) === id), n);
   });
   pintarUnidadesMigracion(el);
+}
+
+// Nombre para elegir producto en el asistente: con su código, porque puede repetirse.
+function etiquetaProductoMigracion(p) { return p ? `${nombreProductoV2(p)} · ${p.sku}` : ''; }
+// { folio: idProducto } con lo elegido en «Movimientos sin producto».
+function enlacesMigracion() {
+  const r = {};
+  _migracion.sinProducto.forEach(g => { const id = _migracion.enlaceDe[g.clave]; if (id) g.folios.forEach(f => { r[f] = id; }); });
+  return r;
 }
 
 function textoConversionMigracion(p, n) {
@@ -160,8 +189,8 @@ async function ejecutarMigracionUI(el, boton) {
   boton.after(progreso);
   try {
     const alProgreso = (paso, texto) => { progreso.textContent = `Paso ${paso} de 6 · ${texto}`; };
-    const unidades = _migracion.unidades;
-    let r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { unidades });
+    const unidades = _migracion.unidades, enlaces = enlacesMigracion();
+    let r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { unidades, enlaces });
     if (!r.ok && r.etapa === 'diferencias') {
       // El stock guardado no coincide con el historial: se avisa y, si acepta, se migra con el historial.
       const d = r.verificacion.diferencias;
@@ -172,7 +201,7 @@ async function ejecutarMigracionUI(el, boton) {
         textoConfirmar: 'Actualizar con el historial', textoCancelar: 'Ahora no'
       });
       if (!seguir) { boton.classList.remove('cargando'); progreso.remove(); return; }
-      r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { aceptarDiferencias: true, unidades });
+      r = await migrarBaseV2(_migracion.idViejo, props, alProgreso, { aceptarDiferencias: true, unidades, enlaces });
     }
     if (!r.ok) {
       boton.classList.remove('cargando');
