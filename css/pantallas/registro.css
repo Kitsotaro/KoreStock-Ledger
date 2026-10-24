@@ -77,5 +77,3 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .fila-cantidad > .control { flex: none; width: 7.5rem; min-width: 0; }
 .fila-cantidad > .control input { width: 100%; }
 .fila-cantidad > .control input { text-align: center; font-weight: var(--peso-fuerte); font-size: var(--t-lg); }
-.ganancia-total { font-size: var(--t-xs); white-space: nowrap; align-self: center; margin-top: 0.7rem; }
-.campo-total > .fila-ganancia { grid-column: 1 / -1; justify-content: flex-end; margin-top: calc(var(--e-1) * -1); }
