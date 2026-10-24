@@ -40,3 +40,5 @@ details.desplegable[open] > summary .chevron { transform: rotate(180deg); }
 /* Ícono + texto en una sola línea (sabores y empaques en el buscador) */
 .sub.en-linea { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .sub.en-linea .icono { flex: none; }
+/* El dibujo del ícono de sabor llena más su caja que los demás: se reduce un poco */
+.icono:has(use[href$="#i-sabor"]) { transform: scale(0.8); }

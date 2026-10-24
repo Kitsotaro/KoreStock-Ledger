@@ -39,3 +39,5 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .control.solo-lectura { background: transparent; border-color: transparent; box-shadow: none; padding-left: 0; }
 .control.solo-lectura input { cursor: default; }
 .interruptor-cobro { align-items: flex-start; margin-top: var(--e-1); }
+/* Modo editor dentro de la tarjeta del producto */
+.editor-producto { padding-top: var(--e-2); border-top: 1px dashed var(--borde); gap: var(--e-3); }
