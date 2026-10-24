@@ -48,8 +48,11 @@ registrarPantalla('stock', {
     stockUI.el = el;
     el.innerHTML = html`
       <div class="columna">
-        <div class="cifras" id="stock-cifras"></div>
-        <div id="stock-grafico"></div>
+        <div class="columna stock-lateral">
+          <div class="cifras" id="stock-cifras"></div>
+          <div id="stock-grafico"></div>
+        </div>
+        <div class="columna stock-principal">
         <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="stock-buscar" type="search" placeholder="Buscar en el catálogo" autocomplete="off"></div></div>
         <div class="fila-chips" id="stock-chips" role="group" aria-label="Filtros"></div>
         <div class="fila-separada">
@@ -62,6 +65,7 @@ registrarPantalla('stock', {
         <div id="stock-barra-seleccion"></div>
         <div id="stock-lista"></div>
         <button type="button" class="boton boton-entrada boton-bloque" data-accion="agregar">${seguro(icono('entrada'))}Agregar stock</button>
+        </div>
       </div>`.texto;
     $('#stock-buscar', el).addEventListener('input', (e) => { stockUI.texto = e.target.value; pintarCifrasStock(); pintarListaStock(); });
     delegar(el, 'click', accionesStock);
