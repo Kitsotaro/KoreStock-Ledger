@@ -16,7 +16,7 @@
 //   pintarPaginado({...})    → lista con «Cargar más (quedan N)» (D37)
 //   html`...`                → plantilla que escapa los valores (INV. 16)
 //
-// Expone: icono, html, seguro, mostrarDialogo, cerrarDialogo, confirmar,
+// Expone: anclarBotonPrincipal, icono, html, seguro, mostrarDialogo, cerrarDialogo, confirmar,
 //   confirmarFuerte, mostrarResumen, abrirHoja, avisar, crearBuscador,
 //   pintarPaginado, delegar, activarSugerencias, botonInfo, mostrarInfobox, cerrarInfobox, $, $$.
 // Depende de: utilidades.js (escaparHTML).
@@ -365,4 +365,36 @@ function pintarPaginado({ contenedor, items, pintarItem, tope = 30, vacio = '', 
     const b = $('button', pie); if (b) b.addEventListener('click', mas);
   };
   mas();
+}
+
+// Botón principal anclado (solo teléfono): mientras el botón real (Cobrar / Guardar) queda
+// debajo de la pantalla, un botón compacto flota abajo a la izquierda y le pasa el toque.
+// Solo presentación: no calcula nada, copia el texto y el estado del botón real.
+function anclarBotonPrincipal(pantalla, selector, clase) {
+  const flota = document.createElement('button');
+  flota.type = 'button'; flota.className = `boton ${clase} boton-flotante`; flota.hidden = true;
+  document.body.appendChild(flota);
+  let real = null, abajo = false;
+  const io = new IntersectionObserver(([e]) => {
+    abajo = !e.isIntersecting && e.boundingClientRect.top >= (e.rootBounds ? e.rootBounds.bottom : innerHeight);
+    sincronizar();
+  }, { rootMargin: '0px 0px -96px 0px' });
+  function sincronizar() {
+    const activa = !pantalla.hidden && real && real.isConnected;
+    // Con el teclado abierto (escribiendo en un campo) no estorba.
+    const escribiendo = pantalla.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    flota.hidden = !(activa && abajo && !escribiendo);
+    if (activa) { flota.innerHTML = real.innerHTML; flota.disabled = real.disabled; }
+  }
+  function buscar() {
+    const nuevo = pantalla.querySelector(selector);
+    if (nuevo === real) { sincronizar(); return; }
+    io.disconnect(); real = nuevo; abajo = false;
+    if (real) io.observe(real);
+    sincronizar();
+  }
+  new MutationObserver(buscar).observe(pantalla, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['disabled', 'hidden'] });
+  pantalla.addEventListener('focusin', sincronizar);
+  pantalla.addEventListener('focusout', () => setTimeout(sincronizar, 0));
+  flota.addEventListener('click', () => { if (real) real.click(); });
 }

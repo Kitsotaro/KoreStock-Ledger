@@ -60,6 +60,7 @@ registrarPantalla('venta', {
       nuevo: { html: (q) => html`${seguro(icono('persona-mas', 'icono-sm'))}<span>Agregar cliente «${q}»</span>`, fn: (q) => crearClienteDesdeVenta(q) }
     });
     delegar(el, 'click', accionesVenta);
+    anclarBotonPrincipal(el, '[data-accion="cobrar"]', 'boton-venta');
     Almacen.suscribir((motivo) => { if (Shell.actual === 'venta' && motivo !== 'carga') refrescarVenta(); });
   },
   mostrar(el, opciones) {
@@ -135,7 +136,7 @@ function pintarProductoVenta() {
   const p = venta.producto;
   rescatarClienteVenta();
   if (!p) {
-    cont.innerHTML = venta.carrito.length ? '' : html`<div class="vacio">${seguro(icono('carrito', 'icono-xl'))}<strong>¿Qué vendiste?</strong><p>Busca el producto o toca uno de los más vendidos.</p></div>`.texto;
+    cont.innerHTML = venta.carrito.length ? '' : html`<div class="vacio">${seguro(icono('carrito', 'icono-xl'))}<strong>¿Qué vendiste?</strong><p>Busca el producto o toca uno de los más vendidos.</p>${Almacen.productosVisibles().length ? '' : html`<button type="button" class="boton boton-entrada" data-accion="producto-nuevo-en-entrada">${seguro(icono('etiqueta-nueva', 'icono-sm'))}Crear un producto en Entrada</button>`}</div>`.texto;
     actualizarClienteVenta();
     return;
   }
@@ -155,9 +156,9 @@ function pintarProductoVenta() {
     <div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span>En stock</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
-      <div class="dato"><span class="fila-precio"><span>Precio</span><button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}/${nombreEmpaqueVenta}` : ''}</strong></div>
-      <div class="dato"><span>Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span><strong>${describirCantidad(p.idProducto, disponible)}</strong></div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('precio', 'icono-sm'))}Precio <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}/${nombreEmpaqueVenta}` : ''}</strong></div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('panorama', 'icono-sm'))}Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
         ${presentaciones.map(x => html`<button type="button" class="chip" data-accion="usar-presentacion" data-cantidad="${x.cantidad}" data-precio="${x.precio}" data-etiqueta="${x.etiqueta}">${x.etiqueta} · ${formatearDinero(x.precio)}</button>`)}
@@ -184,8 +185,6 @@ function pintarProductoVenta() {
             ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="usar-sugerido">Usar sugerido ${formatearDinero(sugerido.total)}</button>`
             : html`<span class="t-tenue">${sugerido.desglose.length > 1 ? sugerido.desglose.map(d => `${formatearNumero(d.veces)} × ${d.etiqueta}`).join(' + ') : 'Sugerido'}</span>`}
         </div>
-        <label class="interruptor interruptor-cobro" title="Actívalo si cobraste distinto al precio sugerido."><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
-          <span><strong>¿Cobro extraordinario?</strong>${venta.cobroExtra ? html`<span class="t-pequeno t-secundario" style="display:block">Escribe el precio real con el que cobraste.</span>` : ''}</span></label>
       </div>
       <details class="desplegable" ${variantes.length ? 'open' : ''}>
         <summary class="fila t-pequeno">${seguro(icono('sabor', 'icono-sm'))}<span class="crece">Sabor <span class="t-tenue">(opcional)</span></span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
@@ -194,6 +193,8 @@ function pintarProductoVenta() {
           <div class="control"><input id="venta-sabor" placeholder="Escribe el sabor o déjalo vacío" value="${venta.variante}" autocomplete="off"></div>
         </div>
       </details>
+      <label class="interruptor interruptor-cobro" title="Actívalo si cobraste distinto al precio sugerido."><input type="checkbox" data-accion="cobro-extra" ${venta.cobroExtra ? 'checked' : ''}><span class="riel"></span>
+          <span><strong>¿Cobro extraordinario?</strong>${venta.cobroExtra ? html`<span class="t-pequeno t-secundario" style="display:block">Escribe el precio real con el que cobraste.</span>` : ''}</span></label>
       <div class="grupo-botones">
         <button type="button" class="boton boton-secundario" data-accion="agregar-carrito" ${excede || !venta.cantidad ? 'disabled' : ''}>${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>
       </div>
@@ -288,6 +289,7 @@ async function crearClienteDesdeVenta(nombre) {
 }
 
 const accionesVenta = {
+  'producto-nuevo-en-entrada': () => { Shell.ir('entrada'); empezarProductoNuevo(''); },
   'quitar-producto': () => { venta.producto = null; venta.selector.marcar(null); pintarProductoVenta(); },
   'venta-por': (b) => {
     const unidadesAntes = venta.cantidad, factorAntes = factorVenta();

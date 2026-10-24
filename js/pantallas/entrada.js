@@ -62,6 +62,7 @@ registrarPantalla('entrada', {
     fecha.max = obtenerFechaLocal();
     fecha.addEventListener('change', () => { entrada.fecha = fecha.value || obtenerFechaLocal(); });
     delegar(el, 'click', accionesEntrada);
+    anclarBotonPrincipal(el, '[data-accion="guardar-entrada"]', 'boton-entrada');
     Almacen.suscribir((motivo) => { if (Shell.actual === 'entrada' && motivo !== 'carga') refrescarEntrada(); });
   },
   mostrar(el, opciones) {
@@ -298,7 +299,7 @@ function pintarProductoEntradaSinFoco() {
   const cont = $('#entrada-producto', entrada.el);
   const p = entrada.producto, n = entrada.nuevo;
   if (!p && !n) {
-    cont.innerHTML = entrada.carrito.length ? '' : html`<div class="vacio">${seguro(icono('entrada', 'icono-xl'))}<strong>¿Qué compraste?</strong><p>Busca el producto. Si es la primera vez, elige «Producto nuevo» al final de la lista.</p></div>`.texto;
+    cont.innerHTML = entrada.carrito.length ? '' : html`<div class="vacio">${seguro(icono('entrada', 'icono-xl'))}<strong>¿Qué compraste?</strong><p>Busca el producto. Si es la primera vez, elige «Producto nuevo» al final de la lista.</p><button type="button" class="boton boton-entrada" data-accion="producto-nuevo">${seguro(icono('etiqueta-nueva', 'icono-sm'))}Producto nuevo</button></div>`.texto;
     return;
   }
   const unidad = unidadBaseEntrada();
@@ -370,9 +371,9 @@ function pintarProductoEntradaSinFoco() {
     ${p ? html`<div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
-      <div class="dato"><span title="Lo que te cobra el distribuidor">Costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.costo, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
-      <div class="dato"><span title="Lo que cobras al consumidor">Venta</span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
+      <div class="dato"><span class="etiqueta-dato" title="Lo que te cobra el distribuidor">${seguro(icono('precio', 'icono-sm'))}Costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.costo, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
+      <div class="dato"><span class="etiqueta-dato" title="Lo que cobras al consumidor">${seguro(icono('etiqueta', 'icono-sm'))}Venta</span><strong class="cifra">${formatearDinero(p.precio)}/${p.unidadBase}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}/${empReg.empaque.toLowerCase()}` : ''}</strong></div>
       ${seguro(detalleProProductoHTML(p).texto)}
       <label class="casilla t-pequeno casilla-compacta"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
       ${editorArriba ? html`<div class="columna editor-producto">
@@ -387,7 +388,6 @@ function pintarProductoEntradaSinFoco() {
       ${empaqueNuevo && !error ? html`<span class="franja aviso-color">${seguro(icono('advertencia', 'icono-sm'))}Se creará una nueva forma de compra para este producto: ${nombreEmp.toLowerCase()} de ${formatearNumero(factor)} ${pluralUnidad(unidad, factor)}. Queda registrada al guardar.</span>` : ''}
       ${error ? html`<span class="franja aviso-color" id="entrada-error">${seguro(icono('advertencia', 'icono-sm'))}${error}</span>` : ''}
       ${bloqueCosto}
-      ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno casilla-compacta"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
       ${!editorArriba && (editor || entrada.costoCambio) ? campoPrecio(!editor) : ''}
       <details class="desplegable" ${entrada.bonif ? 'open' : ''}>
         <summary class="fila t-pequeno">${seguro(icono('caja', 'icono-sm'))}<span class="crece">Bonificadas (gratis)</span>${seguro(icono('chevron-abajo', 'icono-sm chevron'))}</summary>
@@ -401,6 +401,7 @@ function pintarProductoEntradaSinFoco() {
           ${variantes.length ? html`<div class="fila-chips">${variantes.map(v => html`<button type="button" class="chip" data-accion="sabor-entrada" data-sabor="${v}" aria-pressed="${String(normalizarIdentidad(v) === normalizarIdentidad(entrada.variante))}">${v}</button>`)}</div>` : ''}
           <div class="control"><input id="entrada-sabor" value="${entrada.variante}" placeholder="Escribe el sabor o déjalo vacío" autocomplete="off"></div>
         </div></details>` : ''}
+      ${p && !editor && !empaqueNuevo ? html`<label class="casilla t-pequeno casilla-compacta"><input type="checkbox" data-accion="costo-cambio" ${entrada.costoCambio ? 'checked' : ''}> El costo cambió en esta compra</label>` : ''}
       <button type="button" class="boton boton-secundario" data-accion="agregar-entrada">${seguro(icono('mas', 'icono-sm'))}Agregar otro producto</button>
     </div>
     <div id="entrada-resumen">${seguro(resumenEntradaHTML())}</div>
@@ -599,6 +600,7 @@ function pintarCarritoEntrada() {
 
 const accionesEntrada = {
   'menu-entrada': () => abrirMenuEntrada(),
+  'producto-nuevo': () => empezarProductoNuevo(''),
   'quitar-producto-entrada': () => { entrada.producto = null; pintarProductoEntrada(); },
   'cancelar-nuevo': () => { entrada.nuevo = null; pintarProductoEntrada(); },
   'alternar-nivel': () => {
