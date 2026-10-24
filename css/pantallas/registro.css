@@ -80,3 +80,10 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 /* Con el menú Venta / Entrada abierto, el botón flotante queda solo con su ícono y siempre por debajo del menú */
 body:has(.fab-registro.abierto) .boton-flotante { padding: 0; width: 2.75rem; }
 body:has(.fab-registro.abierto) .boton-flotante > span { display: none; }
+/* Modos (2026-10-24): mayoreo grande con la unidad chica debajo; pie con «Agregar» y «Guardar/Cobrar»; empaques en varias filas */
+.registro .tarjeta-producto .dato .mayor { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.registro .tarjeta-producto .dato .mayor strong { font-size: var(--t-lg); }
+.registro .tarjeta-producto .dato .mayor small { font-size: var(--t-xs); color: var(--texto-3); }
+.pie-registro { display: grid; gap: var(--e-3); }
+.pie-registro:empty { display: none; }
+.chips-empaque { flex-wrap: wrap; overflow: visible; }
