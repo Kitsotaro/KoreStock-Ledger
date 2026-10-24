@@ -35,6 +35,10 @@ const GraficoStock = {
         <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2></div>
         <div class="fila-separada fila-estilo">
           <span class="t-pequeno t-secundario">Estilo</span>
+          <span class="segmentado segmentado-compra segmentado-mini segmentado-iconos" role="radiogroup" aria-label="Contar el volumen en">
+            <button type="button" role="radio" data-grafico="medida" data-valor="UNIDADES" aria-label="Unidades" title="Unidades">${seguro(icono('etiqueta', 'icono-sm'))}</button>
+            <button type="button" role="radio" data-grafico="medida" data-valor="MAYOREO" aria-label="Mayoreo (empaques)" title="Mayoreo (empaques)">${seguro(icono('caja', 'icono-sm'))}</button>
+          </span>
           <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Estilo del gráfico">
             <button type="button" role="radio" data-grafico="tipo" data-valor="PASTEL">Circular</button>
             <button type="button" role="radio" data-grafico="tipo" data-valor="BARRAS">Barras</button>
@@ -56,7 +60,12 @@ const GraficoStock = {
       const b = e.target.closest('[data-grafico]');
       if (b && b.dataset.grafico === 'tipo') { this.tipo = b.dataset.valor || (this.tipo === 'PASTEL' ? 'BARRAS' : 'PASTEL'); this.pintar(); }
       if (b && b.dataset.grafico === 'recorte') { this.recorte = b.dataset.valor; this.pintar(); }
-      if (b && b.dataset.grafico === 'medida') { this.medida = b.dataset.valor; this.pintar(); }
+      if (b && b.dataset.grafico === 'medida' && b.dataset.valor !== this.medida) {
+        this.medida = b.dataset.valor; this.pintar();
+        avisar(this.medida === 'MAYOREO'
+          ? 'Volumen por mayoreo: el gráfico y la leyenda cuentan empaques (cajas, fardos…). Lo que no tiene empaque cuenta por unidad.'
+          : 'Volumen por unidades: el gráfico y la leyenda cuentan botellas, latas, bolsas…');
+      }
       if (b && b.dataset.grafico === 'modo-color') {
         abrirSelectorModoColor(b, { actual: leerModoColor('STOCK'), alElegir: (m) => this.guardarColor('_MODO', 'STOCK', textoModoColor(m)) });
       }
@@ -64,8 +73,6 @@ const GraficoStock = {
       if (muestra) this.elegirColor(muestra);
       const miga = e.target.closest('[data-nivel]');
       if (miga) { this.camino = this.camino.slice(0, Number(miga.dataset.nivel)); this.pintar(); }
-      const item = e.target.closest('[data-bajar]');
-      if (item) this.bajar(item.dataset.bajar);
     });
 
     Shell.alCambiarTema(() => { if (Shell.actual === 'stock') this.pintar(); });
@@ -74,8 +81,13 @@ const GraficoStock = {
   // Agrupa el stock ACTIVO del nivel actual: { etiqueta: valor }.
   datosNivel() {
     const nivel = NIVELES_GRAFICO[this.camino.length];
-    // El gráfico va en unidades; el valor en $ (a último costo) acompaña en la leyenda.
-    const valorDe = (p, unidades) => unidades;
+    // Volumen en unidades o por mayoreo (cada producto ÷ su empaque más grande;
+    // sin empaque cuenta por unidad). El valor en $ (a último costo) acompaña en la leyenda.
+    const valorDe = (p, unidades) => {
+      if (this.medida !== 'MAYOREO') return unidades;
+      const eq = Almacen.empaqueMayor(p.idProducto);
+      return eq ? unidades / eq.unidades : unidades;
+    };
     const dineroDe = (p, unidades) => redondearCentavo(multiplicarDinero(p.costo, Math.max(0, unidades)));
     const valores = {};
     const productos = Almacen.productosActivos().filter(p => this.camino.every(paso => this.claveProducto(p, paso.campo) === paso.valor));
@@ -143,6 +155,7 @@ const GraficoStock = {
     const { nivel, grupos, valores, sinAsignar } = this.datosNivel();
     $$('[data-grafico="tipo"]', c).forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === this.tipo)));
     $$('[data-grafico="recorte"]', c).forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === this.recorte)));
+    $$('[data-grafico="medida"]', c).forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === this.medida)));
     $('[data-grafico-recorte]', c).hidden = this.tipo !== 'BARRAS';
     $('.migas', c).innerHTML = [html`<button type="button" data-nivel="0">Todo</button>`]
       .concat(this.camino.map((paso, i) => html`<span aria-hidden="true">›</span>${i === this.camino.length - 1 ? html`<span aria-current="page">${paso.valor}</span>` : html`<button type="button" data-nivel="${i + 1}">${paso.valor}</button>`}`))
@@ -157,20 +170,20 @@ const GraficoStock = {
     const estilo = getComputedStyle(document.documentElement);
     const paleta = paletaAutomatica(leerModoColor('STOCK'), items.length);
     const colores = items.map((it, i) => Almacen.colorGrafico(this.nivelColor(), this.nombreColor(it.etiqueta)) || paleta[i]);
-    const fmt = (v) => formatearNumero(v);
+    const fmt = (v) => formatearNumero(Math.round(v * 10) / 10);
     const nota = $('.nota-grafico', c);
     nota.textContent = nivel.campo === 'sabor'
       ? `Según registros.${sinAsignar ? ` Sin asignar: ${formatearNumero(sinAsignar)}.` : ''}`
       : '';
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
     const cabecera = items.length ? html`<div class="leyenda-cabecera"><span class="crece"></span><span class="valor columnas-leyenda">
-        <button type="button" class="col-n" data-info-titulo="Volumen" data-info="Cuántas unidades hay en bodega de este grupo, cada producto en su propia unidad (botellas, latas, bolsas…).">${seguro(icono('caja', 'icono-sm'))}Volumen</button><span class="sep"></span>
+        <button type="button" class="col-n" data-info-titulo="Volumen" data-info="${this.medida === 'MAYOREO' ? 'Cuántos empaques (cajas, fardos…) hay en bodega de este grupo: cada producto se divide entre su empaque más grande. Lo que no tiene empaque cuenta por unidad.' : 'Cuántas unidades hay en bodega de este grupo, cada producto en su propia unidad (botellas, latas, bolsas…).'}">${seguro(icono(this.medida === 'MAYOREO' ? 'caja' : 'etiqueta', 'icono-sm'))}Volumen</button><span class="sep"></span>
         <button type="button" class="col-d" data-info-titulo="Valor" data-info="Lo que vale ese stock a último costo, con lo que llegó gratis (como el valor neto de bodega).">${seguro(icono('billete', 'icono-sm'))}Valor</button><span class="sep"></span>
         <button type="button" class="col-p" data-info-titulo="Participación" data-info="Qué parte del volumen total de este nivel es este grupo (suma 100 %).">${seguro(icono('pastel', 'icono-sm'))}Part.</button></span></div>`.texto : '';
     $('.leyenda', c).innerHTML = cabecera + (items.length ? items.map((it, i) => html`<div class="leyenda-fila">
         <button type="button" class="muestra-color" style="background:${colores[i]}" data-color="${this.nombreColor(it.etiqueta)}" data-actual="${aHex(colores[i])}" aria-label="Cambiar el color de ${it.etiqueta}" title="Cambiar color"></button>
-        <button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}><span class="recortar">${it.etiqueta}</span>
-        <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></button></div>`.texto).join('')
+        <div class="leyenda-item"><span class="recortar">${it.etiqueta}</span>
+        <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></div></div>`.texto).join('')
       : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto);
 
     try { await cargarChart(); } catch (e) { return; }

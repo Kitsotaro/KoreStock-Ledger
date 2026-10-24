@@ -50,3 +50,10 @@
 .valor-anexo { font-weight: normal; }
 .grupo-detalle-titulo { margin-bottom: var(--e-2); }
 .fila-precio .equivalente { text-align: right; color: var(--texto-3); font-weight: normal; }
+/* Gráfico: interruptor unidades/mayoreo solo con íconos; la leyenda es de lectura */
+.segmentado-iconos button { display: inline-grid; place-items: center; min-width: 2rem; }
+.segmentado-iconos .icono { width: 0.9rem; height: 0.9rem; }
+.fila-estilo { gap: var(--e-2); }
+.fila-estilo > .t-pequeno { margin-right: auto; }
+.fila-estilo > .segmentado-mini { margin-left: 0; }
+.leyenda-fila .leyenda-item { cursor: default; }
