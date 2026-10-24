@@ -26,7 +26,7 @@ const NIVELES_GRAFICO = [
 ];
 
 const GraficoStock = {
-  camino: [], tipo: 'PASTEL', medida: 'UNIDADES', recorte: 'TODO', instancia: null, contenedor: null,
+  camino: [], tipo: 'PASTEL', medida: 'UNIDADES', metrica: 'volumen', recorte: 'TODO', instancia: null, contenedor: null,
 
   montar(contenedor) {
     this.contenedor = contenedor;
@@ -60,6 +60,12 @@ const GraficoStock = {
       const b = e.target.closest('[data-grafico]');
       if (b && b.dataset.grafico === 'tipo') { this.tipo = b.dataset.valor || (this.tipo === 'PASTEL' ? 'BARRAS' : 'PASTEL'); this.pintar(); }
       if (b && b.dataset.grafico === 'recorte') { this.recorte = b.dataset.valor; this.pintar(); }
+      if (b && b.dataset.grafico === 'metrica') {   // pantalla angosta: una sola columna que alterna volumen / valor
+        this.metrica = this.metrica === 'volumen' ? 'valor' : 'volumen';
+        $('.leyenda', contenedor).dataset.metrica = this.metrica;
+        b.innerHTML = this.htmlAlterna();
+        pintarIconos(b);
+      }
       if (b && b.dataset.grafico === 'medida' && b.dataset.valor !== this.medida) {
         this.medida = b.dataset.valor; this.pintar();
         avisar(this.medida === 'MAYOREO'
@@ -76,6 +82,12 @@ const GraficoStock = {
     });
 
     Shell.alCambiarTema(() => { if (Shell.actual === 'stock') this.pintar(); });
+  },
+
+  // Encabezado de la columna que alterna volumen ⇄ valor (solo se ve en pantallas angostas).
+  htmlAlterna() {
+    const esVolumen = this.metrica === 'volumen';
+    return `${icono(esVolumen ? (this.medida === 'MAYOREO' ? 'caja' : 'etiqueta') : 'billete', 'icono-sm')}${esVolumen ? 'Volumen' : 'Valor'}${icono('intercambiar', 'icono-sm')}`;
   },
 
   // Agrupa el stock ACTIVO del nivel actual: { etiqueta: valor }.
@@ -177,13 +189,15 @@ const GraficoStock = {
       : '';
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
     const cabecera = items.length ? html`<div class="leyenda-cabecera"><span class="crece"></span><span class="valor columnas-leyenda">
-        <button type="button" class="col-n" data-info-titulo="Volumen" data-info="${this.medida === 'MAYOREO' ? 'Cuántos empaques (cajas, fardos…) hay en bodega de este grupo: cada producto se divide entre su empaque más grande. Lo que no tiene empaque cuenta por unidad.' : 'Cuántas unidades hay en bodega de este grupo, cada producto en su propia unidad (botellas, latas, bolsas…).'}">${seguro(icono(this.medida === 'MAYOREO' ? 'caja' : 'etiqueta', 'icono-sm'))}Volumen</button><span class="sep"></span>
-        <button type="button" class="col-d" data-info-titulo="Valor" data-info="Lo que vale ese stock a último costo, con lo que llegó gratis (como el valor neto de bodega).">${seguro(icono('billete', 'icono-sm'))}Valor</button><span class="sep"></span>
+        <button type="button" class="col-alterna" data-grafico="metrica" aria-label="Alternar entre volumen y valor" title="Tocar para cambiar entre volumen y valor">${seguro(this.htmlAlterna())}</button>
+        <button type="button" class="col-n" data-info-titulo="Volumen" data-info="${this.medida === 'MAYOREO' ? 'Cuántos empaques (cajas, fardos…) hay en bodega de este grupo: cada producto se divide entre su empaque más grande. Lo que no tiene empaque cuenta por unidad.' : 'Cuántas unidades hay en bodega de este grupo, cada producto en su propia unidad (botellas, latas, bolsas…).'}">${seguro(icono(this.medida === 'MAYOREO' ? 'caja' : 'etiqueta', 'icono-sm'))}Volumen</button><span class="sep sep-a"></span>
+        <button type="button" class="col-d" data-info-titulo="Valor" data-info="Lo que vale ese stock a último costo, con lo que llegó gratis (como el valor neto de bodega).">${seguro(icono('billete', 'icono-sm'))}Valor</button><span class="sep sep-b"></span>
         <button type="button" class="col-p" data-info-titulo="Participación" data-info="Qué parte del volumen total de este nivel es este grupo (suma 100 %).">${seguro(icono('pastel', 'icono-sm'))}Part.</button></span></div>`.texto : '';
+    $('.leyenda', c).dataset.metrica = this.metrica;
     $('.leyenda', c).innerHTML = cabecera + (items.length ? items.map((it, i) => html`<div class="leyenda-fila">
         <button type="button" class="muestra-color" style="background:${colores[i]}" data-color="${this.nombreColor(it.etiqueta)}" data-actual="${aHex(colores[i])}" aria-label="Cambiar el color de ${it.etiqueta}" title="Cambiar color"></button>
         <div class="leyenda-item"><span class="recortar">${it.etiqueta}</span>
-        <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></div></div>`.texto).join('')
+        <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep sep-a">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep sep-b">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></div></div>`.texto).join('')
       : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto);
 
     try { await cargarChart(); } catch (e) { return; }

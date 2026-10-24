@@ -101,3 +101,11 @@
 .boton-paleta { width: 2rem; min-width: 2rem; min-height: 2rem; }
 /* Columnas en rem (no en ch): encabezados y cifras usan fuentes distintas y deben coincidir */
 .columnas-leyenda { grid-template-columns: 4.6rem 1rem 5.6rem 1rem 3.9rem; }
+/* Pantallas angostas: una sola columna que alterna volumen ⇄ valor al tocar su encabezado */
+.leyenda-cabecera .col-alterna { display: none; cursor: pointer; }
+@media (max-width: 599px) {
+  .leyenda .columnas-leyenda { grid-template-columns: 5.6rem 1rem 3.9rem; }
+  .leyenda .sep-a, .leyenda-cabecera .col-n, .leyenda-cabecera .col-d { display: none; }
+  .leyenda-cabecera .col-alterna { display: inline-flex; }
+  .leyenda[data-metrica="volumen"] .leyenda-fila .col-d, .leyenda[data-metrica="valor"] .leyenda-fila .col-n { display: none; }
+}
