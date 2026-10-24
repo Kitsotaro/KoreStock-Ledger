@@ -32,10 +32,20 @@ const GraficoStock = {
     this.contenedor = contenedor;
     contenedor.innerHTML = html`
       <div class="tarjeta">
-        <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2>
-          <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></div>
-        <label class="control" style="min-height:var(--alto-control-sm);margin-bottom:var(--e-2)" data-grafico-recorte><span class="solo-lector">Cuántas barras</span>
-          <select data-grafico="recorte"><option value="TODO">Todas</option><option value="10">5 mayores y 5 menores</option><option value="TOP5">3 mayores y 2 menores</option></select></label>
+        <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2></div>
+        <div class="fila-separada fila-estilo">
+          <span class="t-pequeno t-secundario">Estilo</span>
+          <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Estilo del gráfico">
+            <button type="button" role="radio" data-grafico="tipo" data-valor="PASTEL">Circular</button>
+            <button type="button" role="radio" data-grafico="tipo" data-valor="BARRAS">Barras</button>
+          </span></div>
+        <div class="fila-separada fila-estilo" data-grafico-recorte>
+          <span class="t-pequeno t-secundario">Mostrar</span>
+          <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Cuántas barras">
+            <button type="button" role="radio" data-grafico="recorte" data-valor="TODO">Todas</button>
+            <button type="button" role="radio" data-grafico="recorte" data-valor="10" title="5 mayores y 5 menores">5 + 5</button>
+            <button type="button" role="radio" data-grafico="recorte" data-valor="TOP5" title="3 mayores y 2 menores">3 + 2</button>
+          </span></div>
         <div class="fila-separada fila-migas"><nav class="migas" aria-label="Nivel del gráfico"></nav>
           <button type="button" class="boton boton-icono boton-paleta" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos">${seguro(icono('paleta', 'icono-sm'))}</button></div>
         <div class="contenedor-grafico"><canvas aria-label="Gráfico de distribución del stock" role="img"></canvas></div>
@@ -44,7 +54,8 @@ const GraficoStock = {
       </div>`.texto;
     contenedor.addEventListener('click', (e) => {
       const b = e.target.closest('[data-grafico]');
-      if (b && b.dataset.grafico === 'tipo') { this.tipo = this.tipo === 'PASTEL' ? 'BARRAS' : 'PASTEL'; this.pintar(); }
+      if (b && b.dataset.grafico === 'tipo') { this.tipo = b.dataset.valor || (this.tipo === 'PASTEL' ? 'BARRAS' : 'PASTEL'); this.pintar(); }
+      if (b && b.dataset.grafico === 'recorte') { this.recorte = b.dataset.valor; this.pintar(); }
       if (b && b.dataset.grafico === 'medida') { this.medida = b.dataset.valor; this.pintar(); }
       if (b && b.dataset.grafico === 'modo-color') {
         abrirSelectorModoColor(b, { actual: leerModoColor('STOCK'), alElegir: (m) => this.guardarColor('_MODO', 'STOCK', textoModoColor(m)) });
@@ -56,7 +67,6 @@ const GraficoStock = {
       const item = e.target.closest('[data-bajar]');
       if (item) this.bajar(item.dataset.bajar);
     });
-    $('select', contenedor).addEventListener('change', (e) => { this.recorte = e.target.value; this.pintar(); });
 
     Shell.alCambiarTema(() => { if (Shell.actual === 'stock') this.pintar(); });
   },
@@ -131,7 +141,8 @@ const GraficoStock = {
     if (!this.contenedor) return;
     const c = this.contenedor;
     const { nivel, grupos, valores, sinAsignar } = this.datosNivel();
-    $('[data-grafico="tipo"]', c).textContent = this.tipo === 'PASTEL' ? 'Ver barras' : 'Ver pastel';
+    $$('[data-grafico="tipo"]', c).forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === this.tipo)));
+    $$('[data-grafico="recorte"]', c).forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === this.recorte)));
     $('[data-grafico-recorte]', c).hidden = this.tipo !== 'BARRAS';
     $('.migas', c).innerHTML = [html`<button type="button" data-nivel="0">Todo</button>`]
       .concat(this.camino.map((paso, i) => html`<span aria-hidden="true">›</span>${i === this.camino.length - 1 ? html`<span aria-current="page">${paso.valor}</span>` : html`<button type="button" data-nivel="${i + 1}">${paso.valor}</button>`}`))

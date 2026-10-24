@@ -25,3 +25,11 @@
 .valor-desglose { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); font-size: var(--t-xs); font-weight: var(--peso-fuerte); margin-top: 2px; }
 .valor-desglose span { display: inline-flex; align-items: center; gap: 3px; }
 .valor-desglose .icono { width: 0.85rem; height: 0.85rem; }
+/* Sin huecos: las cifras de Stock van de a dos; «Total en bodega» ocupa la fila */
+#stock-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fila-total { display: flex; align-items: flex-start; gap: var(--e-2); margin-top: var(--e-2); }
+.fila-total > .t-mini { display: inline-flex; align-items: center; gap: 3px; flex: none; min-width: 5.5rem; padding-top: 3px; }
+.fila-total > .t-mini .icono { width: 0.85rem; height: 0.85rem; }
+.fila-total .chips-total { margin-top: 0; }
+/* Gráfico: «Estilo» y «Mostrar» con interruptores pequeños */
+.fila-estilo { margin-bottom: var(--e-2); }
