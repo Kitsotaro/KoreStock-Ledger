@@ -114,6 +114,13 @@ const App = {
       const id = await this.resolverBase();
       if (id) await this.abrir(id);
     } catch (e) {
+      if (e && e.baseNoEncontrada) {
+        // La base guardada ya no está en Drive (borrada, movida o de otro modo): se olvida y se busca de nuevo.
+        const vieja = leerLocal(CLAVES_LOCALES.BASE);
+        if (vieja) { await CacheLocal.borrar(vieja).catch(() => {}); guardarLocal(CLAVES_LOCALES.BASE, null); }
+        avisar('No encontramos tu base anterior en Google Drive; elige o crea una.', { duracion: 6000 });
+        try { const id = await this.resolverBase(); if (id) await this.abrir(id); return; } catch (e2) { this.errorCarga(e2); return; }
+      }
       this.errorCarga(e);
     }
   },

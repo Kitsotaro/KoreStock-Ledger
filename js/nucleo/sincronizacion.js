@@ -98,6 +98,10 @@ async function abrirBase(id, alCargar) {
     if (alCargar) alCargar('drive');
     return { ok: true, modo: r.modo, nuevas: r.nuevas };
   } catch (err) {
+    // Un archivo que ya no existe (404) no es «sin conexión»: se avisa para buscar otra base.
+    if (typeof codigoErrorGoogle === 'function' && codigoErrorGoogle(err) === 404) {
+      const e = new Error(mensajeErrorGoogle(404)); e.baseNoEncontrada = true; throw e;
+    }
     if (local && local.hojas) {
       Almacen.sinConexion = true;
       Almacen.notificar('sin-conexion');

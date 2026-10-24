@@ -29,13 +29,33 @@ const CORREO_CONTACTO = 'contacto@kitsotaro.com';
 
 // Claves de almacenamiento del navegador. NO cambiar los nombres heredados:
 // si cambian, los usuarios pierden la sesión y deben volver a elegir su archivo.
+// La demostración (localhost + ?demo) comparte el origen con las pruebas con
+// Google en localhost: sus DATOS van en claves propias («…-demo») para que el
+// modo real nunca abra la base de la demo (2026-10-23: con Google, la app tomaba
+// el id «demo-…», no lo encontraba en Drive y abría la copia como «sin conexión»).
+// Las preferencias (tema, modo, texto, decimales) sí se comparten.
+const ES_DEMO_LOCAL = typeof location !== 'undefined' && typeof URLSearchParams !== 'undefined' &&
+  (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.hostname.endsWith('.localhost')) &&
+  new URLSearchParams(location.search).has('demo');
+const SUFIJO_DATOS = ES_DEMO_LOCAL ? '-demo' : '';
 const CLAVES_LOCALES = {
-  TOKEN: 'korestock-token-google',
-  BASE: 'finanzas-spreadsheet-id',
+  TOKEN: 'korestock-token-google' + SUFIJO_DATOS,
+  BASE: 'finanzas-spreadsheet-id' + SUFIJO_DATOS,
   TEMA: 'finanzas-tema',
   MODO: 'korestock-modo',
   TAMANO_TEXTO: 'korestock-tamano-texto',
-  AVISOS_LEIDOS: 'korestock-avisos-leidos',
-  ULTIMO_RESPALDO: 'korestock-ultimo-respaldo',
+  AVISOS_LEIDOS: 'korestock-avisos-leidos' + SUFIJO_DATOS,
+  ULTIMO_RESPALDO: 'korestock-ultimo-respaldo' + SUFIJO_DATOS,
   TODOS_DECIMALES: 'korestock-todos-decimales'
 };
+// Una sola vez: lo que la demo dejó en las claves compartidas pasa a las suyas,
+// y el modo real olvida cualquier id de la demo.
+(function separarDatosDemo() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const vieja = localStorage.getItem('finanzas-spreadsheet-id');
+    if (!vieja || !vieja.startsWith('demo-')) return;
+    if (!localStorage.getItem('finanzas-spreadsheet-id-demo')) localStorage.setItem('finanzas-spreadsheet-id-demo', vieja); // se abra en el modo que se abra
+    ['finanzas-spreadsheet-id', 'korestock-ultimo-respaldo', 'korestock-avisos-leidos'].forEach(k => localStorage.removeItem(k));
+  } catch (e) { /* sin almacenamiento */ }
+})();
