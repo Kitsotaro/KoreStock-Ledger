@@ -61,6 +61,33 @@ prueba('entrada «3 cajas de 6 cartones de 30 huevos» suma 540 y recuerda la eq
   verdadero(describirCantidad(huevo.idProducto, 41).includes('≈ 1 cartón'), describirCantidad(huevo.idProducto, 41));
 });
 
+prueba('«caja sobre caja»: 2 fardos de 4 cajas de 12 paquetes suma 96, se recuerda y se puede anular', async () => {
+  if (!hayBasePrueba()) return;
+  await abrirBasePruebaV3(false);
+  const niveles = [{ nombre: 'fardo', unidades: 4, nivelInferior: 'caja' }, { nombre: 'caja', unidades: 12, nivelInferior: 'paquete' }];
+  const nuevo = { marca: 'Prueba', linea: 'Galleta', presentacion: 'Paquete', volumen: '40 g', unidadBase: 'paquete', tipoEmpaque: 'Fardo' };
+  const prep1 = prepararEntrada({ lineas: [{ nuevo, cantEmpaques: 2, nombreEmpaque: 'fardo', unidPorEmpaque: 48, niveles, totalPagado: dinero('96.00') }] });
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prep1));
+  const g = Almacen.productos.find(p => p.marca === 'Prueba');
+  igual(Almacen.stock(g.idProducto), 96, '2 fardos × 4 cajas × 12 paquetes');
+  igual(formatearDinero(g.costo, { decimales: 5 }), '$1.00000', 'costo por paquete');
+  const eqs = Almacen.equivalenciasDe(g.idProducto);
+  verdadero(eqs.some(e => e.nombre === 'fardo' && e.unidades === 4 && e.nivelInferior === 'caja'), 'fardo = 4 cajas');
+  verdadero(eqs.some(e => e.nombre === 'caja' && e.unidades === 12 && e.nivelInferior === 'paquete'), 'caja = 12 paquetes');
+  igual(describirCantidad(g.idProducto, 96), '96 paquetes ≈ 8 cajas', 'Stock muestra el empaque directo (caja), no el fardo');
+  // Segunda compra con el mismo anidado, a otro costo: el stock suma y el costo promedio se mueve.
+  const prep2 = prepararEntrada({ lineas: [{ producto: g.idProducto, cantEmpaques: 1, nombreEmpaque: 'fardo', unidPorEmpaque: 48, niveles, totalPagado: dinero('72.00') }] });
+  await ColaEscritura.ejecutar(operacionGuardarTicket(prep2));
+  igual(Almacen.stock(g.idProducto), 144, 'stock 96 + 48');
+  igual(formatearDinero(Almacen.producto(g.idProducto).costo, { decimales: 5 }), '$1.50000', 'último costo por paquete');
+  igual(Almacen.equivalenciasDe(g.idProducto).filter(e => e.nombre === 'fardo').length, 1, 'la equivalencia no se duplica');
+  // Anular la segunda compra devuelve el stock; al releer de Drive sigue igual.
+  await ColaEscritura.ejecutar(operacionAnular(prep2.filas.map(f => f.folio)));
+  igual(Almacen.stock(g.idProducto), 96, 'anular devuelve 48');
+  await abrirBase(Almacen.baseId);
+  igual(Almacen.stock(Almacen.productos.find(p => p.marca === 'Prueba').idProducto), 96, 'al releer, igual');
+});
+
 prueba('producto nuevo: SKU único, marca «nuevo» y aviso si ya existe (§13, D54)', async () => {
   if (!hayBasePrueba()) return;
   await abrirBasePruebaV3(false);

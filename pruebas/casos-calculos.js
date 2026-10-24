@@ -247,3 +247,14 @@ prueba('cada producto usa su propio empaque, no el de otro con la misma unidad',
   igual(Almacen.empaqueMayor(4), null, 'sin empaque propio no toma ninguno');
   Almacen.cargar(antes);
 });
+
+grupo('Aviso de costo en Entrada');
+prueba('el costo del catálogo no «cambia» por el redondeo a centavo (caja de $8.50 de 6 botellas)', () => {
+  const costo = dividirDinero(dinero('8.50'), 6);
+  verdadero(!costoCambiaEnCompra(costo, 6, dinero('8.50')), '1 caja: exacto');
+  verdadero(!costoCambiaEnCompra(costo, 2, dinero('2.83')), '2 botellas: 2.83334 se cobra 2.83');
+  verdadero(!costoCambiaEnCompra(costo, 1, dinero('1.42')), '1 botella');
+  verdadero(costoCambiaEnCompra(costo, 6, dinero('9.00')), 'si pagaste distinto, sí cambió');
+  verdadero(costoCambiaEnCompra(costo, 2, dinero('3.00')), '2 botellas a otro total');
+  verdadero(!costoCambiaEnCompra(costo, 0, 0), 'sin unidades no hay aviso');
+});

@@ -466,14 +466,16 @@ function resumenEntradaHTML() {
   const unidades = unidadesTotalesEntrada();
   if (!(unidades > 0) && !(entrada.bonif > 0)) return '';
   const total = totalPagadoEntrada();
-  const costoUnidad = unidades > 0 ? precioUnitario(total, unidades) : dividirDinero(costoEmpaqueEntrada(), fc);
+  // El costo del catálogo es un dato fijo: solo cambia si el total pagado ya no coincide con él.
+  const p = entrada.producto;
+  const costoCambio = !!p && costoCambiaEnCompra(p.costo, unidades, total);
+  const costoUnidad = p && unidades > 0 && !costoCambio ? p.costo : unidades > 0 ? precioUnitario(total, unidades) : dividirDinero(costoEmpaqueEntrada(), fc);
   const precio = precioVentaEntrada();
   const ganUnidad = restarDinero(precio, costoUnidad);
   const margen = margenSobreCosto(ganUnidad, costoUnidad);
   const fila = (ic, etiqueta, valor, clase) => html`<div class="fila-resumen">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span><strong class="${clase || ''}">${valor}</strong></div>`;
   // En naranja lo que cambia respecto al catálogo (costo o precio de venta).
-  const p = entrada.producto;
-  const cCosto = p && unidades > 0 && Math.abs(costoUnidad - p.costo) > 1 ? 't-aviso' : '';
+  const cCosto = costoCambio ? 't-aviso' : '';
   const cPrecio = p && entrada.precioNuevo !== null && entrada.precioNuevo !== p.precio ? 't-aviso' : '';
   // Bodega es mayoreo: solo cifras por empaque y de toda la compra.
   if (Shell.modo === 'bodega' && factor > 1 && !entrada.porUnidad) {

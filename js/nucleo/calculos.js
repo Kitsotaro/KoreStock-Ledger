@@ -40,6 +40,13 @@ function esMovVisible(m) { return (m.estado || '') !== ESTADOS.MOV_ARCHIVADA; }
 
 function redondearCantidad(n) { return Math.round(Number(n || 0) * 1000) / 1000; }
 
+// ¿El total pagado de una compra difiere de lo que daría el costo del catálogo? Solo para el aviso
+// visual de Entrada (naranja): el total se redondea a centavo, así que se compara a centavo.
+function costoCambiaEnCompra(costoCatalogo, unidades, totalPagado) {
+  if (!(unidades > 0)) return false;
+  return redondearCentavo(totalPagado) !== redondearCentavo(multiplicarDinero(costoCatalogo, unidades));
+}
+
 function enPeriodo(fecha, inicio, fin) {
   return (!inicio || fecha >= inicio) && (!fin || fecha <= fin);
 }
