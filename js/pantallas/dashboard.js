@@ -17,7 +17,7 @@
 //   operaciones-movimientos.js, cargador.js (Chart).
 // ============================================================
 
-const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'MOVIMIENTOS', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false });
+const estadoDashboard = Object.assign(crearEstadoFiltros('HOY'), { vista: 'MOVIMIENTOS', tipo: 'TODO', texto: '', soloNuevos: false, verCostoPromedio: false, unidadesPor: 'unidad' });
 const dashUI = { el: null, filtros: null, grafico: null };
 
 registrarPantalla('dashboard', {
@@ -167,17 +167,38 @@ function pintarResumenDashboard() {
 // Una sola pasada por los movimientos del período (barato aun con el año completo).
 function tarjetaUnidadesHTML(movs, est, filtro) {
   const entra = new Map(), sale = new Map();
+  const porEmpaque = est.unidadesPor === 'empaque';
+  // Por empaque: las unidades de cada producto se agrupan en su empaque mayor (cajas
+  // completas) y lo que no alcanza una caja queda como unidad suelta.
+  const sumar = (mapa, p, cant) => {
+    const eq = porEmpaque ? Almacen.empaqueMayor(p.idProducto) : null;
+    if (eq) {
+      const n = Math.floor(cant / eq.unidades);
+      if (n > 0) mapa.set(eq.nombre, redondearCantidad((mapa.get(eq.nombre) || 0) + n));
+      cant = redondearCantidad(cant - n * eq.unidades);
+    }
+    if (cant > 0) mapa.set(p.unidadBase, redondearCantidad((mapa.get(p.unidadBase) || 0) + cant));
+  };
+  // Se suma primero por producto y después se reparte: así «2 + 4 botellas» de dos
+  // movimientos cuentan como una caja de 6, no como dos sueltas.
+  const totales = { e: new Map(), s: new Map() };
   movs.forEach(m => {
     if (!esMovValido(m) || !enPeriodo(m.fecha, est.inicio, est.fin) || (filtro && !filtro(m))) return;
-    const p = Almacen.producto(Almacen.idEfectivo(m.idProducto));
+    const id = Almacen.idEfectivo(m.idProducto);
+    const p = Almacen.producto(id);
     if (!p) return;
-    if (m.tipo === TIPOS_MOV.ENTRADA) entra.set(p.unidadBase, redondearCantidad((entra.get(p.unidadBase) || 0) + (m.cantidad || 0) + (m.bonif || 0)));
-    else if (m.tipo === TIPOS_MOV.VENTA) sale.set(p.unidadBase, redondearCantidad((sale.get(p.unidadBase) || 0) + Math.abs(m.cantidad || 0)));
+    if (m.tipo === TIPOS_MOV.ENTRADA) totales.e.set(id, redondearCantidad((totales.e.get(id) || 0) + (m.cantidad || 0) + (m.bonif || 0)));
+    else if (m.tipo === TIPOS_MOV.VENTA) totales.s.set(id, redondearCantidad((totales.s.get(id) || 0) + Math.abs(m.cantidad || 0)));
   });
+  totales.e.forEach((c, id) => sumar(entra, Almacen.producto(id), c));
+  totales.s.forEach((c, id) => sumar(sale, Almacen.producto(id), c));
   if (!entra.size && !sale.size) return '';
   const chips = (mapa) => [...mapa.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`);
   const fila = (ic, texto, mapa) => mapa.size ? html`<div class="fila-total"><span class="t-mini t-secundario">${seguro(icono(ic, 'icono-sm'))}${texto}</span><span class="chips-total">${chips(mapa)}</span></div>` : '';
-  return html`<div class="cifra-tarjeta tarjeta-unidades"><div class="etiqueta">Unidades del período ${botonInfo('Unidades del período', 'Cuántas unidades **entraron** (compras, con las bonificadas) y cuántas **se vendieron** en el período, separadas por tipo de unidad: sumar botellas con bolsas en un solo número no ayuda a decidir.\n\nRespeta el período y los filtros. No incluye anuladas.')}</div>
+  const conmutador = html`<span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Ver las unidades en">
+      <button type="button" role="radio" data-accion="unidades-por" data-por="unidad" aria-checked="${String(!porEmpaque)}">Unidades</button>
+      <button type="button" role="radio" data-accion="unidades-por" data-por="empaque" aria-checked="${String(porEmpaque)}">Empaques</button></span>`;
+  return html`<div class="cifra-tarjeta tarjeta-unidades"><div class="etiqueta">Unidades del período ${botonInfo('Unidades del período', 'Cuántas unidades **entraron** (compras, con las bonificadas) y cuántas **se vendieron** en el período, separadas por tipo de unidad: sumar botellas con bolsas en un solo número no ayuda a decidir.\n\n**Empaques** agrupa en cajas, fardos… lo que alcanza para uno completo; el resto queda como unidades sueltas.\n\nRespeta el período y los filtros. No incluye anuladas.')}${conmutador}</div>
     ${fila('entrada', 'Ingresadas', entra)}${fila('carrito', 'Vendidas', sale)}</div>`;
 }
 
@@ -438,6 +459,7 @@ async function anularConConfirmacion(folios, accion) {
 const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
   'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
+  'unidades-por': (b) => { estadoDashboard.unidadesPor = b.dataset.por === 'empaque' ? 'empaque' : 'unidad'; pintarDashboard(); },
   'ver-costo-promedio': () => { estadoDashboard.verCostoPromedio = !estadoDashboard.verCostoPromedio; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
   'significado': (b) => avisar(b.dataset.texto, { duracion: 2500 }),

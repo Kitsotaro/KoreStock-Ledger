@@ -430,9 +430,13 @@ function conectarCamposEntrada(cont) {
   const texto = (id, fn, repintar) => { const i = $(id, cont); if (!i) return; i.addEventListener('input', () => fn(i.value)); i.addEventListener('change', () => { fn(i.value); if (repintar) repintarEntradaDespues(); }); };
   texto('#entrada-empaque', (v) => {
     entrada.empaque = v.trim();
-    const o = entrada.producto && empaquesRegistrados(entrada.producto).find(x => x.clave !== 'u' && normalizarTexto(x.empaque) === normalizarTexto(v));
+    const o = entrada.producto && empaquesRegistrados(entrada.producto).find(x => x.clave !== 'u' && normalizarTexto(x.empaque) === normalizarTexto(v)
+      && (!entrada.conNivel || (x.conNivel && normalizarTexto(x.subEmpaque) === normalizarTexto(entrada.subEmpaque))));
+    // Con «otros empaques adentro» escribir el nombre mayor no sale de ese modo: solo
+    // se aplica un registrado de dos niveles que coincida con el de adentro.
     if (o && entrada.empaque) aplicarEmpaque(o);
     // Empaque que este producto no tiene: su tamaño se escribe (no hereda el del anterior).
+    else if (entrada.conNivel) { if (entrada.empaque) entrada.costoEditado = false; }
     else if (entrada.empaque && normalizarTexto(entrada.empaque) !== normalizarTexto(unidadBaseEntrada())) { entrada.unidades = 0; entrada.conNivel = false; entrada.costoEditado = false; }
   }, true);
   texto('#entrada-sub', (v) => { entrada.subEmpaque = v.trim(); });
