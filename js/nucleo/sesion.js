@@ -70,7 +70,9 @@ const Sesion = {
           this.gisListo = true;
           listo();
         }
-        if (!this.gapiListo || !this.gisListo) setTimeout(intentar, 150);
+        // Si ya estaban listas (segunda llamada, p. ej. al pulsar «Entrar»), se resuelve
+        // aquí: antes la promesa quedaba pendiente para siempre y no abría el login.
+        if (!this.gapiListo || !this.gisListo) setTimeout(intentar, 150); else listo();
       };
       const listo = () => { if (this.gapiListo && this.gisListo) resolver(); };
       intentar();
