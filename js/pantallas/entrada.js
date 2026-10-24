@@ -619,7 +619,6 @@ const accionesEntrada = {
     else { entrada.empaque = entrada.subEmpaque; entrada.unidades = entrada.porSub; entrada.subEmpaque = ''; entrada.porSub = 1; }
     entrada.costoEditado = false;
     pintarProductoEntrada();
-    setTimeout(() => { const c = $('#entrada-empaque', entrada.el); if (c && entrada.conNivel) c.focus(); }, 50);
   },
   'compra-por': (b) => { entrada.porUnidad = b.dataset.por === 'unidad'; entrada.costoEditado = false; pintarProductoEntrada(); },
   'elegir-empaque': (b) => {
