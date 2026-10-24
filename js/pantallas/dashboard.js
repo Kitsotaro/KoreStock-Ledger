@@ -295,28 +295,38 @@ function filaGrupoHTML(g) {
 
 // Una línea del ticket (Kitso, 2026-10-24): datos con íconos en vez de palabras;
 // cada línea en su propio bloque para separar las ventas de una misma factura.
-// Los datos van en 4 casillas fijas para que los íconos queden en columna
-// (venta: cantidad · ganancia · precio · costo; entrada: cantidad · bonif. · — · costo).
+// 4 casillas fijas (2 en móvil) para que los íconos queden en columna; en cada
+// una, arriba por empaque (mayoreo) y abajo por unidad. Tocar una casilla dice
+// qué es (en el teléfono no hay «title» al pasar el puntero).
+//   venta:   cantidad · ganancia (margen) · precio · costo
+//   entrada: cantidad · bonificadas      · —      · costo
 function lineaMovHTML(m, esVenta, nombre1) {
   const p = Almacen.producto(m.idProducto);
   const q = Math.abs(m.cantidad || 0);
   const unidad = p ? p.unidadBase : '';
-  const dato = (ic, texto, titulo, clase) => html`<span class="dato-mov ${clase || ''}" title="${titulo}: ${texto}">${seguro(icono(ic, 'icono-sm'))}<span class="recortar">${texto}</span></span>`;
+  // Empaque: el de la venta/compra si fue por empaque; si no, el más grande del producto.
+  const eq = m.unidPorEmpaque > 1 ? { nombre: m.empaqueMov, unidades: m.unidPorEmpaque } : (p ? Almacen.empaqueMayor(p.idProducto) : null);
+  const n = eq ? eq.unidades : 0, emp = eq ? String(eq.nombre).toLowerCase() : '';
+  const enEmp = (x) => `${formatearNumero(redondearCantidad(x / n))} ${pluralUnidad(emp, x / n)}`;
+  const celda = (ic, arriba, abajo, titulo, clase) => html`<button type="button" class="dato-mov ${clase || ''}" data-accion="significado" data-texto="${titulo}" title="${titulo}">${seguro(icono(ic, 'icono-sm'))}<span class="dato-lineas"><span class="recortar">${arriba}</span>${abajo ? html`<span class="recortar sub-dato">${abajo}</span>` : ''}</span></button>`;
   const vacio = html`<span></span>`;
   const margen = esVenta && m.totalVenta ? Math.round((dineroANumero(m.utilidad || 0) / dineroANumero(m.totalVenta)) * 100) : null;
+  const precioEmp = n ? multiplicarDinero(m.precioUnit || 0, n) : 0, costoEmp = n ? multiplicarDinero(m.costoUnit || 0, n) : 0;
   const hora = String(m.timestamp || '').slice(0, 16);
   const capturaOtroDia = hora && hora.slice(0, 10) !== m.fecha;
+  const meta = (ic, texto, titulo) => html`<span class="dato-mov" title="${titulo}">${seguro(icono(ic, 'icono-sm'))}<span class="recortar">${texto}</span></span>`;
   return html`<div class="linea-mov ${esMovValido(m) ? '' : 'anulada'}">
     <div class="crece">
       <div class="t-pequeno t-fuerte">${nombre1(m)}${m.variante ? html` · ${m.variante}` : ''}${m.productoNuevo === 'SI' ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${esMovValido(m) ? '' : html` <span class="insignia anulada">Anulada</span>`}</div>
       <div class="datos-mov">
-        ${dato('caja', `${formatearNumero(q)} ${pluralUnidad(unidad, q)}`, 'Cantidad')}
-        ${esVenta ? dato('tendencia', `${formatearDinero(m.utilidad || 0)}${margen === null ? '' : ` · ${margen}%`}`, 'Ganancia y margen', (m.utilidad || 0) < 0 ? 't-peligro' : 't-exito') : m.bonif ? dato('estrella', `+${formatearNumero(m.bonif)}`, 'Bonificadas (gratis)') : vacio}
-        ${esVenta ? dato('etiqueta', `${formatearDinero(m.precioUnit || 0)}/${unidad}`, `Precio por ${unidad}`) : vacio}
-        ${dato('billete', `${formatearDinero(m.costoUnit || 0, { detalle: true })}/${unidad}`, `Costo por ${unidad}`)}
+        ${celda('caja', n ? enEmp(q) : `${formatearNumero(q)} ${pluralUnidad(unidad, q)}`, n ? `${formatearNumero(q)} ${pluralUnidad(unidad, q)}` : '', n ? `Cantidad: en ${pluralUnidad(emp, 2)} y en ${pluralUnidad(unidad, 2)}` : 'Cantidad')}
+        ${esVenta ? celda('tendencia', formatearDinero(m.utilidad || 0), margen === null ? '' : `${margen}% margen`, 'Ganancia de esta venta y su margen (ganancia ÷ cobrado)', (m.utilidad || 0) < 0 ? 't-peligro' : 't-exito')
+          : m.bonif ? celda('estrella', `+${formatearNumero(m.bonif)} ${pluralUnidad(unidad, m.bonif)}`, n && m.bonif >= n ? `≈ ${enEmp(m.bonif)}` : '', 'Bonificadas: llegaron gratis') : vacio}
+        ${esVenta ? celda('etiqueta', n ? `${formatearDinero(precioEmp)}/${emp}` : `${formatearDinero(m.precioUnit || 0)}/${unidad}`, n ? `${formatearDinero(m.precioUnit || 0)}/${unidad}` : '', n ? `Precio de venta por ${emp} y por ${unidad}` : `Precio de venta por ${unidad}`) : vacio}
+        ${celda('billete', n ? `${formatearDinero(costoEmp)}/${emp}` : `${formatearDinero(m.costoUnit || 0, { detalle: true })}/${unidad}`, n ? `${formatearDinero(m.costoUnit || 0, { detalle: true })}/${unidad}` : '', n ? `Costo por ${emp} y por ${unidad}` : `Costo por ${unidad}`)}
       </div>
       <div class="datos-mov tenue">
-        ${dato('recibo', m.folio, 'Folio')}${dato('identificador', m.sku || '—', 'Código')}${capturaOtroDia ? dato('reloj', hora, 'Capturado') : ''}
+        ${meta('recibo', m.folio, 'Folio')}${meta('identificador', m.sku || '—', 'Código')}${capturaOtroDia ? meta('reloj', hora, 'Capturado') : ''}
       </div>
     </div>
     <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
@@ -420,6 +430,7 @@ const accionesDashboard = {
   'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
   'ver-costo-promedio': () => { estadoDashboard.verCostoPromedio = !estadoDashboard.verCostoPromedio; pintarDashboard(); },
   'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
+  'significado': (b) => avisar(b.dataset.texto, { duracion: 2500 }),
   'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
   // Toda anulación queda registrada para poder revertirla (7 días), también una línea suelta.
   'anular-linea': (b) => anularConConfirmacion([b.dataset.folio], { tipo: 'ANULACION_LINEA', alcance: b.dataset.folio }),

@@ -58,3 +58,9 @@
 @media (max-width: 600px) { .separador-vertical { display: none; } }
 @media (max-width: 760px) { #dash-cuerpo .cifras .cifra-tarjeta:nth-child(3) { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .datos-mov { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Casillas de la línea: botón sin aspecto de botón, dos renglones (empaque / unidad) */
+button.dato-mov { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: help; align-items: flex-start; }
+button.dato-mov .icono { margin-top: 2px; }
+.dato-lineas { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.dato-lineas .sub-dato { color: var(--texto-3); font-size: 0.6875rem; }
+.datos-mov { row-gap: var(--e-1); }
