@@ -39,6 +39,8 @@
   /* Naranja intenso: SOLO «cambio importante que merece atención» (no es error). */
   --aviso: #B23C0A;
   --aviso-suave: #FFEDD5;
+  /* Precaución (semáforo «Poco», «bajo la meta», «pronto»): amarillo; texto legible y relleno de barras */
+  --precaucion: #9A6700; --precaucion-relleno: #E5B300; --precaucion-suave: #FEF6D8;
   --peligro: #B91C1C;
   --peligro-suave: #FDE8E8;
   --info: #1E3A8A;
@@ -50,6 +52,7 @@
   --activo-fondo: #111418; --activo-texto: #FFFFFF;
 
   --foco: #1E3A8A;
-  --grafico-1: #1E3A8A; --grafico-2: #0F766E; --grafico-3: #B45309; --grafico-4: #64748B;
-  --grafico-5: #9F1239; --grafico-6: #4D7C0F; --grafico-7: #6D28D9; --grafico-8: #0E7490;
+  /* «Sobrio» (2026-10-23, referencia de Kitso): tonos menos oscurecidos; el naranja ya no tira a café */
+  --grafico-1: #1E3A8A; --grafico-2: #335C67; --grafico-3: #E09F3E; --grafico-4: #9E2A2B;
+  --grafico-5: #7D8C63; --grafico-6: #540B0E; --grafico-7: #6D28D9; --grafico-8: #0E7490;
 }

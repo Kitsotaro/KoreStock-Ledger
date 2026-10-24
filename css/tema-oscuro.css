@@ -36,8 +36,9 @@
 
   --exito: #6CCB8F;
   --exito-suave: #16301F;
-  --aviso: #FB923C;
+  --aviso: #FF9A4D;
   --aviso-suave: #3A2210;
+  --precaucion: #FACC15; --precaucion-relleno: #FACC15; --precaucion-suave: #3A3110;
   --peligro: #F28B82;
   --peligro-suave: #3B1716;
   --info: #9DB4E8;
@@ -48,8 +49,9 @@
   --activo-fondo: #F1F2F4; --activo-texto: #0E1013;
 
   --foco: #9DB4E8;
-  --grafico-1: #9DB4E8; --grafico-2: #5EC2B7; --grafico-3: #F0A35E; --grafico-4: #A3ADBD;
-  --grafico-5: #F08BA6; --grafico-6: #A3CF6A; --grafico-7: #B69CF2; --grafico-8: #67C6DA;
+  /* «Sobrio» en Noche: saturación media (distinta de «Pastel») */
+  --grafico-1: #6E93E8; --grafico-2: #4FA3A5; --grafico-3: #F2A541; --grafico-4: #E0605E;
+  --grafico-5: #A9B88A; --grafico-6: #C77D96; --grafico-7: #9B87F5; --grafico-8: #4CB8D4;
   --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --sombra-2: 0 4px 16px rgb(0 0 0 / 0.5);
   --sombra-3: 0 12px 40px rgb(0 0 0 / 0.6);

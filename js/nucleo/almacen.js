@@ -33,6 +33,8 @@ function pluralUnidad(palabra, cantidad) {
   if (/[áéíóú]n$/i.test(p)) return p.slice(0, -2) + p.slice(-2, -1).normalize('NFD').replace(/[̀-ͯ]/g, '') + 'nes';
   if (/z$/i.test(p)) return p.slice(0, -1) + 'ces';
   if (/s$/i.test(p)) return p;
+  // Préstamos que terminan en consonante «extranjera» (sixpack → sixpacks, six pack → six packs).
+  if (/[kptbgcw]$/i.test(p)) return p + 's';
   return p + 'es';
 }
 

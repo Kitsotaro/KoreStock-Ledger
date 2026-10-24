@@ -23,7 +23,7 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .fila-resumen { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); color: var(--texto-2); padding: var(--e-1) 0; }
 .fila-resumen + .fila-resumen { border-top: 1px dashed var(--borde); }
 .fila-resumen strong { color: var(--texto); font-variant-numeric: tabular-nums; }
-.fila-resumen strong.t-exito { color: var(--exito); } .fila-resumen strong.t-peligro { color: var(--peligro); }
+.fila-resumen strong.t-exito { color: var(--exito); } .fila-resumen strong.t-peligro { color: var(--peligro); } .fila-resumen strong.t-aviso { color: var(--aviso); }
 .registro .dato { display: flex; justify-content: space-between; align-items: baseline; gap: var(--e-3); color: var(--texto-2); font-size: var(--t-sm); }
 .registro .dato strong { color: var(--texto); }
 .registro .dato strong.t-exito { color: var(--exito); } .registro .dato strong.t-peligro { color: var(--peligro); }

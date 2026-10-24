@@ -52,7 +52,6 @@ registrarPantalla('stock', {
         <div id="stock-grafico"></div>
         <div class="buscador"><div class="control">${seguro(icono('buscar', 'icono-sm'))}<input id="stock-buscar" type="search" placeholder="Buscar en el catálogo" autocomplete="off"></div></div>
         <div class="fila-chips" id="stock-chips" role="group" aria-label="Filtros"></div>
-        <label class="casilla t-pequeno"><input type="checkbox" data-accion="ocultar-sabores"> Ocultar sabores en la lista</label>
         <div class="fila-separada">
           <span class="t-pequeno t-secundario" id="stock-conteo"></span>
           <span class="fila">
@@ -84,12 +83,40 @@ function pintarCifrasStock() {
   const v = valorBodega(activos, Almacen.estados);
   const conteo = { agotado: 0, bajo: 0, medio: 0, optimo: 0 };
   activos.forEach(p => { conteo[semaforoStock(Almacen.stock(p.idProducto), p)]++; });
+  const total = totalesPorEmpaque(activos);
   $('#stock-cifras', stockUI.el).innerHTML = html`
-    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', stockUI.valor === 'NETO' ? 'Cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis por bonificación. Úsalo para cuadrar contra tu conteo físico.' : 'Cuánto dinero pagaste de verdad por lo que sigue en bodega: lo que llegó gratis entra con costo $0. Es tu dinero invertido en inventario.')} ${seguro(`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-valor" style="min-height:auto;padding:0">${stockUI.valor === 'NETO' ? 'neto' : 'real'} ▾</button>`)}</div>
+    <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', '**Neto**: cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis por bonificación. Úsalo para cuadrar contra tu conteo físico.\n\n**Real**: cuánto dinero pagaste de verdad por lo que sigue en bodega (costo promedio): lo que llegó gratis entra con costo $0.')}
+      <span class="segmentado segmentado-compra segmentado-mini" role="radiogroup" aria-label="Tipo de valor">
+        <button type="button" role="radio" data-accion="alternar-valor" data-valor="NETO" aria-checked="${String(stockUI.valor === 'NETO')}">Neto</button>
+        <button type="button" role="radio" data-accion="alternar-valor" data-valor="REAL" aria-checked="${String(stockUI.valor === 'REAL')}">Real</button>
+      </span></div>
       <div class="valor">${formatearDinero(stockUI.valor === 'NETO' ? v.bruto : v.real)}</div>
       <div class="comparacion igual">${stockUI.valor === 'NETO' ? 'Todo lo que hay, con lo gratis' : 'Lo que pagaste por lo que queda'}</div></div>
     <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}</div>
-      <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>`.texto;
+      <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>
+    ${total.empaques ? html`<div class="cifra-tarjeta total-bodega" data-solo-modo="pro"><div class="etiqueta">Total en bodega ${botonInfo('Total en bodega', 'Cuántos empaques tienes en total, sin importar la marca: cada producto se cuenta en su empaque más grande (caja, fardo, sixpack…). Lo que no completa un empaque (o no tiene empaque) va aparte con «+».')}</div>
+      <div class="valor">${formatearNumero(total.empaques)} <span class="t-pequeno t-secundario">empaques</span></div>
+      <div class="chips-total">${total.grupos.map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`)}${total.sueltas.map(([n, c]) => html`<span class="chip-dato tenue" title="Fuera de un empaque completo">+${formatearNumero(c)} ${pluralUnidad(n, c)}</span>`)}</div></div>` : ''}`.texto;
+}
+
+// Total en bodega (modo Pro, como el «Total en Bodega» de la v2): cada producto en
+// su empaque más grande; se suman por nombre de empaque sin importar la marca.
+function totalesPorEmpaque(productos) {
+  const grupos = new Map(), sueltas = new Map();
+  let empaques = 0;
+  productos.forEach(p => {
+    const stock = Almacen.stock(p.idProducto);
+    if (stock <= 0) return;
+    const eq = Almacen.equivalenciasDe(p.idProducto).filter(e => e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
+      .sort((a, b) => b.unidades - a.unidades)[0];
+    if (!eq) { sueltas.set(p.unidadBase, (sueltas.get(p.unidadBase) || 0) + stock); return; }
+    const n = Math.floor(stock / eq.unidades), resto = redondearCantidad(stock - n * eq.unidades);
+    const nombre = String(eq.nombre).toLowerCase();
+    if (n) { grupos.set(nombre, (grupos.get(nombre) || 0) + n); empaques += n; }
+    if (resto) sueltas.set(p.unidadBase, (sueltas.get(p.unidadBase) || 0) + resto);
+  });
+  const orden = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]);
+  return { empaques, grupos: orden(grupos), sueltas: orden(sueltas) };
 }
 
 function pintarChipsStock() {
@@ -127,13 +154,14 @@ function filaStockHTML(p) {
   const eq = Almacen.equivalenciasDe(p.idProducto).find(x => x.unidades > 1);
   const sabores = Object.entries(e.porVariante).filter(([k, v]) => k || v);
   const tieneSabores = sabores.some(([k]) => k) && !stockUI.ocultarSabores;
+  const par = (ic, etiqueta, valor, clase) => html`<div class="par-dato con-icono">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span><strong class="${clase || ''}">${valor}</strong></div>`;
   const seleccionado = stockUI.seleccion.has(p.idProducto);
   const unidad = (n) => pluralUnidad(p.unidadBase, n);
   return html`<details class="desplegable fila-stock" data-id="${p.idProducto}" ${stockUI.expandirTodo ? 'open' : ''}>
     <summary class="fila-lista">
       ${stockUI.seleccionando ? html`<input type="checkbox" class="casilla-fila" data-accion="marcar" data-id="${p.idProducto}" ${seleccionado ? 'checked' : ''} aria-label="Seleccionar ${nombreProducto(p)}">` : ''}
       <div class="crece">
-        <div class="titulo recortar">${nombreProducto(p, { conVariante: false })}${p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</div>
+        <div class="titulo recortar">${nombreProducto(p)}${p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</div>
         <div class="sub">${p.sku} · ${describirCantidad(p.idProducto, e.stock)}</div>
         <div class="fila" style="gap:var(--e-2);margin-top:2px">
           <span class="mini-barra" aria-hidden="true"><span class="${sem.fondo}" style="width:${pct.toFixed(0)}%"></span></span>
@@ -144,18 +172,19 @@ function filaStockHTML(p) {
       ${seguro(icono('chevron-abajo', 'icono-sm chevron'))}
     </summary>
     <div class="desplegable-cuerpo">
-      <div class="par-dato"><span>Stock</span><strong>${formatearNumero(e.stock)} ${unidad(e.stock)}</strong></div>
-      ${e.bonif ? html`<div class="par-dato"><span>Llegó gratis (bonificado)</span><strong>${formatearNumero(Math.min(e.bonif, Math.max(0, e.stock)))} ${unidad(e.bonif)}</strong></div>` : ''}
-      <div class="par-dato"><span>Último costo</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })} / ${p.unidadBase}</strong></div>
-      <div class="par-dato"><span>Costo promedio</span><strong class="cifra">${formatearDinero(e.cpp, { detalle: true })} / ${p.unidadBase}</strong></div>
-      <div class="par-dato"><span>Precio de venta</span><strong class="cifra">${formatearDinero(p.precio)} / ${p.unidadBase}</strong></div>
-      ${presentaciones.map(x => html`<div class="par-dato"><span>${x.etiqueta}</span><strong class="cifra">${formatearDinero(x.precio)}</strong></div>`)}
-      ${eq ? html`<div class="par-dato"><span>Empaque habitual</span><strong>${eq.nombre} de ${formatearNumero(eq.unidades)}</strong></div>` : ''}
-      <div class="par-dato"><span>Avisar</span><strong>muy poco ≤ ${formatearNumero(p.umbralMin ?? 4)} · poco ≤ ${formatearNumero(p.umbralMax ?? 6)}</strong></div>
-      ${tieneSabores ? html`<div class="par-dato"><span>Sabores (según registros)</span><strong>${sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')}</strong></div>` : ''}
-      ${p.categoria ? html`<div class="par-dato"><span>Categoría</span><strong>${p.categoria}</strong></div>` : ''}
-      <div class="par-dato"><span>Unidad</span><strong>${p.unidadBase}${p.decimales ? ' (permite decimales)' : ''}</strong></div>
-      <div class="par-dato"><span>Última modificación</span><strong>${String(p.ultimaModif || '').slice(0, 16)}</strong></div>
+      ${par('caja', 'Stock', describirCantidad(p.idProducto, e.stock))}
+      ${e.bonif ? par('estrella', 'Llegó gratis (bonificado)', `${formatearNumero(Math.min(e.bonif, Math.max(0, e.stock)))} ${unidad(e.bonif)}`) : ''}
+      ${par('precio', 'Último costo', `${formatearDinero(p.costo, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
+      ${par('tendencia', 'Costo promedio', `${formatearDinero(e.cpp, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
+      ${par('etiqueta', 'Precio de venta', `${formatearDinero(p.precio)} / ${p.unidadBase}`, 'cifra')}
+      ${presentaciones.map(x => par('precio', x.etiqueta, formatearDinero(x.precio), 'cifra'))}
+      ${eq ? par('lote', 'Empaque habitual', `${eq.nombre} de ${formatearNumero(eq.unidades)}`) : ''}
+      ${p.variante ? par('sabor', 'Sabor del producto', p.variante) : ''}
+      ${tieneSabores ? par('sabor', 'Sabores vendidos y comprados', sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')) : ''}
+      ${par('advertencia', 'Avisar', `muy poco ≤ ${formatearNumero(p.umbralMin ?? 4)} · poco ≤ ${formatearNumero(p.umbralMax ?? 6)}`)}
+      ${p.categoria ? par('etiqueta-nueva', 'Categoría', p.categoria) : ''}
+      ${par('identificador', 'Unidad', `${p.unidadBase}${p.decimales ? ' (permite decimales)' : ''}`)}
+      ${par('reloj', 'Última modificación', String(p.ultimaModif || '').slice(0, 16))}
       <div class="grupo-botones" style="margin-top:var(--e-2)">
         <button type="button" class="boton boton-secundario boton-sm" data-accion="editar" data-id="${p.idProducto}">${seguro(icono('editar', 'icono-sm'))}Editar</button>
         <button type="button" class="boton boton-entrada boton-sm" data-accion="mas-entrada" data-id="${p.idProducto}">${seguro(icono('entrada', 'icono-sm'))}Entrada</button>
@@ -249,7 +278,7 @@ const accionesStock = {
       alMontar: (hoja) => $$('[data-cat]', hoja).forEach(b => b.addEventListener('click', () => { stockUI.categoria = b.dataset.cat; control.cerrar(); pintarChipsStock(); pintarListaStock(); }))
     });
   },
-  'alternar-valor': () => { stockUI.valor = stockUI.valor === 'NETO' ? 'REAL' : 'NETO'; pintarCifrasStock(); },
+  'alternar-valor': (b) => { stockUI.valor = b.dataset.valor || (stockUI.valor === 'NETO' ? 'REAL' : 'NETO'); pintarCifrasStock(); },
   'expandir': (b) => { stockUI.expandirTodo = !stockUI.expandirTodo; b.textContent = stockUI.expandirTodo ? 'Contraer todo' : 'Expandir todo'; pintarListaStock(); },
   'seleccionar': () => { stockUI.seleccionando = !stockUI.seleccionando; stockUI.seleccion.clear(); pintarListaStock(); },
   'marcar': (b, e) => {

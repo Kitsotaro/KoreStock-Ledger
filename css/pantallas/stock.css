@@ -8,3 +8,16 @@
 .fila-stock[open] > summary { background: var(--superficie-2); }
 .casilla-fila { width: 1.25rem; height: 1.25rem; margin-top: 3px; accent-color: var(--primario); flex-shrink: 0; }
 .lista-stock .desplegable-cuerpo { padding-top: var(--e-3); }
+/* Valor en bodega: interruptor Neto | Real pequeño */
+.segmentado-mini { padding: 2px; gap: 2px; margin-left: auto; }
+.segmentado-mini button { min-height: 1.5rem; padding: 0 var(--e-2); font-size: 0.6875rem; text-transform: none; letter-spacing: 0; }
+.cifra-tarjeta .etiqueta:has(.segmentado-mini) { overflow: visible; flex-wrap: wrap; gap: 4px; }
+/* Total en bodega (Pro) */
+.cifra-tarjeta.total-bodega { grid-column: 1 / -1; }
+.chips-total { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-2); margin-top: var(--e-1); }
+.chip-dato { font-size: var(--t-xs); color: var(--texto-2); padding: 2px var(--e-2); border-radius: var(--r-pildora); background: var(--superficie-2); }
+.chip-dato strong { color: var(--texto); }
+.chip-dato.tenue { opacity: 0.8; }
+/* Detalle del producto con íconos pequeños */
+.par-dato.con-icono { display: flex; align-items: center; gap: var(--e-2); }
+.par-dato.con-icono > .icono { width: 0.95rem; height: 0.95rem; color: var(--texto-3); flex: none; }

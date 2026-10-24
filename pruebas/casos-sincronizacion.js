@@ -71,6 +71,7 @@ prueba('sin conexión, con copia local, abre en solo lectura', async () => {
 prueba('plural de unidades', () => {
   igual(pluralUnidad('cartón', 3), 'cartones'); igual(pluralUnidad('huevo', 2), 'huevos');
   igual(pluralUnidad('unidad', 5), 'unidades'); igual(pluralUnidad('lata', 1), 'lata');
+  igual(pluralUnidad('sixpack', 4), 'sixpacks', 'préstamo en consonante');
 });
 
 prueba('la copia del dispositivo vence a los 3 días y se borra (auditoría 2026-10-22)', async () => {

@@ -35,10 +35,6 @@ const GraficoStock = {
         <div class="tarjeta-titulo"><h2>${seguro(icono('pastel', 'icono-sm'))} Distribución del stock</h2>
           <button type="button" class="boton boton-texto boton-sm" data-grafico="tipo"></button></div>
         <div class="fila envolver" style="margin-bottom:var(--e-2)">
-          <div class="segmentado" role="group" aria-label="Medida">
-            <button type="button" data-grafico="medida" data-valor="UNIDADES">Unidades</button>
-            <button type="button" data-grafico="medida" data-valor="VALOR">Valor $</button>
-          </div>
           <label class="control" style="min-height:var(--alto-control-sm)" data-grafico-recorte><span class="solo-lector">Cuántas barras</span>
             <select data-grafico="recorte"><option value="TODO">Todas</option><option value="10">5 mayores y 5 menores</option><option value="TOP5">3 mayores y 2 menores</option></select></label>
           <button type="button" class="boton boton-icono" data-grafico="modo-color" aria-label="Colores automáticos" title="Colores automáticos" style="margin-left:auto">${seguro(icono('paleta', 'icono-sm'))}</button>
@@ -70,7 +66,10 @@ const GraficoStock = {
   // Agrupa el stock ACTIVO del nivel actual: { etiqueta: valor }.
   datosNivel() {
     const nivel = NIVELES_GRAFICO[this.camino.length];
-    const valorDe = (p, unidades) => this.medida === 'VALOR' ? dineroANumero(redondearCentavo(multiplicarDinero(p.costo, Math.max(0, unidades)))) : unidades;
+    // El gráfico va en unidades; el valor en $ (a último costo) acompaña en la leyenda.
+    const valorDe = (p, unidades) => unidades;
+    const dineroDe = (p, unidades) => redondearCentavo(multiplicarDinero(p.costo, Math.max(0, unidades)));
+    const valores = {};
     const productos = Almacen.productosActivos().filter(p => this.camino.every(paso => this.claveProducto(p, paso.campo) === paso.valor));
     const grupos = {};
     let sinAsignar = 0;
@@ -79,7 +78,7 @@ const GraficoStock = {
         const e = Almacen.estado(p.idProducto);
         Object.entries(e.porVariante).forEach(([sabor, u]) => {
           if (!sabor) { sinAsignar += u; return; }
-          if (u > 0) grupos[sabor] = (grupos[sabor] || 0) + valorDe(p, u);
+          if (u > 0) { grupos[sabor] = (grupos[sabor] || 0) + valorDe(p, u); valores[sabor] = sumarDinero(valores[sabor] || 0, dineroDe(p, u)); }
         });
       });
     } else {
@@ -88,9 +87,10 @@ const GraficoStock = {
         if (u <= 0) return;
         const k = this.claveProducto(p, nivel.campo) || 'Sin dato';
         grupos[k] = (grupos[k] || 0) + valorDe(p, u);
+        valores[k] = sumarDinero(valores[k] || 0, dineroDe(p, u));
       });
     }
-    return { nivel, grupos, sinAsignar };
+    return { nivel, grupos, valores, sinAsignar };
   },
 
   // Selector propio: sugerencias del modo, variaciones, usados antes y «Automático».
@@ -132,14 +132,13 @@ const GraficoStock = {
   async pintar() {
     if (!this.contenedor) return;
     const c = this.contenedor;
-    const { nivel, grupos, sinAsignar } = this.datosNivel();
+    const { nivel, grupos, valores, sinAsignar } = this.datosNivel();
     $('[data-grafico="tipo"]', c).textContent = this.tipo === 'PASTEL' ? 'Ver barras' : 'Ver pastel';
-    $$('[data-grafico="medida"]', c).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.valor === this.medida)));
     $('[data-grafico-recorte]', c).hidden = this.tipo !== 'BARRAS';
     $('.migas', c).innerHTML = [html`<button type="button" data-nivel="0">Todo</button>`]
       .concat(this.camino.map((paso, i) => html`<span aria-hidden="true">›</span>${i === this.camino.length - 1 ? html`<span aria-current="page">${paso.valor}</span>` : html`<button type="button" data-nivel="${i + 1}">${paso.valor}</button>`}`))
       .map(x => x.texto).join(' ');
-    let items = Object.entries(grupos).map(([etiqueta, valor]) => ({ etiqueta, valor })).sort((a, b) => b.valor - a.valor);
+    let items = Object.entries(grupos).map(([etiqueta, valor]) => ({ etiqueta, valor, dinero: valores[etiqueta] || 0 })).sort((a, b) => b.valor - a.valor);
     const total = items.reduce((s, i) => s + i.valor, 0);
     if (this.tipo === 'BARRAS') {
       const n = items.length;
@@ -149,16 +148,16 @@ const GraficoStock = {
     const estilo = getComputedStyle(document.documentElement);
     const paleta = paletaAutomatica(leerModoColor('STOCK'), items.length);
     const colores = items.map((it, i) => Almacen.colorGrafico(this.nivelColor(), this.nombreColor(it.etiqueta)) || paleta[i]);
-    const fmt = (v) => this.medida === 'VALOR' ? formatearDinero(dinero(v)) : formatearNumero(v);
+    const fmt = (v) => formatearNumero(v);
     const nota = $('.nota-grafico', c);
     nota.textContent = nivel.campo === 'sabor'
       ? `Según registros.${sinAsignar ? ` Sin asignar: ${formatearNumero(sinAsignar)}.` : ''}`
-      : (this.medida === 'UNIDADES' ? 'Unidades en bodega (cada producto en su propia unidad).' : 'Valor en bodega a último costo.');
+      : 'Unidades en bodega (cada producto en su propia unidad) · valor a último costo · %.';
     const puedeBajar = this.camino.length < NIVELES_GRAFICO.length - 1;
     $('.leyenda', c).innerHTML = items.length ? items.map((it, i) => html`<div class="leyenda-fila">
         <button type="button" class="muestra-color" style="background:${colores[i]}" data-color="${this.nombreColor(it.etiqueta)}" data-actual="${aHex(colores[i])}" aria-label="Cambiar el color de ${it.etiqueta}" title="Cambiar color"></button>
         <button type="button" class="leyenda-item" ${puedeBajar ? html`data-bajar="${it.etiqueta}"` : ''}><span class="recortar">${it.etiqueta}</span>
-        <span class="valor">${fmt(it.valor)} · ${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></button></div>`.texto).join('')
+        <span class="valor columnas-leyenda"><span class="col-n">${fmt(it.valor)}</span><span class="sep">·</span><span class="col-d">${formatearDinero(it.dinero)}</span><span class="sep">·</span><span class="col-p">${total ? (it.valor / total * 100).toFixed(1) : '0'}%</span></span></button></div>`.texto).join('')
       : html`<p class="t-tenue t-pequeno">No hay stock para mostrar.</p>`.texto;
 
     try { await cargarChart(); } catch (e) { return; }
