@@ -1,7 +1,20 @@
 /* © 2026 KoreStock Ledger — un proyecto de Kitsótaro · Código disponible, todos los derechos reservados (ver LICENSE).
  * DASHBOARD y listas de movimientos (§17). */
-.linea-mov { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) 0; border-top: 1px dashed var(--borde); }
-.linea-mov:first-child { border-top: 0; }
+/* Cada línea del ticket en su propio bloque (separa ventas de una misma factura) */
+.linea-mov { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-3); border-radius: var(--r-md); background: var(--superficie-2); border-left: 3px solid var(--borde); }
+.linea-mov + .linea-mov { margin-top: var(--e-2); }
+.desplegable:has(.insignia.venta) .linea-mov { border-left-color: var(--venta); }
+.desplegable:has(.insignia.entrada) .linea-mov { border-left-color: var(--primario); }
+.datos-mov { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px var(--e-3); margin-top: 3px; font-size: var(--t-xs); color: var(--texto-2); }
+.datos-mov.tenue { color: var(--texto-3); }
+.dato-mov { display: flex; align-items: center; gap: 3px; min-width: 0; font-variant-numeric: tabular-nums; }
+.dato-mov .icono { flex: none; }
+.dato-mov > .recortar { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linea-mov > .crece { min-width: 0; }
+.linea-mov .t-fuerte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dato-mov .icono { width: 0.8rem; height: 0.8rem; opacity: 0.8; }
+.cliente-mov { display: inline-flex; align-items: center; gap: 3px; margin-left: var(--e-1); padding: 0 var(--e-2); border-radius: var(--r-pildora); background: var(--primario-suave, var(--superficie-3)); color: var(--primario); font-weight: var(--peso-fuerte); }
+.cliente-mov .icono { width: 0.8rem; height: 0.8rem; }
 .linea-mov.anulada .t-fuerte, .linea-mov.anulada .cifra { text-decoration: line-through; color: var(--texto-3); }
 .desplegable > summary .insignia { flex-shrink: 0; }
 /* Movimientos: buscador + ajustes en una fila; panel de ajustes críticos en rojo (fase UI) */
@@ -26,3 +39,22 @@
 .accesos-hoy { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e-2); }
 .accesos-hoy button { display: grid; justify-items: center; gap: 4px; padding: var(--e-2) 0; border: 0; border-radius: var(--r-md); background: color-mix(in srgb, var(--sobre-hoy) 14%, transparent); color: inherit; font-size: var(--t-xs); font-weight: var(--peso-fuerte); cursor: pointer; }
 .accesos-hoy button:hover { background: color-mix(in srgb, var(--sobre-hoy) 22%, transparent); }
+/* Tipo de movimiento: interruptor con conteo; «Productos nuevos» aparte */
+.fila-tipo-mov { display: flex; align-items: center; flex-wrap: wrap; gap: var(--e-2) var(--e-3); }
+.segmentado-tipo button { display: inline-flex; align-items: center; gap: 5px; }
+.segmentado-tipo button .icono { width: 0.9rem; height: 0.9rem; }
+.conteo-seg { font-size: 0.6875rem; padding: 0 6px; border-radius: var(--r-pildora); background: color-mix(in srgb, currentColor 14%, transparent); font-variant-numeric: tabular-nums; }
+.separador-vertical { width: 1px; align-self: stretch; min-height: 1.5rem; background: var(--borde); }
+.chip-con-info { display: inline-flex; align-items: center; gap: 2px; }
+/* Tarjeta de arriba con búsqueda: indica que cuenta lo filtrado */
+.tarjeta-hoy.filtrada .tarjeta-hoy-cifras > div:first-child .etiqueta-hoy { display: flex; align-items: center; gap: 4px; }
+.tarjeta-hoy.filtrada .etiqueta-hoy .icono { width: 0.8rem; height: 0.8rem; }
+/* Resumen: tarjetas de cifras más grandes */
+#dash-cuerpo .cifras { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--e-4); }
+#dash-cuerpo .cifras .cifra-tarjeta { padding: var(--e-4) var(--e-5); min-height: 8.5rem; }
+#dash-cuerpo .cifras .cifra-tarjeta .etiqueta { font-size: var(--t-xs); }
+#dash-cuerpo .cifras .cifra-tarjeta .valor { font-size: var(--t-2xl); }
+#dash-cuerpo .cifras .tarjeta-unidades { grid-column: 1 / -1; min-height: 0; }
+@media (max-width: 600px) { .separador-vertical { display: none; } }
+@media (max-width: 760px) { #dash-cuerpo .cifras .cifra-tarjeta:nth-child(3) { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .datos-mov { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

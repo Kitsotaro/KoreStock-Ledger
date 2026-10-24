@@ -46,9 +46,13 @@ registrarPantalla('dashboard', {
 });
 
 // Tarjeta «Hoy» (referencias de UI): lo vendido y ganado hoy, comparado con
-// ayer, y accesos rápidos. No depende del período ni de los filtros.
+// ayer, y accesos rápidos. Sin búsqueda no depende del período ni de los filtros;
+// CON búsqueda en Movimientos (Kitso, 2026-10-24) cuenta lo que se ve: período +
+// filtros + búsqueda («pepsi» en «Este año» → solo Pepsi del año).
 function pintarHoyDashboard() {
   const cont = $('#dash-hoy', dashUI.el); if (!cont) return;
+  const est = estadoDashboard;
+  if (est.vista === 'MOVIMIENTOS' && est.texto.trim()) { cont.innerHTML = tarjetaBusquedaHTML(); return; }
   const hoy = obtenerFechaLocal(), ayer = restarDias(hoy, 1);
   const movs = Almacen.movimientosEfectivos();
   const r = calcularResumenPeriodo(movs, hoy, hoy), ra = calcularResumenPeriodo(movs, ayer, ayer);
@@ -59,12 +63,42 @@ function pintarHoyDashboard() {
         <span class="detalle-hoy">${pct === null ? (r.ventas ? 'Ayer no hubo ventas' : 'Aún sin ventas') : `${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)} % vs. ayer`} · ${r.nTickets} ${pluralizar(r.nTickets, 'ticket')}</span></div>
       <div class="ganancia-hoy"><span class="etiqueta-hoy">Ganancia</span><strong>${formatearDinero(r.utilidad)}</strong></div>
     </div>
-    <div class="accesos-hoy">
+    ${accesosHoyHTML()}</section>`.texto;
+}
+
+// Accesos rápidos de la tarjeta de arriba.
+function accesosHoyHTML() {
+  return html`<div class="accesos-hoy">
       <button type="button" data-ir="venta">${seguro(icono('carrito'))}<span>Vender</span></button>
       <button type="button" data-ir="entrada">${seguro(icono('entrada'))}<span>Comprar</span></button>
       <button type="button" data-ir="gastos">${seguro(icono('recibo'))}<span>Gasto</span></button>
       <button type="button" data-ir="stock">${seguro(icono('caja'))}<span>Stock</span></button>
-    </div></section>`.texto;
+    </div>`;
+}
+
+// Totales de lo que muestra la búsqueda. Con «Entradas» elegido cuenta lo invertido.
+function tarjetaBusquedaHTML() {
+  const est = estadoDashboard;
+  const grupos = gruposMovimientos({ conTipo: false });
+  const entradas = est.tipo === 'ENTRADA';
+  let total = 0, ganancia = 0, unidades = 0, tickets = 0;
+  grupos.forEach(g => {
+    const validas = g.lineas.filter(esMovValido);
+    if (!validas.length || g.tipo !== (entradas ? TIPOS_MOV.ENTRADA : TIPOS_MOV.VENTA)) return;
+    tickets++;
+    validas.forEach(m => {
+      if (entradas) { total = sumarDinero(total, m.inversion || 0); unidades += (m.cantidad || 0) + (m.bonif || 0); }
+      else { total = sumarDinero(total, m.totalVenta || 0); ganancia = sumarDinero(ganancia, m.utilidad || 0); unidades += Math.abs(m.cantidad || 0); }
+    });
+  });
+  const periodo = dashUI.filtros ? dashUI.filtros.textoPeriodo() : '';
+  return html`<section class="tarjeta-hoy filtrada" aria-label="Lo que muestra la búsqueda">
+    <div class="tarjeta-hoy-cifras">
+      <div><span class="etiqueta-hoy">${seguro(icono('embudo', 'icono-sm'))}${entradas ? 'Invertido' : 'Vendido'} · ${periodo}</span><strong class="cifra-hoy">${formatearDinero(total)}</strong>
+        <span class="detalle-hoy">«${est.texto.trim()}» · ${formatearNumero(tickets)} ${entradas ? pluralizar(tickets, 'entrada') : pluralizar(tickets, 'ticket')} · ${formatearNumero(redondearCantidad(unidades))} ${pluralizar(unidades, 'unidad', 'unidades')}</span></div>
+      ${entradas ? '' : html`<div class="ganancia-hoy"><span class="etiqueta-hoy">Ganancia</span><strong>${formatearDinero(ganancia)}</strong></div>`}
+    </div>
+    ${accesosHoyHTML()}</section>`.texto;
 }
 
 function pintarDashboard() {
@@ -112,6 +146,7 @@ function pintarResumenDashboard() {
         <button type="button" class="chip chip-mini" data-accion="ver-costo-promedio" aria-pressed="${String(!!est.verCostoPromedio)}">${seguro(icono(est.verCostoPromedio ? 'check' : 'intercambiar', 'icono-sm'))}Costo promedio</button></div>
       <div class="cifra-tarjeta"><div class="etiqueta">Invertido ${botonInfo('Invertido', 'Suma de lo que pagaste en las entradas (compras) del período. Las unidades ingresadas incluyen las bonificadas. No incluye anuladas.'+' El porcentaje compara con los mismos días del período anterior (si el período va en curso, hasta hoy); deja el cursor sobre él para ver ese monto.')}</div><div class="valor">${formatearDinero(r.inversion)}</div>${comparacionHTML(r.inversion, ra.inversion, true, true)}<div class="t-mini t-secundario">${formatearNumero(r.unidadesEntradas)} ${pluralizar(r.unidadesEntradas, 'ingresada', 'ingresadas')}</div></div>
     </div>
+    ${tarjetaUnidadesHTML(movs, est, filtro)}
     ${bodega ? '' : html`
     <div class="tarjeta">
       <div class="tarjeta-titulo"><h2>${seguro(icono('tendencia', 'icono-sm'))} Tendencia</h2><span class="t-pequeno t-secundario">${formatearFechaCorta(est.inicio)} – ${formatearFechaCorta(est.fin)}</span></div>
@@ -122,6 +157,25 @@ function pintarResumenDashboard() {
     ${Almacen.hojas.CLIENTES.length ? html`<div class="tarjeta"><div class="tarjeta-titulo"><h2>Clientes</h2></div>${rankCli.length ? html`<ul class="lista">${rankCli}</ul>` : html`<p class="t-tenue t-pequeno">Ninguna venta con cliente en el período.</p>`}</div>` : ''}`}
   `.texto;
   if (!bodega) pintarTendencia(movs, est, filtro);
+}
+
+// Unidades del período por tipo (botellas, bolsas…): sumar botellas con bolsas
+// en un solo número no dice nada, así que van por unidad, ingresadas y vendidas.
+// Una sola pasada por los movimientos del período (barato aun con el año completo).
+function tarjetaUnidadesHTML(movs, est, filtro) {
+  const entra = new Map(), sale = new Map();
+  movs.forEach(m => {
+    if (!esMovValido(m) || !enPeriodo(m.fecha, est.inicio, est.fin) || (filtro && !filtro(m))) return;
+    const p = Almacen.producto(Almacen.idEfectivo(m.idProducto));
+    if (!p) return;
+    if (m.tipo === TIPOS_MOV.ENTRADA) entra.set(p.unidadBase, redondearCantidad((entra.get(p.unidadBase) || 0) + (m.cantidad || 0) + (m.bonif || 0)));
+    else if (m.tipo === TIPOS_MOV.VENTA) sale.set(p.unidadBase, redondearCantidad((sale.get(p.unidadBase) || 0) + Math.abs(m.cantidad || 0)));
+  });
+  if (!entra.size && !sale.size) return '';
+  const chips = (mapa) => [...mapa.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`);
+  const fila = (ic, texto, mapa) => mapa.size ? html`<div class="fila-total"><span class="t-mini t-secundario">${seguro(icono(ic, 'icono-sm'))}${texto}</span><span class="chips-total">${chips(mapa)}</span></div>` : '';
+  return html`<div class="cifra-tarjeta tarjeta-unidades"><div class="etiqueta">Unidades del período ${botonInfo('Unidades del período', 'Cuántas unidades **entraron** (compras, con las bonificadas) y cuántas **se vendieron** en el período, separadas por tipo de unidad: sumar botellas con bolsas en un solo número no ayuda a decidir.\n\nRespeta el período y los filtros. No incluye anuladas.')}</div>
+    ${fila('entrada', 'Ingresadas', entra)}${fila('carrito', 'Vendidas', sale)}</div>`;
 }
 
 async function pintarTendencia(movs, est, filtro) {
@@ -187,15 +241,16 @@ function movimientosDashboard() {
   return PeriodosLargos.hojasPara(estadoDashboard.inicio).LOG_TRANS;
 }
 
-function gruposMovimientos() {
+function gruposMovimientos(opciones) {
+  const conTipo = !opciones || opciones.conTipo !== false;
   const est = estadoDashboard;
   const filtro = predicadoFiltros(est);
   const grupos = new Map();
   movimientosDashboard().forEach(m => {
     if (!esMovVisible(m) || !enPeriodo(m.fecha, est.inicio, est.fin)) return;
     if (filtro && !filtro(m)) return;
-    if (est.tipo === 'VENTA' && m.tipo !== TIPOS_MOV.VENTA) return;
-    if (est.tipo === 'ENTRADA' && m.tipo !== TIPOS_MOV.ENTRADA) return;
+    if (conTipo && est.tipo === 'VENTA' && m.tipo !== TIPOS_MOV.VENTA) return;
+    if (conTipo && est.tipo === 'ENTRADA' && m.tipo !== TIPOS_MOV.ENTRADA) return;
     if (est.soloNuevos && m.productoNuevo !== 'SI') return;
     if (est.texto) {
       const p = Almacen.producto(m.idProducto);
@@ -228,27 +283,58 @@ function filaGrupoHTML(g) {
     <summary class="fila-lista ${todoAnulado ? 'anulada' : ''}">
       <span class="insignia ${esVenta ? 'venta' : 'entrada'}">${etiquetaTipo}</span>
       <div class="crece"><div class="titulo recortar">${g.lineas.length === 1 ? nombre1(g.lineas[0]) : `${g.lineas.length} productos`}${hayNuevo ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${g.lineas.some(m => m.bonif > 0) ? html` <span class="insignia">+Bonif.</span>` : ''}</div>
-        <div class="sub">${formatearFechaCorta(g.fecha)} ${String(g.timestamp || '').slice(11, 16)} · ${g.clave}${cliente ? html` · ${cliente.nombre}` : ''}${anuladas && !todoAnulado ? html` · ${anuladas} anulada${anuladas > 1 ? 's' : ''}` : ''}</div></div>
+        <div class="sub">${formatearFechaCorta(g.fecha)} ${String(g.timestamp || '').slice(11, 16)} · ${g.clave}${cliente ? html` <span class="cliente-mov">${seguro(icono('persona', 'icono-sm'))}${cliente.nombre}</span>` : ''}${anuladas && !todoAnulado ? html` · ${anuladas} anulada${anuladas > 1 ? 's' : ''}` : ''}</div></div>
       <span class="monto">${formatearDinero(totalGrupo(g))}</span>
       ${seguro(icono('chevron-abajo', 'icono-sm chevron'))}
     </summary>
     <div class="desplegable-cuerpo">
-      ${g.lineas.map(m => { const p = Almacen.producto(m.idProducto); const u = p ? pluralUnidad(p.unidadBase, Math.abs(m.cantidad)) : ''; return html`
-        <div class="linea-mov ${esMovValido(m) ? '' : 'anulada'}">
-          <div class="crece"><div class="t-pequeno t-fuerte">${nombre1(m)}${m.variante ? html` · ${m.variante}` : ''}${m.productoNuevo === 'SI' ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${esMovValido(m) ? '' : html` <span class="insignia anulada">Anulada</span>`}</div>
-            <div class="t-mini t-secundario">${m.folio} · ${formatearNumero(Math.abs(m.cantidad))} ${u}${m.bonif ? html` + ${formatearNumero(m.bonif)} gratis` : ''}${m.unidPorEmpaque > 1 ? html` (${formatearNumero(m.cantEmpaques)} ${m.empaqueMov} de ${formatearNumero(m.unidPorEmpaque)})` : ''}${esVenta ? html` · gana ${formatearDinero(m.utilidad || 0)}` : ''}</div>
-            <div class="t-mini t-tenue">Código ${m.sku || '—'} · capturado ${String(m.timestamp || '').slice(0, 16) || '—'} · costo ${formatearDinero(m.costoUnit || 0, { detalle: true })} · precio ${formatearDinero(m.precioUnit || 0)}</div></div>
-          <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
-          ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
-        </div>`; })}
+      ${g.lineas.map(m => lineaMovHTML(m, esVenta, nombre1))}
       ${g.lineas.length > 1 && !g.lineas.some(m => m._historico) && g.lineas.filter(esMovValido).length > 1 ? html`<button type="button" class="boton boton-secundario boton-sm" data-accion="anular-ticket" data-ticket="${g.clave}" style="justify-self:start">${seguro(icono('papelera', 'icono-sm'))}Anular ticket completo</button>` : ''}
     </div></details>`;
+}
+
+// Una línea del ticket (Kitso, 2026-10-24): datos con íconos en vez de palabras;
+// cada línea en su propio bloque para separar las ventas de una misma factura.
+// Los datos van en 4 casillas fijas para que los íconos queden en columna
+// (venta: cantidad · ganancia · precio · costo; entrada: cantidad · bonif. · — · costo).
+function lineaMovHTML(m, esVenta, nombre1) {
+  const p = Almacen.producto(m.idProducto);
+  const q = Math.abs(m.cantidad || 0);
+  const unidad = p ? p.unidadBase : '';
+  const dato = (ic, texto, titulo, clase) => html`<span class="dato-mov ${clase || ''}" title="${titulo}: ${texto}">${seguro(icono(ic, 'icono-sm'))}<span class="recortar">${texto}</span></span>`;
+  const vacio = html`<span></span>`;
+  const margen = esVenta && m.totalVenta ? Math.round((dineroANumero(m.utilidad || 0) / dineroANumero(m.totalVenta)) * 100) : null;
+  const hora = String(m.timestamp || '').slice(0, 16);
+  const capturaOtroDia = hora && hora.slice(0, 10) !== m.fecha;
+  return html`<div class="linea-mov ${esMovValido(m) ? '' : 'anulada'}">
+    <div class="crece">
+      <div class="t-pequeno t-fuerte">${nombre1(m)}${m.variante ? html` · ${m.variante}` : ''}${m.productoNuevo === 'SI' ? html` <span class="insignia nuevo">Nuevo</span>` : ''}${esMovValido(m) ? '' : html` <span class="insignia anulada">Anulada</span>`}</div>
+      <div class="datos-mov">
+        ${dato('caja', `${formatearNumero(q)} ${pluralUnidad(unidad, q)}`, 'Cantidad')}
+        ${esVenta ? dato('tendencia', `${formatearDinero(m.utilidad || 0)}${margen === null ? '' : ` · ${margen}%`}`, 'Ganancia y margen', (m.utilidad || 0) < 0 ? 't-peligro' : 't-exito') : m.bonif ? dato('estrella', `+${formatearNumero(m.bonif)}`, 'Bonificadas (gratis)') : vacio}
+        ${esVenta ? dato('etiqueta', `${formatearDinero(m.precioUnit || 0)}/${unidad}`, `Precio por ${unidad}`) : vacio}
+        ${dato('billete', `${formatearDinero(m.costoUnit || 0, { detalle: true })}/${unidad}`, `Costo por ${unidad}`)}
+      </div>
+      <div class="datos-mov tenue">
+        ${dato('recibo', m.folio, 'Folio')}${dato('identificador', m.sku || '—', 'Código')}${capturaOtroDia ? dato('reloj', hora, 'Capturado') : ''}
+      </div>
+    </div>
+    <span class="cifra t-pequeno">${formatearDinero(esVenta ? (m.totalVenta || 0) : m.inversion)}</span>
+    ${esMovValido(m) && !m._historico && (m.tipo === TIPOS_MOV.VENTA || m.tipo === TIPOS_MOV.ENTRADA) ? html`<button type="button" class="boton boton-texto boton-sm peligro" data-accion="anular-linea" data-folio="${m.folio}">Anular</button>` : ''}
+  </div>`;
+}
+
+// Cuántos tickets hay de cada tipo con el período, filtros y búsqueda actuales.
+function conteoTiposMov(todos) {
+  todos = todos || gruposMovimientos({ conTipo: false });
+  return { TODO: todos.length, VENTA: todos.filter(g => g.tipo === TIPOS_MOV.VENTA).length, ENTRADA: todos.filter(g => g.tipo === TIPOS_MOV.ENTRADA).length };
 }
 
 function pintarMovimientosDashboard() {
   const est = estadoDashboard;
   const grupos = gruposMovimientos();
   const cuerpo = $('#dash-cuerpo', dashUI.el);
+  const conteo = conteoTiposMov(est.tipo === 'TODO' ? grupos : null);
   // Fase UI: buscador y botón de ajustes en una fila; las acciones de alto
   // nivel (corregir precio, anular lo filtrado, acciones recientes) quedan
   // ocultas en ese panel, marcadas en rojo porque cambian el historial.
@@ -262,13 +348,26 @@ function pintarMovimientosDashboard() {
       <div class="grupo-botones" data-solo-modo="tienda pro" id="dash-acciones-lote"></div>
       <div id="dash-acciones-recientes"></div>
     </div>
-    <div class="fila-chips" role="group" aria-label="Tipo">
-      ${[['TODO', 'Todo'], ['VENTA', 'Ventas'], ['ENTRADA', 'Entradas']].map(([v, t]) => html`<button type="button" class="chip" data-accion="tipo" data-valor="${v}" aria-pressed="${String(est.tipo === v)}">${t}</button>`)}
-      <button type="button" class="chip" data-accion="solo-nuevos" aria-pressed="${String(est.soloNuevos)}">${seguro(icono('archivo-nuevo', 'icono-sm'))}Productos nuevos</button>
+    <div class="fila-tipo-mov">
+      <span class="segmentado segmentado-compra segmentado-tipo" role="radiogroup" aria-label="Tipo de movimiento">
+        ${[['TODO', 'Todo', 'lista'], ['VENTA', 'Ventas', 'carrito'], ['ENTRADA', 'Entradas', 'entrada']].map(([v, t, ic]) => html`<button type="button" role="radio" data-accion="tipo" data-valor="${v}" aria-checked="${String(est.tipo === v)}">${seguro(icono(ic, 'icono-sm'))}${t}<span class="conteo-seg">${formatearNumero(conteo[v])}</span></button>`)}
+      </span>
+      <span class="separador-vertical" aria-hidden="true"></span>
+      <span class="chip-con-info">
+        <button type="button" class="chip" data-accion="solo-nuevos" aria-pressed="${String(est.soloNuevos)}">${seguro(icono('archivo-nuevo', 'icono-sm'))}Productos nuevos</button>
+        ${botonInfo('Productos nuevos', 'Muestra solo las **entradas que crearon un producto** en tu catálogo (la primera compra de algo que no tenías). Sirve para revisar altas recientes: nombre, costo y precio con que quedaron.\n\nSe combina con el período, los filtros y la búsqueda.')}
+      </span>
     </div>
     <div id="dash-lista"></div>`.texto;
   const buscar = $('#dash-buscar', cuerpo);
-  buscar.addEventListener('input', () => { est.texto = buscar.value; pintarListaMovimientos(); });
+  buscar.addEventListener('input', () => {
+    est.texto = buscar.value;
+    const grupos = gruposMovimientos();
+    const c = conteoTiposMov(est.tipo === 'TODO' ? grupos : null);
+    $$('.segmentado-tipo [data-valor]', cuerpo).forEach(b => { b.querySelector('.conteo-seg').textContent = formatearNumero(c[b.dataset.valor]); });
+    pintarHoyDashboard(); pintarIconos($('#dash-hoy', dashUI.el));
+    pintarListaMovimientos(grupos);
+  });
   if (typeof pintarBotonesLote === 'function') pintarBotonesLote($('#dash-acciones-lote', cuerpo));
   if (typeof pintarAccionesRecientes === 'function') pintarAccionesRecientes($('#dash-acciones-recientes', cuerpo));
   pintarListaMovimientos(grupos);
@@ -320,8 +419,8 @@ const accionesDashboard = {
   'vista': (b) => { estadoDashboard.vista = b.dataset.valor; pintarDashboard(); },
   'ajustes-movimientos': (b) => { const e = estadoDashboard; e.ajustesAbiertos = !e.ajustesAbiertos; b.setAttribute('aria-expanded', String(e.ajustesAbiertos)); $('#dash-ajustes', dashUI.el).hidden = !e.ajustesAbiertos; },
   'ver-costo-promedio': () => { estadoDashboard.verCostoPromedio = !estadoDashboard.verCostoPromedio; pintarDashboard(); },
-  'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarMovimientosDashboard(); },
-  'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarMovimientosDashboard(); },
+  'tipo': (b) => { estadoDashboard.tipo = b.dataset.valor; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
+  'solo-nuevos': () => { estadoDashboard.soloNuevos = !estadoDashboard.soloNuevos; pintarHoyDashboard(); pintarMovimientosDashboard(); pintarIconos(dashUI.el); },
   // Toda anulación queda registrada para poder revertirla (7 días), también una línea suelta.
   'anular-linea': (b) => anularConConfirmacion([b.dataset.folio], { tipo: 'ANULACION_LINEA', alcance: b.dataset.folio }),
   'anular-ticket': (b) => {
