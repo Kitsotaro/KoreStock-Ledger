@@ -244,3 +244,17 @@ prueba('movimiento sin producto: se ofrece unirlo y con la unión el stock cuadr
   const entrada = v3.LOG_TRANS.find(m => m.folio === 'IN-000001');
   igual(entrada.idProducto, 1); igual(entrada.sku, 'AGFA-001'); igual(entrada.referencia, 'AGBO-001', 'guarda el código con que venía');
 });
+
+// Nombre de la unidad y del empaque escritos en el asistente (Kitso, 2026-10-24:
+// «Huevo Mediano» no debe contarse en «medianos», ni el fardo de agua en «bolsas»).
+prueba('el asistente puede renombrar la unidad y el empaque', async () => {
+  const id = crearBaseV2Petit();
+  const r = await migrarBaseV2(id, [], null, { unidades: { 5: { modo: 'CONVERTIR', unidades: 6, nombre: 'Tetrapack', empaque: 'six pack' }, 6: { modo: 'PRESENTACION', nombre: 'caja' } } });
+  verdadero(r.ok, JSON.stringify(r.verificacion));
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  const tetra = v3.CATALOGO.find(p => p.presentacion === 'Tetra'), lata = v3.CATALOGO.find(p => p.presentacion === 'Lata');
+  igual(tetra.unidadBase, 'tetrapack'); igual(lata.unidadBase, 'caja'); igual(lata.stockCache, 2, 'renombrar no cambia cantidades');
+  const eq = v3.EQUIVALENCIAS.find(e => e.idProducto === tetra.idProducto);
+  igual(eq.nombre, 'six pack'); igual(eq.nivelInferior, 'tetrapack');
+  igual(v3.LOG_TRANS.find(m => m.folio === 'FAC-000001').empaqueMov, 'six pack');
+});

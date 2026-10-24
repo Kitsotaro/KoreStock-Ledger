@@ -115,6 +115,12 @@ function pintarAsistenteMigracion(el) {
       _migracion.enlaceDe[enl.dataset.enlace] = p ? p.idProducto : '';
       return;
     }
+    const nom = e.target.closest('[data-nombre-de], [data-empaque-de]');
+    if (nom) {
+      const id = nom.dataset.nombreDe || nom.dataset.empaqueDe;
+      _migracion.unidades[id][nom.dataset.nombreDe ? 'nombre' : 'empaque'] = nom.value.trim();
+      return;
+    }
     const i = e.target.closest('[data-unidades-de]');
     if (!i) return;
     const id = i.dataset.unidadesDe, n = Math.round(parsearNumero(i.value)) || '';
@@ -122,6 +128,8 @@ function pintarAsistenteMigracion(el) {
     const ayuda = $(`[data-ayuda-de="${id}"]`, el);
     if (ayuda) ayuda.textContent = textoConversionMigracion(_migracion.datos.CATALOGO.find(p => String(p.idProducto) === id), n);
   });
+  // Al terminar de escribir un nombre se repinta la lista (los textos usan el nombre nuevo).
+  el.addEventListener('change', (e) => { if (e.target.closest('[data-nombre-de], [data-empaque-de]')) pintarUnidadesMigracion(el); });
   pintarUnidadesMigracion(el);
 }
 
@@ -134,10 +142,16 @@ function enlacesMigracion() {
   return r;
 }
 
+// Nombres elegidos en el asistente (o los de la v2).
+function nombresMigracion(p) {
+  const u = _migracion.unidades[p.idProducto] || {};
+  return { pres: (u.nombre || '').trim().toLowerCase() || nombreUnidadV2(p, 'PRESENTACION'), emp: (u.empaque || '').trim().toLowerCase() || nombreUnidadV2(p, 'EMPAQUE') };
+}
+
 function textoConversionMigracion(p, n) {
-  const pres = nombreUnidadV2(p, 'PRESENTACION'), emp = nombreUnidadV2(p, 'EMPAQUE');
-  if (!(n > 1)) return `Escribe cuántas ${pres}s trae una ${emp}.`;
-  return `${formatearNumero(p.stockCache)} ${emp}s pasan a ${formatearNumero(p.stockCache * n)} ${pres}s; el costo por ${pres} será ${formatearDinero(dividirDinero(p.costo, n), { detalle: true })}.`;
+  const { pres, emp } = nombresMigracion(p);
+  if (!(n > 1)) return `Escribe cuántas unidades (${pluralUnidad(pres, 2)}) trae cada ${emp}.`;
+  return `${formatearNumero(p.stockCache)} ${pluralUnidad(emp, p.stockCache)} pasan a ${formatearNumero(p.stockCache * n)} ${pluralUnidad(pres, p.stockCache * n)}; el costo por ${pres} será ${formatearDinero(dividirDinero(p.costo, n), { detalle: true })}.`;
 }
 
 // Lista de productos con su unidad (con «Cargar más» para catálogos grandes).
@@ -149,8 +163,8 @@ function pintarUnidadesMigracion(el) {
     contenedor: $('#migracion-lista-unidades', el), items: productos, tope: 40,
     pintarItem: (p) => {
       const u = _migracion.unidades[p.idProducto];
-      const pres = nombreUnidadV2(p, 'PRESENTACION'), emp = nombreUnidadV2(p, 'EMPAQUE');
-      const mismo = pres === emp;
+      const { pres, emp } = nombresMigracion(p);
+      const mismo = pres === emp && !u.empaque;
       const opcion = (modo, texto) => html`<button type="button" role="radio" data-accion="unidad-modo" data-id="${p.idProducto}" data-modo="${modo}" aria-checked="${String(u.modo === modo)}">${texto}</button>`;
       return html`<div class="fila-unidad">
         <div class="crece"><div class="titulo">${nombreProductoV2(p)}${p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</div>
@@ -158,6 +172,10 @@ function pintarUnidadesMigracion(el) {
         <span class="segmentado segmentado-compra" role="radiogroup" aria-label="Cómo se cuenta ${nombreProductoV2(p)}">
           ${opcion('PRESENTACION', `Por ${pres} (unidad)`)}${mismo ? '' : opcion('CONVERTIR', `Por ${emp} de N ${pres}s (empaque)`)}
         </span>
+        <div class="fila envolver t-pequeno nombres-unidad">
+          <label class="fila">Se cuenta en <span class="control control-n"><input data-nombre-de="${p.idProducto}" value="${u.nombre || ''}" placeholder="${nombreUnidadV2(p, 'PRESENTACION')}" aria-label="Nombre de la unidad de ${nombreProductoV2(p)}" autocomplete="off"></span></label>
+          ${u.modo === 'CONVERTIR' || mismo ? html`<label class="fila">Empaque <span class="control control-n"><input data-empaque-de="${p.idProducto}" value="${u.empaque || ''}" placeholder="${nombreUnidadV2(p, 'EMPAQUE')}" aria-label="Nombre del empaque de ${nombreProductoV2(p)}" autocomplete="off"></span></label>` : ''}
+        </div>
         ${u.modo === 'CONVERTIR' ? html`<div class="control control-n"><input inputmode="numeric" data-unidades-de="${p.idProducto}" value="${u.unidades || ''}" placeholder="N" aria-label="Cuántas ${pres} trae una ${emp}"><span class="sufijo">${pres}s por ${emp}</span></div>
           <span class="ayuda-campo" data-ayuda-de="${p.idProducto}">${textoConversionMigracion(p, u.unidades)}</span>` : ''}
       </div>`;

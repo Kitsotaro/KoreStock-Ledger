@@ -223,6 +223,16 @@ function convertirAV3(datos, fusiones, opciones) {
     modoDe.set(p.idProducto, modo);
   });
 
+  // Nombre de la unidad y del empaque: el que escribió el usuario en el asistente
+  // (p. ej. «huevo» en vez de «mediano», «fardo» en vez de «bolsa») o el de la v2.
+  // Los sabores unidos usan el del producto que queda.
+  const nombreDe = (p, modo) => {
+    const fusion = fusionDe.get(p.idProducto);
+    const u = unidades[fusion && fusion.tipo !== 'UNIDADES' ? fusion.destino : p.idProducto] || {};
+    const propio = String((modo === 'EMPAQUE' ? u.empaque : u.nombre) || '').trim().toLowerCase();
+    return propio || nombreUnidadV2(p, modo);
+  };
+
   // Enlace de movimientos (ver crearEnlazadorV2); los que no se encuentran
   // usan el producto que eligió el usuario en el asistente (si eligió).
   const enlazador = crearEnlazadorV2(datos.CATALOGO);
@@ -272,7 +282,7 @@ function convertirAV3(datos, fusiones, opciones) {
       n.costoUnit = dividirDinero(m.costoUnit, f);
       n.precioUnit = dividirDinero(m.precioUnit, f);
       n.margenUnit = dividirDinero(m.margenUnit, f);
-      n.empaqueMov = nombreUnidadV2(p, 'EMPAQUE');
+      n.empaqueMov = nombreDe(p, 'EMPAQUE');
       n.cantEmpaques = Math.abs(m.cantidad);
       n.unidPorEmpaque = f;
       n.unidadesTotales = Math.abs(m.cantidad) * f;
@@ -305,7 +315,7 @@ function convertirAV3(datos, fusiones, opciones) {
     const esDestino = fusion && fusion.destino === p.idProducto;
     const f = factorDe.get(p.idProducto) || 1;
     const u = umbralDe(p);
-    n.unidadBase = nombreUnidadV2(p, modoDe.get(p.idProducto));
+    n.unidadBase = nombreDe(p, modoDe.get(p.idProducto) === 'EMPAQUE' ? 'EMPAQUE' : 'PRESENTACION');
     n.umbralMin = u.min; n.umbralMax = u.max;
     if (conversionDe.has(p.idProducto)) {
       const c = conversionDe.get(p.idProducto);
@@ -354,7 +364,7 @@ function convertirAV3(datos, fusiones, opciones) {
     if (destinoDe.has(id) && destinoDe.get(id) !== id) return; // sabor unido: el empaque queda en el que queda
     const p = porId.get(id);
     const usos = log.filter(m => m.idProducto === id && m.unidPorEmpaque === c);
-    equivalencias.push({ idEquiv: ++idEquiv, nombre: nombreUnidadV2(p, 'EMPAQUE'), unidades: c, nivelInferior: nombreUnidadV2(p, 'PRESENTACION'),
+    equivalencias.push({ idEquiv: ++idEquiv, nombre: nombreDe(p, 'EMPAQUE'), unidades: c, nivelInferior: nombreDe(p, 'PRESENTACION'),
       idProducto: id, ultimoUso: usos.reduce((max, m) => (m.fecha > max ? m.fecha : max), '') });
   });
 
@@ -366,7 +376,7 @@ function convertirAV3(datos, fusiones, opciones) {
       n.idProducto = destinoDe.get(p.idProducto) || p.idProducto;
       const fusion = fusionDe.get(p.idProducto);
       if (fusion && fusion.tipo === 'UNIDADES') n.detalle = `Precio por ${String(p.presentacion).toLowerCase()} de ${p.volumen} (antes de unificar)`;
-      if (conversionDe.has(p.idProducto)) n.detalle = `Precio por ${nombreUnidadV2(p, 'EMPAQUE')} de ${conversionDe.get(p.idProducto)} (antes de contar por ${nombreUnidadV2(p, 'PRESENTACION')})`;
+      if (conversionDe.has(p.idProducto)) n.detalle = `Precio por ${nombreDe(p, 'EMPAQUE')} de ${conversionDe.get(p.idProducto)} (antes de contar por ${nombreDe(p, 'PRESENTACION')})`;
     }
     return n;
   });
