@@ -36,6 +36,6 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .detalle-pro { display: grid; gap: var(--e-1); padding-top: var(--e-2); margin-top: var(--e-1); border-top: 1px dashed var(--borde); }
 .detalle-pro .dato strong { text-align: right; }
 /* Total cobrado: solo lectura salvo «¿Cobro extraordinario?» */
-.control.solo-lectura { background: var(--superficie-2); }
+.control.solo-lectura { background: transparent; border-color: transparent; box-shadow: none; padding-left: 0; }
 .control.solo-lectura input { cursor: default; }
 .interruptor-cobro { align-items: flex-start; margin-top: var(--e-1); }

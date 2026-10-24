@@ -159,7 +159,7 @@ function pintarProductoVenta() {
       <div class="dato"><span>Precio por ${p.unidadBase}${factorEmp > 1 ? ` · por ${nombreEmpaqueVenta}` : ''}</span><span><strong class="cifra">${formatearDinero(p.precio)}${factorEmp > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorEmp))}` : ''}</strong>
         <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span></div>
       <div class="dato"><span>Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
-      ${seguro(detalleProProductoHTML(p).texto)}
+      ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}
       ${presentaciones.length ? html`<div class="fila-chips" data-solo-modo="tienda pro" aria-label="Presentaciones">
         ${presentaciones.map(x => html`<button type="button" class="chip" data-accion="usar-presentacion" data-cantidad="${x.cantidad}" data-precio="${x.precio}" data-etiqueta="${x.etiqueta}">${x.etiqueta} · ${formatearDinero(x.precio)}</button>`)}
       </div>` : ''}

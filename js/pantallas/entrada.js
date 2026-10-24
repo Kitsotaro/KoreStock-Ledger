@@ -189,7 +189,7 @@ function validarEmpaqueEntrada() {
   const unidad = unidadBaseEntrada();
   const factor = factorEntrada();
   const nombre = entrada.empaque.trim();
-  if (!nombre) return 'Elige el tipo de empaque (caja, fardo, bolsa…) o la unidad.';
+  if (!nombre) return entrada.conNivel ? `Escribe el empaque mayor (el que trae ${pluralUnidad((entrada.subEmpaque || 'empaque').toLowerCase(), 2)} adentro) o vuelve a un solo empaque.` : `Elige el tipo de compra: por ${unidad} o por mayoreo (caja, fardo…).`;
   const esUnidad = normalizarTexto(nombre) === normalizarTexto(unidad);
   if (esUnidad) return entrada.conNivel ? 'Escribe el nombre del empaque mayor.' : '';
   if (entrada.conNivel) {
@@ -198,8 +198,8 @@ function validarEmpaqueEntrada() {
     if (normalizarTexto(entrada.subEmpaque) === normalizarTexto(unidad)) return `El empaque de adentro no puede llamarse igual que la unidad (${unidad}).`;
     if (!(entrada.unidades >= 1) || !(entrada.porSub > 1)) return 'Indica cuántos empaques trae el mayor y cuántas unidades trae cada uno.';
   } else if (!(factor > 1)) return entrada.unidades > 1 || !entrada.unidades
-    ? `¿Cuántas ${pluralUnidad(unidad, 2)} trae cada ${nombre.toLowerCase()}? Escríbelo en «de». Si compraste por ${unidad}, elige «${unidad}» (compra individual).`
-    : `Un empaque debe traer más de una unidad. Si compraste por ${unidad}, elige «${unidad}» (compra individual).`;
+    ? `¿Cuántas ${pluralUnidad(unidad, 2)} trae cada ${nombre.toLowerCase()}? Escríbelo en «de». Si compraste por ${unidad}, elige «${unidad}» (por unidad).`
+    : `Un empaque debe traer más de una unidad. Si compraste por ${unidad}, elige «${unidad}» (por unidad).`;
   // Un nombre ya registrado no cambia de tamaño (rompería las equivalencias).
   if (entrada.producto) {
     const choque = (nom, unidades, inferior) => Almacen.equivalenciasDe(entrada.producto.idProducto)
@@ -221,7 +221,7 @@ function precioVentaEntrada() {
 // empaques (compra por mayor, que pide cuántas unidades trae).
 function datalistEmpaques(unidad, valores) {
   const mayor = valores.filter(v => normalizarTexto(v) !== normalizarTexto(unidad));
-  return html`<datalist id="lista-empaques-entrada"><option value="${unidad}" data-grupo="Compra individual (por ${unidad})"></option>${mayor.map(v => html`<option value="${v.toLowerCase()}" data-grupo="Compra por mayor (empaque con varias ${pluralUnidad(unidad, 2)})"></option>`)}</datalist>`;
+  return html`<datalist id="lista-empaques-entrada"><option value="${unidad}" data-grupo="Por unidad"></option>${mayor.map(v => html`<option value="${v.toLowerCase()}" data-grupo="Por mayoreo"></option>`)}</datalist>`;
 }
 function datalist(id, valores) {
   return html`<datalist id="${id}">${valores.map(v => html`<option value="${v}"></option>`)}</datalist>`;
@@ -326,8 +326,8 @@ function pintarProductoEntradaSinFoco() {
   // 1. El empaque: cómo viene el producto (se registra aunque se compren unidades sueltas).
   const filaEmpaque = html`
       <div class="frase frase-notas ${entrada.conNivel ? 'con-nivel' : ''}" aria-label="Empaque">
-        <span class="frase-palabra">Empaque</span>
-        <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${entrada.empaque}" list="lista-empaques-entrada" aria-label="Tipo de empaque" placeholder="caja, fardo…" autocomplete="off"></span>${nota('Tipo de empaque')}</span>
+        <span class="frase-palabra">Tipo de compra</span>
+        <span class="frase-campo ancho"><span class="control ancho"><input id="entrada-empaque" value="${entrada.empaque}" list="lista-empaques-entrada" aria-label="Tipo de compra" placeholder="${unidad}, caja, fardo…" autocomplete="off"></span>${nota(entrada.conNivel ? 'Empaque mayor' : 'Por unidad o por mayoreo')}</span>
         ${empaqueEsUnidad && !entrada.conNivel ? '' : html`<span class="frase-palabra">de</span>
           ${entrada.conNivel
             ? html`<span class="frase-campo"><span class="control"><input id="entrada-por-sub" value="${entrada.unidades}" aria-label="Cuántos empaques trae"></span>${nota('Empaques')}</span>
@@ -337,7 +337,7 @@ function pintarProductoEntradaSinFoco() {
         ${datalistEmpaques(unidad, listaEmpaques)}
       </div>
       ${opciones.length > 1 ? html`<div class="fila-chips" role="group" aria-label="Empaques registrados">${opciones.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque" data-clave="${o.clave}" aria-pressed="${String(o.clave === claveActual)}">${o.etiqueta}</button>`)}</div>` : ''}
-      ${!empaqueEsUnidad && entrada.empaque.trim() ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? 'Quitar el empaque de adentro' : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
+      ${entrada.conNivel || (!empaqueEsUnidad && entrada.empaque.trim()) ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="alternar-nivel" style="justify-self:start">${seguro(icono(entrada.conNivel ? 'menos' : 'mas', 'icono-sm'))}${entrada.conNivel ? `Volver a un solo empaque (${(entrada.subEmpaque || 'el de adentro').toLowerCase()})` : `Cada ${nombreEmp.toLowerCase()} trae otros empaques adentro`}</button>` : ''}`;
 
   // 2. Cuánto compraste y en qué unidad (empaque o unidad suelta).
   const filaCompra = html`

@@ -139,3 +139,4 @@ body[data-pantalla="migracion"] .barra-inferior, body[data-pantalla="migracion"]
   background: var(--fondo);
 }
 @media (min-width: 900px) { .base-isla { display: none; } }
+.pestana-texto { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }

@@ -20,7 +20,8 @@ function textoEmpaquesProducto(p) {
 }
 
 // Todo lo que se sabe del producto (tarjeta de Venta y Entrada en modo Pro).
-function detalleProProductoHTML(p) {
+function detalleProProductoHTML(p, opciones) {
+  const { conAviso = true } = opciones || {};
   const e = Almacen.estado(p.idProducto);
   const empaques = textoEmpaquesProducto(p);
   const sabores = Object.entries(e.porVariante || {}).filter(([s, u]) => s && u);
@@ -33,7 +34,7 @@ function detalleProProductoHTML(p) {
     ${dato('Empaques', empaques || `solo por ${p.unidadBase}`)}
     ${sabores.length ? dato('Sabores en stock', sabores.map(([s, u]) => `${s} ${formatearNumero(u)}`).join(' · ')) : ''}
     ${e.bonif ? dato('Bonificadas recibidas', `${formatearNumero(e.bonif)} ${pluralUnidad(p.unidadBase, e.bonif)}`) : ''}
-    ${dato('Avisar con', `${formatearNumero(p.umbralMin || 0)} o menos (ideal ${formatearNumero(p.umbralMax || 0)})`)}
+    ${conAviso ? dato('Avisar con', `${formatearNumero(p.umbralMin || 0)} o menos (ideal ${formatearNumero(p.umbralMax || 0)})`) : ''}
     ${e.ultimaEntrada || e.ultimaVenta ? dato('Última compra · venta', `${e.ultimaEntrada ? formatearFechaCorta(e.ultimaEntrada) : '—'} · ${e.ultimaVenta ? formatearFechaCorta(e.ultimaVenta) : '—'}`) : ''}
   </div>`;
 }
@@ -47,8 +48,8 @@ function filaProductoHTML(p, q) {
   const empaques = textoEmpaquesProducto(p);
   return html`<div class="crece"><div class="recortar t-fuerte">${nombreProducto(p, { conVariante: false })}</div>
     <div class="sub">${p.sku} · ${describirCantidad(p.idProducto, e.stock)}</div>
-    ${empaques ? html`<div class="sub recortar">${seguro(icono('caja', 'icono-sm'))} ${empaques}</div>` : ''}
-    ${textoSabores ? html`<div class="sub">${seguro(icono('sabor', 'icono-sm'))} ${textoSabores}</div>` : ''}</div>
+    ${empaques ? html`<div class="sub en-linea">${seguro(icono('caja', 'icono-sm'))}<span class="recortar">${empaques}</span></div>` : ''}
+    ${textoSabores ? html`<div class="sub en-linea">${seguro(icono('sabor', 'icono-sm'))}<span class="recortar">${textoSabores}</span></div>` : ''}</div>
     <span class="cifra t-pequeno">${formatearDinero(p.precio)}</span>`;
 }
 

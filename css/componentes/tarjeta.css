@@ -30,3 +30,6 @@ details.tarjeta[open] > summary { margin-bottom: var(--e-3); }
 /* Una etiqueta con botón (Stock: «bruto ▾») baja el botón a otra línea en vez de cortarse */
 .cifra-tarjeta .etiqueta:has(.boton-texto) { flex-wrap: wrap; white-space: normal; }
 .tarjeta-titulo .boton-texto { white-space: nowrap; }
+/* Texto grande del navegador: las cifras y títulos se recortan con «…» en vez de cortarse */
+.cifra-tarjeta .valor, .cifra-tarjeta .comparacion, .tarjeta-titulo h2, .tarjeta-hoy .etiqueta-hoy, .tarjeta-hoy .detalle-hoy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cifra-tarjeta .valor { overflow-wrap: normal; }
