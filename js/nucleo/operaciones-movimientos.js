@@ -30,8 +30,7 @@ function describirCantidad(idProducto, unidades) {
   const p = Almacen.producto(idProducto);
   if (!p) return formatearNumero(unidades);
   const base = `${formatearNumero(unidades)} ${pluralUnidad(p.unidadBase, unidades)}`;
-  const eq = Almacen.equivalenciasDe(idProducto).filter(e => e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
-    .sort((a, b) => b.unidades - a.unidades)[0];
+  const eq = Almacen.empaqueMayor(idProducto);
   if (!eq || unidades < eq.unidades) return base;
   const n = Math.floor(unidades / eq.unidades);
   return `${base} ≈ ${n} ${pluralUnidad(eq.nombre, n)}`;

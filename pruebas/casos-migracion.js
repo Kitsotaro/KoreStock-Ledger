@@ -194,3 +194,24 @@ prueba('«empaque de N» sin N no migra y lo dice', async () => {
   try { await migrarBaseV2(id, [], null, { unidades: { 5: { modo: 'CONVERTIR' } } }); } catch (e) { error = e.message; }
   verdadero(/cuántas unidades trae el empaque/.test(error), error);
 });
+
+// Unión de sabores + «empaque de N» (Kitso, 2026-10-24): la unidad elegida para
+// el sabor que queda vale para todos; antes se ignoraba y los fardos pasaban como bolsas.
+prueba('sabores unidos: «fardo de N» del que queda convierte a todos los sabores', async () => {
+  if (!hayBasePrueba()) return;
+  const id = await prepararDemoConBaseV2();
+  const datos = await leerBaseV2(id);
+  const union = proponerFusiones(datos).find(x => x.tipo === 'VARIANTES');
+  union.aceptada = true;
+  const N = 20;
+  const r = await migrarBaseV2(id, [union], null, { unidades: { [union.destino]: { modo: 'CONVERTIR', unidades: N } } });
+  verdadero(r.ok, JSON.stringify(r.verificacion && r.verificacion.errores));
+  const v3 = await leerHojas(r.idNuevo, NOMBRES_HOJAS);
+  const viejos = datos.CATALOGO.filter(p => union.productos.includes(p.idProducto));
+  const destino = v3.CATALOGO.find(p => p.idProducto === union.destino);
+  igual(destino.stockCache, viejos.reduce((s, p) => s + p.stockCache, 0) * N, 'todos los sabores × N');
+  igual(destino.unidadBase, nombreUnidadV2(viejos[0], 'PRESENTACION'));
+  const eqs = v3.EQUIVALENCIAS.filter(e => union.productos.includes(e.idProducto));
+  igual(eqs.length, 1, 'un solo empaque, en el que queda');
+  igual(eqs[0].idProducto, union.destino); igual(eqs[0].unidades, N);
+});

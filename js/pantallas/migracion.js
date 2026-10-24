@@ -113,7 +113,8 @@ function textoConversionMigracion(p, n) {
 
 // Lista de productos con su unidad (con «Cargar más» para catálogos grandes).
 function pintarUnidadesMigracion(el) {
-  const enUnion = new Set(_migracion.propuestas.flatMap(p => p.productos));
+  const enUnion = new Map();
+  _migracion.propuestas.forEach(f => f.productos.forEach(id => enUnion.set(id, f)));
   const productos = _migracion.datos.CATALOGO.filter(p => p.idProducto);
   pintarPaginado({
     contenedor: $('#migracion-lista-unidades', el), items: productos, tope: 40,
@@ -124,7 +125,7 @@ function pintarUnidadesMigracion(el) {
       const opcion = (modo, texto) => html`<button type="button" role="radio" data-accion="unidad-modo" data-id="${p.idProducto}" data-modo="${modo}" aria-checked="${String(u.modo === modo)}">${texto}</button>`;
       return html`<div class="fila-unidad">
         <div class="crece"><div class="titulo">${nombreProductoV2(p)}${p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</div>
-          <div class="sub">Costo ${formatearDinero(p.costo, { detalle: true })} · precio ${formatearDinero(p.precio)} · stock ${formatearNumero(p.stockCache)}${enUnion.has(p.idProducto) ? ' · si lo unes arriba, se cuenta como diga la unión' : ''}</div></div>
+          <div class="sub">Costo ${formatearDinero(p.costo, { detalle: true })} · precio ${formatearDinero(p.precio)} · stock ${formatearNumero(p.stockCache)}${enUnion.has(p.idProducto) ? (enUnion.get(p.idProducto).tipo === 'UNIDADES' ? ' · si lo unes arriba, se cuenta como diga la unión' : (enUnion.get(p.idProducto).destino === p.idProducto ? ' · si unes sus sabores arriba, todos se cuentan así' : ' · si lo unes arriba, se cuenta como el sabor que queda')) : ''}</div></div>
         <span class="segmentado segmentado-compra" role="radiogroup" aria-label="Cómo se cuenta ${nombreProductoV2(p)}">
           ${opcion('PRESENTACION', `Por ${pres} (unidad)`)}${mismo ? '' : opcion('CONVERTIR', `Por ${emp} de N ${pres}s (empaque)`)}
         </span>

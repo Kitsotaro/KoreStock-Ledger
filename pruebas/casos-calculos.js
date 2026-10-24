@@ -201,3 +201,24 @@ prueba('«Este mes» en curso se compara con los mismos días del mes anterior',
   const x = periodoComparable('2026-10-10', '2026-10-19', 'PERSONALIZADO', '2026-10-23');
   igual(x.inicio, '2026-09-30'); igual(x.fin, '2026-10-09');
 });
+
+grupo('Total en bodega por empaque (Kitso, 2026-10-24)');
+prueba('cada producto usa su propio empaque, no el de otro con la misma unidad', () => {
+  const antes = Almacen.hojas;
+  Almacen.cargar({
+    CATALOGO: [
+      { idProducto: 1, sku: 'Q', marca: 'Diana', linea: 'Quesitos', unidadBase: 'bolsa', estado: ESTADOS.ACTIVO },
+      { idProducto: 2, sku: 'T', marca: 'Diana', linea: 'Tortillitas', unidadBase: 'bolsa', estado: ESTADOS.ACTIVO },
+      { idProducto: 3, sku: 'T2', marca: 'Diana', linea: 'Tortillitas', unidadBase: 'bolsa', estado: ESTADOS.FUSIONADO, fusionadoEn: 2 },
+      { idProducto: 4, sku: 'N', marca: 'Nivea', linea: 'Crema', unidadBase: 'frasco', estado: ESTADOS.ACTIVO }
+    ],
+    EQUIVALENCIAS: [
+      { idEquiv: 1, nombre: 'caja', unidades: 24, nivelInferior: 'bolsa', idProducto: 1 },
+      { idEquiv: 2, nombre: 'fardo', unidades: 20, nivelInferior: 'bolsa', idProducto: 3 }
+    ]
+  });
+  igual(Almacen.empaqueMayor(1).nombre, 'caja');
+  igual(Almacen.empaqueMayor(2).nombre, 'fardo', 'el del sabor unido, no la caja de Quesitos');
+  igual(Almacen.empaqueMayor(4), null, 'sin empaque propio no toma ninguno');
+  Almacen.cargar(antes);
+});

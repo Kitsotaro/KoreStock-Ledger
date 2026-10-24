@@ -176,6 +176,20 @@ const Almacen = {
       .filter(e => { const k = `${normalizarTexto(e.nombre)}|${e.unidades}|${normalizarTexto(e.nivelInferior)}`; if (vistos.has(k)) return false; vistos.add(k); return true; });
   },
 
+  // Empaque más grande DEL PRODUCTO sobre su unidad (o null). A diferencia de
+  // equivalenciasDe (que también sugiere los de otros productos), aquí valen solo
+  // los suyos, los de sabores unidos a él y los generales: la «caja de 24 bolsas»
+  // de Quesitos no es el fardo de Tortillitas (Kitso, 2026-10-24).
+  empaqueMayor(idProducto) {
+    const p = this.producto(idProducto);
+    if (!p) return null;
+    const id = Number(idProducto);
+    const unidos = new Set(this.hojas.CATALOGO.filter(x => Number(x.fusionadoEn) === id).map(x => Number(x.idProducto)));
+    return this.hojas.EQUIVALENCIAS.filter(e => (!e.idProducto || Number(e.idProducto) === id || unidos.has(Number(e.idProducto)))
+      && e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
+      .sort((a, b) => b.unidades - a.unidades || ((b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : -1))[0] || null;
+  },
+
   // Sabores ya usados con este producto (D24: el sabor es dato del movimiento).
   variantesDe(idProducto) {
     const vistos = new Map();

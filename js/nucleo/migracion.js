@@ -152,11 +152,15 @@ function convertirAV3(datos, fusiones, opciones) {
   aceptadas.forEach(f => f.productos.forEach(id => {
     destinoDe.set(id, f.destino); factorDe.set(id, f.tipo === 'UNIDADES' ? f.factores[id] : 1); fusionDe.set(id, f);
   }));
-  // Unidad elegida por producto (los fusionados usan la unidad de su unión).
+  // Unidad elegida por producto. Unión por empaques: la unidad de la unión.
+  // Unión de sabores: todos se cuentan como el producto que queda (Kitso,
+  // 2026-10-24: antes se ignoraba y «11 fardos» de Tortillitas pasaban como bolsas).
   const modoDe = new Map(), conversionDe = new Map();
   datos.CATALOGO.forEach(p => {
-    if (!p.idProducto || fusionDe.has(p.idProducto)) return;
-    const u = unidades[p.idProducto] || {};
+    if (!p.idProducto) return;
+    const fusion = fusionDe.get(p.idProducto);
+    if (fusion && fusion.tipo === 'UNIDADES') return;
+    const u = unidades[fusion ? fusion.destino : p.idProducto] || {};
     const modo = MODOS_UNIDAD.includes(u.modo) ? u.modo : 'PRESENTACION';
     const n = Number(u.unidades);
     if (modo === 'CONVERTIR') {
@@ -225,7 +229,8 @@ function convertirAV3(datos, fusiones, opciones) {
         n.unidPorEmpaque = f;
         n.unidadesTotales = Math.abs(m.cantidad) * f;
       }
-    } else if (conversionDe.has(p.idProducto)) {
+    }
+    if (!(fusion && fusion.tipo === 'UNIDADES') && conversionDe.has(p.idProducto)) {
       // «Caja de N»: lo registrado eran cajas; se guarda en unidades.
       const f = conversionDe.get(p.idProducto);
       n.cantidad = m.cantidad * f;
@@ -312,6 +317,7 @@ function convertirAV3(datos, fusiones, opciones) {
 
   // El empaque de los productos convertidos queda como empaque conocido.
   conversionDe.forEach((c, id) => {
+    if (destinoDe.has(id) && destinoDe.get(id) !== id) return; // sabor unido: el empaque queda en el que queda
     const p = porId.get(id);
     const usos = log.filter(m => m.idProducto === id && m.unidPorEmpaque === c);
     equivalencias.push({ idEquiv: ++idEquiv, nombre: nombreUnidadV2(p, 'EMPAQUE'), unidades: c, nivelInferior: nombreUnidadV2(p, 'PRESENTACION'),
@@ -420,7 +426,7 @@ function verificarMigracion(datos, resultado) {
   });
   // Convertidos a unidades: mismo valor salvo fracciones de centavo por el costo ÷ N (5 decimales).
   (resultado.conversionDe || new Map()).forEach((c, id) => {
-    if (conDiferencia.has(id)) return;
+    if (conDiferencia.has(id) || resultado.destinoDe.has(id)) return; // los unidos se avisan aparte
     const viejo = datos.CATALOGO.find(x => x.idProducto === id), nuevo = v3.CATALOGO.find(x => x.idProducto === id);
     if (!viejo || !nuevo || viejo.estado === ESTADOS.OBSOLETO) return;
     const a = multiplicarDinero(viejo.costo, viejo.stockCache), b = multiplicarDinero(nuevo.costo, nuevo.stockCache);

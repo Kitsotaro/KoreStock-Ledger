@@ -63,7 +63,7 @@ registrarPantalla('stock', {
         <div id="stock-lista"></div>
         <button type="button" class="boton boton-entrada boton-bloque" data-accion="agregar">${seguro(icono('entrada'))}Agregar stock</button>
       </div>`.texto;
-    $('#stock-buscar', el).addEventListener('input', (e) => { stockUI.texto = e.target.value; pintarListaStock(); });
+    $('#stock-buscar', el).addEventListener('input', (e) => { stockUI.texto = e.target.value; pintarCifrasStock(); pintarListaStock(); });
     delegar(el, 'click', accionesStock);
     GraficoStock.montar($('#stock-grafico', el));
     Almacen.suscribir((motivo) => { if (Shell.actual === 'stock') pintarStock(); });
@@ -79,7 +79,8 @@ function pintarStock() {
 }
 
 function pintarCifrasStock() {
-  const activos = Almacen.productosActivos();
+  // El buscador también filtra las tarjetas (no el gráfico): «diana» → solo métricas de Diana.
+  const activos = Almacen.productosActivos().filter(p => !stockUI.texto || coincidenPalabras(textoBuscableProducto(p), stockUI.texto));
   const v = valorBodega(activos, Almacen.estados);
   const conteo = { agotado: 0, bajo: 0, medio: 0, optimo: 0 };
   activos.forEach(p => { conteo[semaforoStock(Almacen.stock(p.idProducto), p)]++; });
@@ -90,7 +91,7 @@ function pintarCifrasStock() {
       <div class="valor-desglose"><span class="t-exito">${seguro(icono('billete', 'icono-sm'))}Real ${formatearDinero(v.real)}</span><span class="t-secundario">${seguro(icono('estrella', 'icono-sm'))}Bonificación ${formatearDinero(v.bonificacion)}</span></div></div>
     <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}</div>
       <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>
-    ${total.empaques ? html`<div class="cifra-tarjeta total-bodega" data-solo-modo="pro"><div class="etiqueta">Total en bodega ${botonInfo('Total en bodega', 'Cuántos empaques tienes en total, sin importar la marca: cada producto se cuenta en su empaque más grande (caja, fardo, sixpack…). «Mayoreo»: empaques completos. «Unidades»: todo el stock contado en su unidad (botellas, latas, bolsas…), sumado sin importar la marca.')}</div>
+    ${total.empaques || total.sueltas.length ? html`<div class="cifra-tarjeta total-bodega" data-solo-modo="pro"><div class="etiqueta">Total en bodega ${botonInfo('Total en bodega', 'Cuántos empaques tienes en total, sin importar la marca: cada producto se cuenta en su empaque más grande (caja, fardo, sixpack…). «Mayoreo»: empaques completos. «Unidades»: todo el stock contado en su unidad (botellas, latas, bolsas…), sumado sin importar la marca.')}</div>
       <div class="valor">${formatearNumero(total.empaques)} <span class="t-pequeno t-secundario">empaques</span></div>
       ${total.grupos.length ? html`<div class="fila-total"><span class="t-mini t-secundario">${seguro(icono('caja', 'icono-sm'))}Mayoreo</span><span class="chips-total">${total.grupos.map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`)}</span></div>` : ''}
       ${total.sueltas.length ? html`<div class="fila-total"><span class="t-mini t-secundario">${seguro(icono('identificador', 'icono-sm'))}Unidades</span><span class="chips-total">${total.sueltas.map(([n, c]) => html`<span class="chip-dato"><strong>${formatearNumero(c)}</strong> ${pluralUnidad(n, c)}</span>`)}</span></div>` : ''}</div>` : ''}`.texto;
@@ -101,11 +102,7 @@ function textoUmbral(p, n) {
   const eq = empaqueMayor(p);
   return eq ? `${formatearNumero(n)} (${formatearNumero(redondearCantidad(n / eq.unidades))} ${pluralUnidad(String(eq.nombre).toLowerCase(), n / eq.unidades)})` : formatearNumero(n);
 }
-// Empaque más grande registrado sobre la unidad del producto (o null).
-function empaqueMayor(p) {
-  return Almacen.equivalenciasDe(p.idProducto).filter(e => e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
-    .sort((a, b) => b.unidades - a.unidades)[0] || null;
-}
+function empaqueMayor(p) { return Almacen.empaqueMayor(p.idProducto); }
 
 // Total en bodega (modo Pro, como el «Total en Bodega» de la v2): cada producto en
 // su empaque más grande; se suman por nombre de empaque sin importar la marca.
@@ -115,8 +112,7 @@ function totalesPorEmpaque(productos) {
   productos.forEach(p => {
     const stock = Almacen.stock(p.idProducto);
     if (stock <= 0) return;
-    const eq = Almacen.equivalenciasDe(p.idProducto).filter(e => e.unidades > 1 && normalizarTexto(e.nivelInferior) === normalizarTexto(p.unidadBase))
-      .sort((a, b) => b.unidades - a.unidades)[0];
+    const eq = empaqueMayor(p);
     // «Unidades»: TODO el stock en su unidad (botellas, latas, tetras…), sumado por nombre.
     sueltas.set(p.unidadBase, redondearCantidad((sueltas.get(p.unidadBase) || 0) + stock));
     if (!eq) return;
@@ -160,7 +156,7 @@ function filaStockHTML(p) {
   const pct = Math.max(4, Math.min(100, (e.stock / (max * 2)) * 100));
   const valor = redondearCentavo(multiplicarDinero(p.costo, Math.max(0, e.stock)));
   const presentaciones = Almacen.presentacionesDe(p.idProducto);
-  const eq = Almacen.equivalenciasDe(p.idProducto).find(x => x.unidades > 1);
+  const eq = Almacen.empaqueMayor(p.idProducto);
   const sabores = Object.entries(e.porVariante).filter(([k, v]) => k || v);
   const tieneSabores = sabores.some(([k]) => k) && !stockUI.ocultarSabores;
   const par = (ic, etiqueta, valor, clase) => html`<div class="par-dato con-icono">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span><strong class="${clase || ''}">${valor}</strong></div>`;
