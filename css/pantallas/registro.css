@@ -64,7 +64,7 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .registro-venta .control.grande:has(#venta-cantidad) { min-height: 3.25rem; }
 .registro-venta #venta-cantidad { font-size: var(--t-2xl); }
 /* Botón principal flotante (solo teléfono): ver anclarBotonPrincipal en componentes.js */
-.boton-flotante { position: fixed; right: var(--e-4); bottom: calc(var(--alto-barra-inferior) + var(--e-3) + var(--e-5) + env(safe-area-inset-bottom)); z-index: calc(var(--z-barra) + 1); min-height: 2.75rem; padding: 0 var(--e-4); gap: var(--e-2); box-shadow: var(--sombra-2); }
+.boton-flotante { position: fixed; right: var(--e-4); bottom: calc(var(--alto-barra-inferior) + var(--e-3) + var(--e-5) + env(safe-area-inset-bottom)); z-index: var(--z-barra); min-height: 2.75rem; padding: 0 var(--e-4); gap: var(--e-2); box-shadow: var(--sombra-2); }
 .boton-flotante:disabled { opacity: 1; background: var(--superficie-3); color: var(--texto-2); border-color: var(--borde-fuerte); box-shadow: var(--sombra-1); }
 .boton-flotante[hidden] { display: none; }
 @media (min-width: 720px) { .boton-flotante { display: none; } }
@@ -77,3 +77,6 @@ details.desplegable-simple:not([open]) { padding-top: var(--e-3); padding-bottom
 .fila-cantidad > .control { flex: none; width: 7.5rem; min-width: 0; }
 .fila-cantidad > .control input { width: 100%; }
 .fila-cantidad > .control input { text-align: center; font-weight: var(--peso-fuerte); font-size: var(--t-lg); }
+/* Con el menú Venta / Entrada abierto, el botón flotante queda solo con su ícono y siempre por debajo del menú */
+body:has(.fab-registro.abierto) .boton-flotante { padding: 0; width: 2.75rem; }
+body:has(.fab-registro.abierto) .boton-flotante > span { display: none; }
