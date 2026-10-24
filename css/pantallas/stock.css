@@ -33,3 +33,18 @@
 .fila-total .chips-total { margin-top: 0; }
 /* Gráfico: «Estilo» y «Mostrar» con interruptores pequeños */
 .fila-estilo { margin-bottom: var(--e-2); }
+/* Detalle de Stock por grupos (Existencias · Precios · Producto) */
+.grupo-detalle { display: flex; flex-direction: column; gap: var(--e-1); padding-top: var(--e-2); }
+.grupo-detalle + .grupo-detalle { border-top: 1px solid var(--borde); margin-top: var(--e-1); }
+.grupo-detalle-titulo { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-xs); font-weight: var(--peso-fuerte); color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.grupo-detalle-titulo .icono { width: 0.8rem; height: 0.8rem; }
+/* Precios en columnas: [ícono] etiqueta · por empaque · por unidad */
+.tabla-precios { display: flex; flex-direction: column; gap: var(--e-1); }
+.fila-precio { display: grid; grid-template-columns: 0.95rem minmax(0, 1fr) 6.5rem; align-items: center; gap: var(--e-2); font-size: var(--t-sm); color: var(--texto-2); }
+.tabla-precios.dos .fila-precio { grid-template-columns: 0.95rem minmax(0, 1fr) 6.5rem 6.5rem; }
+.fila-precio > .icono { width: 0.95rem; height: 0.95rem; color: var(--texto-3); }
+.fila-precio strong { color: var(--texto); font-weight: var(--peso-fuerte); text-align: right; }
+.fila-precio.cabecera { grid-template-columns: minmax(0, 1fr) 6.5rem; font-size: var(--t-xs); color: var(--texto-3); }
+.tabla-precios.dos .fila-precio.cabecera { grid-template-columns: minmax(0, 1fr) 6.5rem 6.5rem; }
+.fila-precio.cabecera span:not(.crece) { text-align: right; }
+.valor-anexo { font-weight: normal; }

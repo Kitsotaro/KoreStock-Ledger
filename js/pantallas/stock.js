@@ -89,7 +89,7 @@ function pintarCifrasStock() {
     <div class="cifra-tarjeta"><div class="etiqueta">Valor en bodega ${botonInfo('Valor en bodega', '**Valor neto** (cifra grande): cuánto vale en capital TODO lo que tienes en bodega, a último costo, incluyendo lo que llegó gratis. Úsalo para cuadrar contra tu conteo físico.\n\n**Real** (verde): lo que pagaste por las unidades pagadas que siguen en bodega (a su costo promedio).\n\n**Bonificación**: lo que vale, a último costo, lo gratis que todavía no se vende. Lo gratis siempre sale primero al vender.')}</div>
       <div class="valor">${formatearDinero(v.bruto)}</div>
       <div class="valor-desglose"><span class="t-exito">${seguro(icono('billete', 'icono-sm'))}Real ${formatearDinero(v.real)}</span><span class="t-secundario">${seguro(icono('estrella', 'icono-sm'))}Bonificación ${formatearDinero(v.bonificacion)}</span></div></div>
-    <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}</div>
+    <div class="cifra-tarjeta"><div class="etiqueta">Productos</div><div class="valor">${formatearNumero(activos.length)}${total.empaques ? html` <span class="t-pequeno t-secundario valor-anexo" data-solo-modo="bodega tienda">· ${formatearNumero(total.empaques)} ${pluralizar(total.empaques, 'empaque')}</span>` : ''}</div>
       <div class="comparacion ${conteo.agotado + conteo.bajo ? 'baja' : 'igual'}">${conteo.agotado} agotados · ${conteo.bajo + conteo.medio} con poco</div></div>
     ${total.empaques || total.sueltas.length ? html`<div class="cifra-tarjeta total-bodega" data-solo-modo="pro"><div class="etiqueta">Total en bodega ${botonInfo('Total en bodega', 'Cuántos empaques tienes en total, sin importar la marca: cada producto se cuenta en su empaque más grande (caja, fardo, sixpack…). «Mayoreo»: empaques completos. «Unidades»: todo el stock contado en su unidad (botellas, latas, bolsas…), sumado sin importar la marca.')}</div>
       <div class="valor">${formatearNumero(total.empaques)} <span class="t-pequeno t-secundario">empaques</span></div>
@@ -177,19 +177,22 @@ function filaStockHTML(p) {
       ${seguro(icono('chevron-abajo', 'icono-sm chevron'))}
     </summary>
     <div class="desplegable-cuerpo">
-      ${par('caja', 'Stock', describirCantidad(p.idProducto, e.stock))}
-      ${e.bonif ? par('estrella', 'Bonificación en bodega', e.bonifEnBodega > 0 ? `${describirCantidad(p.idProducto, e.bonifEnBodega)} (sale primero)` : `ya se vendió (recibidas ${describirCantidad(p.idProducto, e.bonif)})`) : ''}
-      ${par('precio', 'Último costo', `${formatearDinero(p.costo, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
-      ${par('tendencia', 'Costo promedio (pagadas)', `${formatearDinero(e.cpp, { detalle: true })} / ${p.unidadBase}`, 'cifra')}
-      ${par('etiqueta', 'Precio de venta', `${formatearDinero(p.precio)} / ${p.unidadBase}`, 'cifra')}
-      ${presentaciones.map(x => par('precio', x.etiqueta, formatearDinero(x.precio), 'cifra'))}
-      ${eq ? par('lote', 'Empaque habitual', `${eq.nombre} de ${formatearNumero(eq.unidades)}`) : ''}
-      ${p.variante ? par('sabor', 'Sabor del producto', p.variante) : ''}
-      ${tieneSabores ? par('sabor', 'Sabores vendidos y comprados', sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')) : ''}
-      ${par('advertencia', 'Avisar', `muy poco ≤ ${textoUmbral(p, p.umbralMin ?? 4)} · poco ≤ ${textoUmbral(p, p.umbralMax ?? 6)}`)}
-      ${p.categoria ? par('etiqueta-nueva', 'Categoría', p.categoria) : ''}
-      ${par('identificador', 'Unidad', `${p.unidadBase}${p.decimales ? ' (permite decimales)' : ''}`)}
-      ${par('reloj', 'Última modificación', String(p.ultimaModif || '').slice(0, 16))}
+      <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('caja', 'icono-sm'))}Existencias</div>
+        ${par('caja', 'Stock', describirCantidad(p.idProducto, e.stock))}
+        ${e.bonif ? par('estrella', 'Bonificación en bodega', e.bonifEnBodega > 0 ? `${describirCantidad(p.idProducto, e.bonifEnBodega)} (sale primero)` : `ya se vendió (recibidas ${describirCantidad(p.idProducto, e.bonif)})`) : ''}
+        ${tieneSabores ? par('sabor', 'Sabores vendidos y comprados', sabores.map(([k, v]) => `${k || 'Sin asignar'} ${formatearNumero(v)}`).join(' · ')) : ''}
+        ${par('advertencia', 'Avisar', `muy poco ≤ ${textoUmbral(p, p.umbralMin ?? 4)} · poco ≤ ${textoUmbral(p, p.umbralMax ?? 6)}`)}
+      </div>
+      <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('precio', 'icono-sm'))}Precios</div>
+        ${tablaPreciosStock(p, e, eq, presentaciones)}
+      </div>
+      <div class="grupo-detalle"><div class="grupo-detalle-titulo">${seguro(icono('identificador', 'icono-sm'))}Producto</div>
+        ${eq ? par('lote', 'Empaque habitual', `${eq.nombre} de ${formatearNumero(eq.unidades)}`) : ''}
+        ${p.variante ? par('sabor', 'Sabor del producto', p.variante) : ''}
+        ${p.categoria ? par('etiqueta-nueva', 'Categoría', p.categoria) : ''}
+        ${par('identificador', 'Unidad', `${p.unidadBase}${p.decimales ? ' (permite decimales)' : ''}`)}
+        ${par('reloj', 'Última modificación', String(p.ultimaModif || '').slice(0, 16))}
+      </div>
       <div class="grupo-botones" style="margin-top:var(--e-2)">
         <button type="button" class="boton boton-secundario boton-sm" data-accion="editar" data-id="${p.idProducto}">${seguro(icono('editar', 'icono-sm'))}Editar</button>
         <button type="button" class="boton boton-entrada boton-sm" data-accion="mas-entrada" data-id="${p.idProducto}">${seguro(icono('entrada', 'icono-sm'))}Entrada</button>
@@ -198,6 +201,22 @@ function filaStockHTML(p) {
       </div>
     </div>
   </details>`;
+}
+
+// Precios del detalle en columnas: por empaque (mayoreo, primero) y por unidad.
+// Venta por empaque: su presentación de venta si existe; si no, precio × N.
+function tablaPreciosStock(p, e, eq, presentaciones) {
+  const n = eq ? eq.unidades : 0;
+  const pres = n ? presentaciones.find(x => Number(x.cantidad) === n) : null;
+  const otras = presentaciones.filter(x => x !== pres);
+  const fila = (ic, etiqueta, unit, mayor) => html`<div class="fila-precio">${seguro(icono(ic, 'icono-sm'))}<span class="crece">${etiqueta}</span>${n ? html`<strong class="cifra">${formatearDinero(mayor)}</strong>` : ''}<strong class="cifra">${formatearDinero(unit, { detalle: true })}</strong></div>`;
+  return html`<div class="tabla-precios ${n ? 'dos' : 'una'}">
+    <div class="fila-precio cabecera"><span class="crece"></span>${n ? html`<span>Por ${String(eq.nombre).toLowerCase()} (${formatearNumero(n)})</span>` : ''}<span>Por ${p.unidadBase}</span></div>
+    ${fila('precio', 'Último costo', p.costo, multiplicarDinero(p.costo, n))}
+    ${fila('tendencia', 'Costo promedio (pagadas)', e.cpp, multiplicarDinero(e.cpp, n))}
+    ${fila('etiqueta', 'Precio de venta', p.precio, pres ? pres.precio : multiplicarDinero(p.precio, n))}
+  </div>
+  ${otras.map(x => html`<div class="par-dato con-icono">${seguro(icono('precio', 'icono-sm'))}<span class="crece">${x.etiqueta}</span><strong class="cifra">${formatearDinero(x.precio)}</strong></div>`)}`;
 }
 
 function pintarListaStock() {
