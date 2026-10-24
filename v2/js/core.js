@@ -193,7 +193,9 @@ async function verificarAccesoUsuario(email) {
   if (!email) return false;
 
   const consultar = async () => {
-    const resp = await fetch(`${URL_VERIFICACION_ACCESO}?email=${encodeURIComponent(email)}`);
+    // También el pase de Google (token): el verificador comprueba con Google de quién es.
+    const pase = (typeof gapi !== 'undefined' && gapi.client && gapi.client.getToken && gapi.client.getToken()) || null;
+    const resp = await fetch(`${URL_VERIFICACION_ACCESO}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(pase && pase.access_token || '')}`);
     const data = await resp.json();
     return data.autorizado === true;
   };
