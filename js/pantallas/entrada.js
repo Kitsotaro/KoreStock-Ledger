@@ -375,7 +375,8 @@ function pintarProductoEntradaSinFoco() {
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto-entrada" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
       <div class="dato"><span>En bodega</span><strong>${describirCantidad(p.idProducto, Almacen.stock(p.idProducto))}</strong></div>
-      <div class="dato"><span>Precio por ${p.unidadBase}${factorReg > 1 ? ` · por ${empReg.empaque.toLowerCase()}` : ''}</span><strong class="cifra">${formatearDinero(p.precio)}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}` : ''}</strong></div>
+      <div class="dato"><span>Compra a distribuidor por ${p.unidadBase}${factorReg > 1 ? ` · por ${empReg.empaque.toLowerCase()}` : ''}</span><strong class="cifra">${formatearDinero(p.costo, { detalle: true })}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.costo, factorReg))}` : ''}</strong></div>
+      <div class="dato"><span>Venta al consumidor por ${p.unidadBase}${factorReg > 1 ? ` · por ${empReg.empaque.toLowerCase()}` : ''}</span><strong class="cifra">${formatearDinero(p.precio)}${factorReg > 1 ? ` · ${formatearDinero(multiplicarDinero(p.precio, factorReg))}` : ''}</strong></div>
       ${seguro(detalleProProductoHTML(p).texto)}
       <label class="casilla t-pequeno"><input type="checkbox" data-accion="modo-editor" ${entrada.editor ? 'checked' : ''}> Modo editor: costo o precio de venta</label>
       ${editorArriba ? html`<div class="columna editor-producto">
