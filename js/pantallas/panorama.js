@@ -49,7 +49,10 @@ registrarPantalla('panorama', {
   mostrar() { panUI.filtros.pintar(); pintarPanorama(); }
 });
 
-function umbralRoi() { return Almacen.umbral('ROI') || { min: 10, max: 20 }; }
+// Meta de ROI por defecto: ≤10 % crítico, ≤20 % bajo, más de 20 % saludable
+// (margen habitual de una distribuidora pequeña); «Restablecer» vuelve a esto.
+const ROI_PREDETERMINADO = { min: 10, max: 20 };
+function umbralRoi() { return Almacen.umbral('ROI') || ROI_PREDETERMINADO; }
 function umbralAgotamiento() { return Almacen.umbral('AGOTAMIENTO') || { min: 7, max: 20 }; }
 
 function tarjetaPanorama(clave, titulo, iconoNombre, valor, sub, cuerpo) {
@@ -74,12 +77,15 @@ function pintarPanorama() {
   incluirHistoricosUI(est.inicio, pintarPanorama);
   const movs = hojas.LOG_TRANS;
   const productos = Almacen.productosActivos().filter(p => !filtro || filtro({ idProducto: p.idProducto }));
+  // ROI: también los obsoletos que se movieron en el período; el ROI global ya los
+  // cuenta y sin ellos la lista no sumaba el total (Kitso, 2026-10-24).
+  const productosRoi = Almacen.productosVisibles().filter(p => !filtro || filtro({ idProducto: p.idProducto }));
   const ur = umbralRoi(), ua = umbralAgotamiento();
 
   // ROI y rotación
   const roi = calcularROI(movs, est.inicio, est.fin, filtro);
   const claseRoi = (v) => v <= ur.min ? ['critico', 'advertencia', 'Crítico'] : v <= ur.max ? ['bajo', 'info', 'Bajo la meta'] : ['bien', 'check-circulo', 'En la meta'];
-  const roiFilas = productos.map(p => {
+  const roiFilas = productosRoi.map(p => {
     const d = roi.porProducto[p.idProducto] || { inversion: 0, ganancia: 0, unidadesVendidas: 0, unidadesCompradas: 0, roi: 0 };
     const stock = Almacen.stock(p.idProducto);
     return { p, d, rotacion: stock > 0 ? d.unidadesVendidas / stock : null };
@@ -118,16 +124,23 @@ function pintarPanorama() {
     <div class="rejilla-panorama">
     ${tarjetaPanorama('roi', 'Retorno (ROI)', 'tendencia', `${roi.roiGlobal.toFixed(1)}%`,
       html`<span class="semaforo ${cGlobal}">${seguro(icono(iGlobal))}${tGlobal}</span> · invertiste ${formatearDinero(roi.inversionGlobal)} y ganaste ${formatearDinero(roi.gananciaGlobal)}`,
-      html`<div class="fila envolver t-pequeno">Meta: crítico ≤ <input class="umbral" data-umbral="ROI-min" value="${ur.min}" aria-label="ROI crítico">% · bajo ≤ <input class="umbral" data-umbral="ROI-max" value="${ur.max}" aria-label="ROI bajo">%</div>
+      html`<div class="fila envolver t-pequeno">Meta: crítico ≤ <input class="umbral" data-umbral="ROI-min" value="${ur.min}" aria-label="ROI crítico">% · bajo ≤ <input class="umbral" data-umbral="ROI-max" value="${ur.max}" aria-label="ROI bajo">%
+          ${ur.min !== ROI_PREDETERMINADO.min || ur.max !== ROI_PREDETERMINADO.max ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="roi-predeterminado">${seguro(icono('deshacer', 'icono-sm'))}Restablecer ${ROI_PREDETERMINADO.min} / ${ROI_PREDETERMINADO.max}</button>` : ''}</div>
         <div class="control">${seguro(icono('buscar', 'icono-sm'))}<input type="search" data-buscar="roi" placeholder="Buscar producto" value="${est.buscarRoi}"></div>
         <div data-lista="roi"></div>`)}
     ${tarjetaPanorama('equilibrio', 'Punto de equilibrio', 'panorama', eq.puntoEquilibrio === null ? 'Sin margen' : formatearDinero(eq.puntoEquilibrio),
       eq.puntoEquilibrio === null ? 'No hubo ventas con ganancia en el período.' : (falta > 0 ? `Te faltan ${formatearDinero(falta)} en ventas para cubrir tus gastos` : 'Ya cubriste tus gastos del período'),
-      html`<div class="par-dato"><span>Gastos fijos del período</span><strong>${formatearDinero(eq.gastosFijos)}</strong></div>
-        <div class="par-dato"><span>Margen de contribución</span><strong>${eq.margenContribucion.toFixed(1)}%</strong></div>
-        <div class="par-dato"><span>Vendido</span><strong>${formatearDinero(eq.ventaTotal)} (${progreso.toFixed(0)}%)</strong></div>
-        <div class="mini-barra" style="width:100%;height:10px"><span class="${progreso >= 100 ? 'fondo-bien' : progreso >= 50 ? 'fondo-bajo' : 'fondo-critico'}" style="width:${Math.min(100, progreso).toFixed(0)}%"></span></div>
-        <p class="t-mini t-tenue">No incluye combustible: sus cargas se ven en su propia tarjeta.</p>`)}
+      html`<div class="datos-equilibrio">
+          <div class="dato-equilibrio">${seguro(icono('recibo', 'icono-sm'))}<span class="etiqueta-eq">Gastos fijos</span><strong class="cifra">${formatearDinero(eq.gastosFijos)}</strong></div>
+          <div class="dato-equilibrio">${seguro(icono('tendencia', 'icono-sm'))}<span class="etiqueta-eq">Margen de contribución</span><strong class="cifra">${eq.margenContribucion.toFixed(1)}%</strong></div>
+          <div class="dato-equilibrio">${seguro(icono('carrito', 'icono-sm'))}<span class="etiqueta-eq">Vendido</span><strong class="cifra">${formatearDinero(eq.ventaTotal)}</strong></div>
+        </div>
+        <div class="avance-equilibrio">
+          <div class="fila-separada t-pequeno"><span>${seguro(icono(progreso >= 100 ? 'check-circulo' : 'panorama', 'icono-sm'))}${progreso >= 100 ? 'Cubriste tus gastos' : progreso >= 50 ? 'Vas a mitad de camino' : 'Aún lejos del equilibrio'}</span><strong class="cifra">${progreso.toFixed(0)}%</strong></div>
+          <div class="mini-barra" style="width:100%;height:10px"><span class="${progreso >= 100 ? 'fondo-bien' : progreso >= 50 ? 'fondo-bajo' : 'fondo-critico'}" style="width:${Math.min(100, progreso).toFixed(0)}%"></span></div>
+          ${eq.puntoEquilibrio !== null ? html`<div class="fila-separada t-mini t-secundario"><span>${falta > 0 ? `Faltan ${formatearDinero(falta)}` : `Sobran ${formatearDinero(restarDinero(eq.ventaTotal, eq.puntoEquilibrio))}`}</span><span>Meta ${formatearDinero(eq.puntoEquilibrio)}</span></div>` : ''}
+        </div>
+        <p class="t-mini t-tenue nota-icono">${seguro(icono('combustible', 'icono-sm'))}No incluye combustible: sus cargas se ven en su propia tarjeta.</p>`)}
     ${tarjetaPanorama('proyeccion', 'Agotamiento', 'reloj', primero ? textoDiasRestantes(primero.d.diasRestantes) : 'Sin ventas',
       primero ? html`Lo primero en acabarse: ${nombreProducto(primero.p, { conVariante: false })}` : `Sin ventas en los últimos ${est.ventana} días`,
       html`<div class="fila envolver t-pequeno">Ritmo de los últimos <input class="umbral" data-ventana value="${est.ventana}" aria-label="Días de la ventana"> días · urgente ≤ <input class="umbral" data-umbral="AGOTAMIENTO-min" value="${ua.min}" aria-label="Días urgente"> · pronto ≤ <input class="umbral" data-umbral="AGOTAMIENTO-max" value="${ua.max}" aria-label="Días pronto"></div>
@@ -151,21 +164,23 @@ function pintarPanorama() {
   pintarPaginado({ contenedor: $('[data-lista="roi"]', cuerpo), items: roiFilas, tope: 20,
     vacio: html`<p class="t-tenue t-pequeno">Sin compras ni ventas en el período.</p>`,
     pintarItem: (x) => { const [c, i, t] = claseRoi(x.d.roi); return html`<div class="fila-roi">
-      <div class="fila-separada"><span class="titulo recortar">${nombreProducto(x.p, { conVariante: false })}</span><strong class="cifra semaforo ${c}" title="${t}">${seguro(icono(i))}${x.d.roi.toFixed(1)} %</strong></div>
+      <div class="fila-separada"><span class="titulo recortar">${nombreProducto(x.p)}${x.p.estado === ESTADOS.OBSOLETO ? html` <span class="insignia">Obsoleto</span>` : ''}</span><strong class="cifra semaforo ${c}" title="${t}">${seguro(icono(i))}${x.d.roi.toFixed(1)} %</strong></div>
       <div class="mini-barra"><span class="fondo-${c}" style="width:${Math.max(2, Math.min(100, roiMax > 0 ? x.d.roi / roiMax * 100 : 0)).toFixed(0)}%"></span></div>
       <div class="sub">Invertiste ${formatearDinero(x.d.inversion)} · ganaste ${formatearDinero(x.d.ganancia)}</div>
       <div class="sub">${x.rotacion === null ? 'Sin stock para comparar' : `Vendió ${formatearNumero(x.d.unidadesVendidas)} · quedan ${formatearNumero(Almacen.stock(x.p.idProducto))} · rotación ${x.rotacion.toFixed(1)}×`}</div>
     </div>`; } });
   pintarPaginado({ contenedor: $('[data-lista="proyeccion"]', cuerpo), items: proyFilas, tope: 20,
     vacio: html`<p class="t-tenue t-pequeno">Sin ventas en la ventana elegida.</p>`,
-    pintarItem: (x) => { const [c, i, t] = claseProy(x.d.diasRestantes); return html`<div class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreProducto(x.p, { conVariante: false })}</div>
+    pintarItem: (x) => { const [c, i, t] = claseProy(x.d.diasRestantes); return html`<div class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreProducto(x.p)}</div>
       <div class="sub">${describirCantidad(x.p.idProducto, Almacen.stock(x.p.idProducto))} · vende ${x.d.ritmoDiario.toFixed(1)} al día</div><span class="semaforo ${c}">${seguro(icono(i))}${t}</span></div>
       <div class="lado"><div class="monto${Math.floor(x.d.diasRestantes) < 1 ? ' t-peligro' : ''}">${Math.floor(x.d.diasRestantes) < 1 ? 'Hoy' : `${Math.floor(x.d.diasRestantes)} d`}</div></div></div>`; } });
   pintarPaginado({ contenedor: $('[data-lista="cpp"]', cuerpo), items: cppFilas, tope: 20,
     vacio: html`<p class="t-tenue t-pequeno">Sin productos.</p>`,
-    pintarItem: (x) => html`<div class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreProducto(x.p, { conVariante: false })}</div>
+    pintarItem: (x) => html`<div class="fila-lista"><div class="crece"><div class="titulo recortar">${nombreProducto(x.p)}</div>
       <div class="sub">${describirCantidad(x.p.idProducto, x.e.stock)} · en bodega ${formatearDinero(redondearCentavo(x.e.fondo))}</div></div>
-      <div class="lado"><div class="monto">${formatearDinero(x.e.cpp, { detalle: true })}</div><div class="sub">por ${x.p.unidadBase}</div></div></div>` });
+      ${(() => { const eqp = Almacen.empaqueMayor(x.p.idProducto); return eqp
+        ? html`<div class="lado"><div class="monto">${formatearDinero(multiplicarDinero(x.e.cpp, eqp.unidades))}<span class="sub"> /${String(eqp.nombre).toLowerCase()}</span></div><div class="sub">${formatearDinero(x.e.cpp, { detalle: true })} /${x.p.unidadBase}</div></div>`
+        : html`<div class="lado"><div class="monto">${formatearDinero(x.e.cpp, { detalle: true })}</div><div class="sub">por ${x.p.unidadBase}</div></div>`; })()}</div>` });
   $$('[data-buscar]', cuerpo).forEach(i => i.addEventListener('change', () => {
     if (i.dataset.buscar === 'roi') est.buscarRoi = i.value; else est.buscarCpp = i.value;
     pintarPanorama();
@@ -188,5 +203,9 @@ async function cambiarUmbralPanorama(input) {
 }
 
 const accionesPanorama = {
+  'roi-predeterminado': async () => {
+    const r = await ejecutarOperacion(operacionGuardarUmbral('ROI', ROI_PREDETERMINADO.min, ROI_PREDETERMINADO.max));
+    if (r !== null) avisar(`Meta de ROI restablecida: ${ROI_PREDETERMINADO.min} / ${ROI_PREDETERMINADO.max} %.`);
+  },
   'formula': (b, e) => { e.preventDefault(); e.stopPropagation(); mostrarInfobox(b, 'Cómo se calcula', FORMULAS[b.dataset.clave]); }
 };
