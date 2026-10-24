@@ -172,7 +172,10 @@ const Almacen = {
       else if (!e.idProducto || normalizarTexto(e.nivelInferior) === unidad) otras.push(e);
     });
     const vistos = new Set();
-    return propias.concat(otras).sort((a, b) => (b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : -1)
+    // Cada grupo se ordena por separado: al quitar repetidas, la del propio producto
+    // gana siempre a la de otro con el mismo empaque (caja de 24 latas de Petit y Salutaris).
+    const porUso = (a, b) => (b.ultimoUso || '') > (a.ultimoUso || '') ? 1 : (b.ultimoUso || '') < (a.ultimoUso || '') ? -1 : 0;
+    return propias.sort(porUso).concat(otras.sort(porUso))
       .filter(e => { const k = `${normalizarTexto(e.nombre)}|${e.unidades}|${normalizarTexto(e.nivelInferior)}`; if (vistos.has(k)) return false; vistos.add(k); return true; });
   },
 
