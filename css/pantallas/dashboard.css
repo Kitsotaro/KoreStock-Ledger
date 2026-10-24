@@ -64,3 +64,12 @@ button.dato-mov .icono { margin-top: 2px; }
 .dato-lineas { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
 .dato-lineas .sub-dato { color: var(--texto-3); font-size: 0.6875rem; }
 .datos-mov { row-gap: var(--e-1); }
+/* Móvil: la línea del ticket en bloques separados (datos arriba; total y Anular abajo) */
+@media (max-width: 600px) {
+  .linea-mov { flex-wrap: wrap; gap: var(--e-2) var(--e-3); padding: var(--e-3); }
+  .linea-mov > .crece { flex: 1 1 100%; padding-bottom: var(--e-2); border-bottom: 1px dashed var(--borde); }
+  .linea-mov > .cifra { margin-left: auto; font-size: var(--t-sm); }
+  .datos-mov { gap: var(--e-2) var(--e-4); margin-top: var(--e-2); }
+  .datos-mov.tenue { margin-top: var(--e-2); }
+  .linea-mov + .linea-mov { margin-top: var(--e-3); }
+}
