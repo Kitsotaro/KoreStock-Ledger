@@ -20,7 +20,7 @@
 const venta = {
   el: null, selector: null,
   producto: null, cantidad: 0, total: 0, totalEditado: false, cobroExtra: false, variante: '', etiqueta: '',
-  carrito: [], idCliente: null, fecha: '', empaqueVenta: null, verMayoreo: false,
+  carrito: [], idCliente: null, fecha: '', empaqueVenta: null, porUnidad: false, verMayoreo: false,
 };
 
 registrarPantalla('venta', {
@@ -81,16 +81,19 @@ function refrescarVenta() {
   folio.textContent = `Folio ${Almacen.verFolioSiguiente('FAC-')}`;
 }
 
-// Unidad de venta (Kitso 2026-10-23): Bodega y Pro asumen el empaque
-// registrado (caja); Tienda, la unidad suelta. Siempre se puede cambiar.
-function factorVenta() { const o = venta.empaqueVenta; return o ? (o.conNivel ? o.unidades * o.porSub : o.unidades) : 1; }
-function nombreVenta() { return venta.empaqueVenta ? venta.empaqueVenta.empaque : venta.producto.unidadBase; }
+// Unidad de venta (Kitso 2026-10-23, 2026-10-25): igual que Entrada, el EMPAQUE se elige aparte
+// (venta.empaqueVenta) y el interruptor Cajas/Unidades (venta.porUnidad) dice si se cuenta por empaque
+// o suelto. Bodega y Pro parten por empaque; Tienda, por unidad. Siempre se puede cambiar.
+function factorEmpaqueVenta(o) { return o ? (o.conNivel ? o.unidades * o.porSub : o.unidades) : 1; }
+function factorVenta() { return venta.porUnidad ? 1 : factorEmpaqueVenta(venta.empaqueVenta); }
+function nombreVenta() { return !venta.porUnidad && venta.empaqueVenta ? venta.empaqueVenta.empaque : venta.producto.unidadBase; }
 
 function elegirProductoVenta(p) {
   venta.producto = p;
   venta.cantidad = 0;
   const empaques = empaquesRegistrados(p).filter(o => o.clave !== 'u');
-  venta.empaqueVenta = Shell.modo !== 'tienda' && empaques.length ? empaques[0] : null;
+  venta.empaqueVenta = empaques[0] || null;
+  venta.porUnidad = !empaques.length || Shell.modo === 'tienda';
   venta.variante = '';
   venta.etiqueta = '';
   venta.verMayoreo = false;
@@ -153,21 +156,27 @@ function pintarProductoVenta() {
   const cantVista = factor > 1 ? redondearCantidad(venta.cantidad / factor) : venta.cantidad;
   // Modos (Kitso 2026-10-24): Bodega prioriza el mayoreo (empaques primero, cifras grandes en cajas);
   // Tienda, las unidades (el mayoreo aparece al pedirlo); Pro lo muestra todo.
-  const bodega = Shell.modo === 'bodega', tienda = Shell.modo === 'tienda';
-  const soloUnidad = tienda && !venta.verMayoreo && !venta.empaqueVenta;
-  const unidadOpc = { clave: 'u', texto: pluralUnidad(p.unidadBase, 2), marcada: !venta.empaqueVenta };
-  const empaqueOpc = empaquesVenta.map(o => ({ clave: o.clave, texto: `${pluralUnidad(o.empaque, 2)} de ${formatearNumero(o.conNivel ? o.unidades * o.porSub : o.unidades)}`, marcada: !!venta.empaqueVenta && venta.empaqueVenta.clave === o.clave }));
-  const opcionesVenta = bodega ? empaqueOpc.concat(unidadOpc) : [unidadOpc].concat(empaqueOpc);
-  const selectorUnidad = !empaquesVenta.length || soloUnidad ? ''
-    : opcionesVenta.length > 3
-      ? html`<div class="fila-chips chips-empaque" role="group" aria-label="Vender por">${opcionesVenta.map(o => html`<button type="button" class="chip" data-accion="venta-por" data-clave="${o.clave}" aria-pressed="${String(o.marcada)}">${o.texto}</button>`)}</div>`
-      : html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">${opcionesVenta.map(o => html`<button type="button" role="radio" data-accion="venta-por" data-clave="${o.clave}" aria-checked="${String(o.marcada)}">${o.texto}</button>`)}</span>`;
-  const empCifra = venta.empaqueVenta || empaquesVenta[0] || null;
+  const tienda = Shell.modo === 'tienda';
+  const soloUnidad = tienda && venta.porUnidad && !venta.verMayoreo;
+  const empSel = venta.empaqueVenta || empaquesVenta[0] || null;
+  // 1. El empaque (como en Entrada): chips si hay varios, o solo se muestra el único registrado.
+  const filaEmpaque = !empaquesVenta.length || soloUnidad ? ''
+    : empaquesVenta.length > 1
+      ? html`<div class="campo"><label>Empaque de venta</label>
+          <div class="fila-chips chips-empaque" role="group" aria-label="Empaque de venta">${empaquesVenta.map(o => html`<button type="button" class="chip" data-accion="elegir-empaque-venta" data-clave="${o.clave}" aria-pressed="${String(!!empSel && empSel.clave === o.clave)}">${o.etiqueta}</button>`)}</div></div>`
+      : html`<div class="dato"><span>Empaque</span><strong>${empaquesVenta[0].etiqueta}</strong></div>`;
+  // 2. El interruptor empaque ↔ unidad suelta, con el nombre del empaque elegido.
+  const interruptor = empaquesVenta.length && !soloUnidad
+    ? html`<span class="segmentado segmentado-compra" role="radiogroup" aria-label="Vender por">
+          <button type="button" role="radio" data-accion="venta-por" data-por="empaque" aria-checked="${String(!venta.porUnidad)}">${pluralUnidad(empSel.empaque.toLowerCase(), 2)}</button>
+          <button type="button" role="radio" data-accion="venta-por" data-por="unidad" aria-checked="${String(venta.porUnidad)}">${pluralUnidad(p.unidadBase, 2)}</button>
+        </span>` : '';
+  const empCifra = empSel;
   cont.innerHTML = html`
     <div class="tarjeta tarjeta-producto">
       <div class="fila-separada"><span class="nombre">${nombreProducto(p, { conVariante: false })}</span>
         <button type="button" class="boton boton-icono" data-accion="quitar-producto" aria-label="Quitar producto">${seguro(icono('cerrar', 'icono-sm'))}</button></div>
-      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span>${seguro(stockPorModoHTML(p, disponible, venta.empaqueVenta || empaquesVenta[0] || null))}</div>
+      <div class="dato"><span class="etiqueta-dato">${seguro(icono('caja', 'icono-sm'))}En stock</span>${seguro(stockPorModoHTML(p, disponible, empSel))}</div>
       <div class="dato"><span class="etiqueta-dato">${seguro(icono('precio', 'icono-sm'))}Precio <button type="button" class="boton boton-texto boton-sm" data-accion="cambiar-precio">Cambiar</button></span>${seguro(dineroPorModoHTML(p.precio, p, empCifra, false))}</div>
       <div class="dato" data-solo-modo="tienda pro"><span class="etiqueta-dato">${seguro(icono('panorama', 'icono-sm'))}Margen sobre costo</span><strong class="${p.precio > p.costo ? 't-exito' : 't-peligro'}">${p.costo > 0 ? `${porcentajeDe(restarDinero(p.precio, p.costo), p.costo).toFixed(1)} %` : '—'}</strong></div>
       ${seguro(detalleProProductoHTML(p, { conAviso: false }).texto)}
@@ -178,8 +187,12 @@ function pintarProductoVenta() {
     </div>
     <div class="tarjeta columna">
       <div class="campo">
-        <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>${selectorUnidad}</div>
-        <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>
+        ${filaEmpaque}
+        <label for="venta-cantidad">Cantidad</label>
+        <div class="fila-cantidad">
+          <span class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}">${interruptor ? '' : html`<span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span>`}</span>
+          ${interruptor}
+        </div>
         ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
         ${factor > 1 && !p.decimales ? html`<span class="error-campo venta-fraccion" ${Number.isInteger(venta.cantidad) ? 'hidden' : ''}>Esa cantidad no sale en ${pluralUnidad(p.unidadBase, 2)} enteras. Haz dos ventas: una con las cajas completas y otra con las ${pluralUnidad(p.unidadBase, 2)} sueltas, porque la matemática no cuadra.</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
@@ -314,18 +327,14 @@ async function crearClienteDesdeVenta(nombre) {
 const accionesVenta = {
   'producto-nuevo-en-entrada': () => { Shell.ir('entrada'); empezarProductoNuevo(''); },
   'quitar-producto': () => { venta.producto = null; venta.selector.marcar(null); pintarProductoVenta(); },
-  'venta-por': (b) => {
-    const unidadesAntes = venta.cantidad, factorAntes = factorVenta();
-    venta.empaqueVenta = b.dataset.clave === 'u' ? null : empaquesRegistrados(venta.producto).find(o => o.clave === b.dataset.clave) || null;
-    // Se conserva la cantidad escrita en la nueva unidad (2 latas → 2 cajas).
-    venta.cantidad = redondearCantidad((factorAntes > 1 ? unidadesAntes / factorAntes : unidadesAntes) * factorVenta());
-    venta.totalEditado = false; recalcularTotalVenta(); pintarProductoVenta();
-  },
-  'ver-mayoreo-venta': () => {
-    venta.verMayoreo = true;
-    const o = empaquesRegistrados(venta.producto).find(x => x.clave !== 'u');
-    if (o) accionesVenta['venta-por']({ dataset: { clave: o.clave } });
-  },
+  // Cambiar empaque o interruptor conserva la cantidad escrita en la nueva unidad (2 latas → 2 cajas).
+  'venta-por': (b) => cambiarUnidadVenta(() => { venta.porUnidad = b.dataset.por === 'unidad'; }),
+  'elegir-empaque-venta': (b) => cambiarUnidadVenta(() => {
+    const o = empaquesRegistrados(venta.producto).find(x => x.clave === b.dataset.clave);
+    if (o) { venta.empaqueVenta = o; venta.porUnidad = false; }
+  }),
+  // Tienda: pasa de unidades al mayoreo (caja, fardo…).
+  'ver-mayoreo-venta': () => cambiarUnidadVenta(() => { venta.verMayoreo = true; venta.porUnidad = false; }),
   'usar-presentacion': (b) => {
     venta.cantidad = Number(b.dataset.cantidad);
     venta.totalEditado = false;
@@ -354,6 +363,13 @@ const accionesVenta = {
   'quitar-cliente': () => { venta.idCliente = null; pintarClienteVenta(); },
   'cobrar': (b) => cobrarVenta(b)
 };
+
+function cambiarUnidadVenta(cambio) {
+  const unidadesAntes = venta.cantidad, factorAntes = factorVenta();
+  cambio();
+  venta.cantidad = redondearCantidad((factorAntes > 1 ? unidadesAntes / factorAntes : unidadesAntes) * factorVenta());
+  venta.totalEditado = false; recalcularTotalVenta(); pintarProductoVenta();
+}
 
 async function cobrarVenta(boton) {
   const actual = lineaActualVenta();

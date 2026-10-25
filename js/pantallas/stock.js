@@ -423,6 +423,7 @@ function editarProducto(idProducto) {
   const campo = (id, etiqueta, valor, extra) => html`<div class="campo"><label for="${id}">${etiqueta}</label><div class="control">${extra && extra.prefijo ? html`<span class="prefijo">${extra.prefijo}</span>` : ''}<input id="${id}" value="${valor}" ${extra && extra.lista ? html`list="${extra.lista}"` : ''} autocomplete="off" ${extra && extra.deshabilitado ? 'disabled' : ''}>${extra && extra.sufijo ? html`<span class="sufijo">${extra.sufijo}</span>` : ''}</div>${extra && extra.ayuda ? html`<span class="ayuda-campo">${extra.ayuda}</span>` : ''}</div>`;
   const eqMayor = empaqueMayor(p);
   const nombreEmp = eqMayor ? String(eqMayor.nombre).toLowerCase() : '';
+  const empaquesProducto = Almacen.empaquesQuitables(p.idProducto);
   let umbralPorEmpaque = umbralEnEmpaques(p, eqMayor);
   const enAviso = (u) => umbralPorEmpaque ? redondearCantidad(u / eqMayor.unidades) : u;
   const sufijoAviso = umbralPorEmpaque ? pluralUnidad(nombreEmp, 2) : pluralUnidad(p.unidadBase, 2);
@@ -460,6 +461,8 @@ function editarProducto(idProducto) {
       </div>
       <div class="rejilla-campos">${campo('ed-categoria', 'Categoría', p.categoria, { lista: 'ed-cats' })}${campo('ed-empaque', 'Tipo de empaque', p.tipoEmpaque, { lista: 'ed-empaques' })}</div>
       <datalist id="ed-cats">${Almacen.categorias().map(c => html`<option value="${c}"></option>`)}</datalist>
+      ${empaquesProducto.length ? html`<div class="columna"><span class="t-pequeno t-secundario">Empaques registrados (puedes corregir el nombre)</span>
+        <div class="rejilla-campos">${empaquesProducto.map(x => campo(`ed-emp-${x.idEquiv}`, `Nombre del empaque de ${formatearNumero(x.unidades)}`, x.nombre, { sufijo: pluralUnidad(x.nivelInferior, x.unidades) }))}</div></div>` : ''}
       <label class="casilla" data-solo-modo="tienda pro"><input type="checkbox" id="ed-decimales" ${p.decimales ? 'checked' : ''}> Se vende por peso o medida (permite decimales)</label>
       <button type="button" class="boton boton-texto boton-sm" id="ed-presentaciones" data-solo-modo="tienda pro" style="justify-self:start">${seguro(icono('precio', 'icono-sm'))}Precios por presentación</button>
       <details class="desplegable conteo-fisico">
@@ -495,10 +498,14 @@ function editarProducto(idProducto) {
       const contado = conteoEscrito(c.el);
       const dif = contado === null ? 0 : redondearCantidad(contado - Almacen.stock(p.idProducto));
       if (dif && !(await confirmar({ titulo: 'Ajustar con conteo físico', mensaje: `${textoDiferenciaConteo(p, dif)}\n\nSe registra como ajuste (no es venta ni compra) y se puede anular desde Dashboard.`, textoConfirmar: 'Sí, ajustar' }))) return;
-      let op;
-      try { op = operacionActualizarProducto(p.idProducto, cambios); } catch (e) { mostrarDialogo({ titulo: 'No se puede guardar', mensaje: e.message }); return; }
+      let op, opEmpaques;
+      try {
+        op = operacionActualizarProducto(p.idProducto, cambios);
+        opEmpaques = operacionRenombrarEquivalencias(empaquesProducto.map(x => ({ idEquiv: x.idEquiv, nombre: v(`#ed-emp-${x.idEquiv}`) })));
+      } catch (e) { mostrarDialogo({ titulo: 'No se puede guardar', mensaje: e.message }); return; }
       const r = await ejecutarOperacion(op, { boton: $('.acciones .boton-primario', c.el) });
       if (!r) return;
+      if (opEmpaques && !(await ejecutarOperacion(opEmpaques, { boton: $('.acciones .boton-primario', c.el) }))) return;
       if (dif) {
         let prep;
         try { prep = prepararAjuste(p.idProducto, contado); } catch (e) { mostrarDialogo({ titulo: 'No se puede ajustar', mensaje: e.message }); return; }

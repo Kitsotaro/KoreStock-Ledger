@@ -178,6 +178,51 @@ function operacionQuitarEquivalencia(idEquiv) {
   ]);
 }
 
+// Renombrar empaques registrados (Editar producto): solo cambia el nombre; unidades, historial y
+// stock quedan igual (las compras y ventas ya guardadas llevan su propio texto de empaque). Si otro
+// empaque del producto cuenta en este («cartón» dentro de «caja»), su nivel inferior se actualiza.
+function operacionRenombrarEquivalencias(cambios) {
+  const hoja = Almacen.hojas.EQUIVALENCIAS;
+  const nuevos = new Map(); // idEquiv -> nombre nuevo
+  cambios.forEach(c => {
+    const e = hoja.find(x => x.idEquiv === Number(c.idEquiv));
+    const nombre = String(c.nombre || '').trim().toLowerCase();
+    if (!e) throw new Error('Empaque no encontrado');
+    if (!nombre) throw new Error('El nombre del empaque no puede quedar vacío.');
+    if (nombre !== String(e.nombre).trim().toLowerCase()) nuevos.set(e.idEquiv, nombre);
+  });
+  if (!nuevos.size) return null;
+  const propias = Almacen.empaquesQuitables(hoja.find(x => x.idEquiv === [...nuevos.keys()][0]).idProducto);
+  const nombreFinal = (e) => nuevos.get(e.idEquiv) || e.nombre;
+  const claves = new Set();
+  propias.forEach(e => {
+    const k = `${normalizarTexto(nombreFinal(e))}|${e.unidades}`;
+    if (claves.has(k)) throw new Error(`Ya existe un empaque «${nombreFinal(e)}» de ${formatearNumero(e.unidades)}. Usa otro nombre.`);
+    claves.add(k);
+  });
+  const filas = [];
+  // Solo un empaque DISTINTO sirve de nivel inferior; la unidad base («bolsa») nunca se renombra por aquí.
+  const unidadBase = normalizarTexto(Almacen.producto(propias[0].idProducto).unidadBase);
+  const viejos = new Map([...nuevos].map(([id, n]) => [id, normalizarTexto(hoja.find(x => x.idEquiv === id).nombre)]).filter(([id, v]) => v !== unidadBase));
+  propias.forEach(e => {
+    const copia = Object.assign({}, e);
+    if (nuevos.has(e.idEquiv)) copia.nombre = nuevos.get(e.idEquiv);
+    const interior = [...viejos].find(([id, v]) => id !== e.idEquiv && v === normalizarTexto(e.nivelInferior));
+    if (interior) copia.nivelInferior = nuevos.get(interior[0]);
+    if (copia.nombre !== e.nombre || copia.nivelInferior !== e.nivelInferior) filas.push(copia);
+  });
+  return crearOperacion('Renombrar empaque', [
+    {
+      nombre: 'empaques',
+      fn: async () => {
+        await Hoja.actualizar(Almacen.baseId, filas.map(f => ({ rango: rangoFila('EQUIVALENCIAS', f._fila), valores: [objetoAFila('EQUIVALENCIAS', f, false)] })));
+        filas.forEach(f => Almacen.reemplazarFila('EQUIVALENCIAS', f));
+      }
+    },
+    { nombre: 'copia local', fn: async () => { Almacen.notificar('equivalencias'); guardarCacheBase(); } }
+  ]);
+}
+
 // Color de la leyenda: nunca se reescribe una fila, se agrega otra (queda el historial).
 function operacionGuardarColor(nivel, nombre, color) {
   const valido = nivel === '_MODO' ? /^(SOBRIO|PASTEL|VIVIDO|MONOCROMO( #[0-9a-f]{6})?)$/i : /^#[0-9a-f]{6}$/i;
