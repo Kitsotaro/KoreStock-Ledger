@@ -181,7 +181,7 @@ function pintarProductoVenta() {
         <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>${selectorUnidad}</div>
         <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>
         ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
-        ${factor > 1 && !p.decimales ? html`<span class="error-campo venta-fraccion" ${Number.isInteger(venta.cantidad) ? 'hidden' : ''}>Esa cantidad no sale en ${pluralUnidad(p.unidadBase, 2)} enteras. Ajústala.</span>` : ''}
+        ${factor > 1 && !p.decimales ? html`<span class="error-campo venta-fraccion" ${Number.isInteger(venta.cantidad) ? 'hidden' : ''}>Esa cantidad no sale en ${pluralUnidad(p.unidadBase, 2)} enteras. Haz dos ventas: una con las cajas completas y otra con las ${pluralUnidad(p.unidadBase, 2)} sueltas, porque la matemática no cuadra.</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
         ${soloUnidad && empaquesVenta.length ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="ver-mayoreo-venta" style="justify-self:start">${seguro(icono('caja', 'icono-sm'))}Vender por caja o mayoreo…</button>` : ''}
       </div>

@@ -409,7 +409,7 @@ function pintarProductoEntradaSinFoco() {
 
   // 2. Cuánto compraste y en qué unidad (empaque o unidad suelta).
   const etiquetaCompra = pluralUnidad(compraPorUnidad() ? unidad : nombreEmp.toLowerCase(), entrada.cantEmp);
-  const conSwitch = factor > 1 && !bodega && !soloUnidad;
+  const conSwitch = factor > 1 && !soloUnidad; // también en Bodega: unidades sueltas cuando las cajas no cuadran
   const filaCompra = html`
       <div class="campo"><label for="entrada-cant">Cantidad comprada</label>
         <div class="fila-cantidad">
@@ -647,7 +647,7 @@ function lineaActualEntrada() {
 function errorFraccionEntrada() {
   const p = entrada.producto || entrada.nuevo;
   if (!p || p.decimales || Number.isInteger(unidadesTotalesEntrada())) return '';
-  return `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreCompra(), entrada.cantEmp)} da ${formatearNumero(unidadesTotalesEntrada())} ${pluralUnidad(unidadBaseEntrada(), 2)}: no sale en unidades enteras. Ajusta la cantidad.`;
+  return `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreCompra(), entrada.cantEmp)} da ${formatearNumero(unidadesTotalesEntrada())} ${pluralUnidad(unidadBaseEntrada(), 2)}: no sale en unidades enteras. Registra dos facturas: una con las cajas completas y otra con las ${pluralUnidad(unidadBaseEntrada(), 2)} sueltas (cambia a ${pluralUnidad(unidadBaseEntrada(), 2)} arriba), porque la matemática no cuadra.`;
 }
 
 function validarNuevo() {
