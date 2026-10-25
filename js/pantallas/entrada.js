@@ -259,7 +259,9 @@ function textoTotalEntrada() {
     const sub = (entrada.subEmpaque || 'empaque').toLowerCase();
     return `${cant} ${nombre} × ${formatearNumero(entrada.unidades)} ${pluralUnidad(sub, entrada.unidades)} × ${formatearNumero(entrada.porSub)} ${pluralUnidad(unidad, entrada.porSub)} = ${total}`;
   }
-  return `${cant} ${nombre} × ${formatearNumero(fc)} ${pluralUnidad(unidad, fc)} = ${total}`;
+  const enteras = Math.floor(entrada.cantEmp), sueltas = redondearCantidad(unidades - enteras * fc);
+  const desglose = entrada.cantEmp > enteras && enteras > 0 && sueltas > 0 ? ` (${formatearNumero(enteras)} ${pluralUnidad((entrada.empaque || unidad).toLowerCase(), enteras)} + ${formatearNumero(sueltas)} ${pluralUnidad(unidad, sueltas)} sueltas)` : '';
+  return `${cant} ${nombre} × ${formatearNumero(fc)} ${pluralUnidad(unidad, fc)} = ${total}${desglose}`;
 }
 
 // Lista del campo «Empaque» con dos grupos: la unidad (compra individual) y los
@@ -477,7 +479,8 @@ function pintarProductoEntradaSinFoco() {
 function conectarCamposEntrada(cont) {
   const num = (id, dec, fn) => { const i = $(id, cont); if (!i) return; prepararCampoNumerico(i, { decimales: dec }); i.addEventListener('input', () => { fn(i); actualizarCalculoEntrada(); }); i.addEventListener('change', () => repintarEntradaDespues()); };
   const decCant = (entrada.producto ? entrada.producto.decimales : (entrada.nuevo && entrada.nuevo.decimales)) ? 3 : 0;
-  num('#entrada-cant', decCant, (i) => { entrada.cantEmp = leerCantidad(i); });
+  // Por empaque se aceptan fracciones (1.5 cajas = 1 caja + media suelta); en unidades, solo si el producto es decimal.
+  num('#entrada-cant', decCant || (compraPorUnidad() ? 0 : 3), (i) => { entrada.cantEmp = leerCantidad(i); });
   num('#entrada-por', 0, (i) => { entrada.unidades = leerCantidad(i) || 1; });
   num('#entrada-por-sub', 0, (i) => { entrada.unidades = leerCantidad(i) || 1; });
   num('#entrada-por-unidad', 0, (i) => { entrada.porSub = leerCantidad(i) || 1; });
@@ -640,8 +643,15 @@ function lineaActualEntrada() {
   return linea;
 }
 
+// Cajas fraccionarias en un producto que no se parte (1.5 cajas de 25 = 37.5 unidades).
+function errorFraccionEntrada() {
+  const p = entrada.producto || entrada.nuevo;
+  if (!p || p.decimales || Number.isInteger(unidadesTotalesEntrada())) return '';
+  return `${formatearNumero(entrada.cantEmp)} ${pluralUnidad(nombreCompra(), entrada.cantEmp)} da ${formatearNumero(unidadesTotalesEntrada())} ${pluralUnidad(unidadBaseEntrada(), 2)}: no sale en unidades enteras. Ajusta la cantidad.`;
+}
+
 function validarNuevo() {
-  if (entrada.producto || entrada.nuevo) { const e = validarEmpaqueEntrada(); if (e) return e; }
+  if (entrada.producto || entrada.nuevo) { const e = validarEmpaqueEntrada() || errorFraccionEntrada(); if (e) return e; }
   const n = entrada.nuevo;
   if (!n) return '';
   if (!n.marca || !n.linea) return 'Escribe la marca y el producto.';

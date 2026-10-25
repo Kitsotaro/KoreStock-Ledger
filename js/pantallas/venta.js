@@ -181,6 +181,7 @@ function pintarProductoVenta() {
         <div class="fila-separada"><label for="venta-cantidad">Cantidad</label>${selectorUnidad}</div>
         <div class="control grande${excede ? ' error' : ''}"><input id="venta-cantidad" value="${formatearNumero(cantVista).replace(/,/g, '')}"><span class="sufijo">${pluralUnidad(nombreVenta(), cantVista)}</span></div>
         ${factor > 1 ? html`<span class="ayuda-campo venta-equivale">= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}</span>` : ''}
+        ${factor > 1 && !p.decimales ? html`<span class="error-campo venta-fraccion" ${Number.isInteger(venta.cantidad) ? 'hidden' : ''}>Esa cantidad no sale en ${pluralUnidad(p.unidadBase, 2)} enteras. Ajústala.</span>` : ''}
         ${excede ? html`<span class="error-campo">Solo hay ${formatearNumero(disponible)} ${pluralUnidad(p.unidadBase, disponible)}.</span>` : ''}
         ${soloUnidad && empaquesVenta.length ? html`<button type="button" class="boton boton-texto boton-sm" data-accion="ver-mayoreo-venta" style="justify-self:start">${seguro(icono('caja', 'icono-sm'))}Vender por caja o mayoreo…</button>` : ''}
       </div>
@@ -208,7 +209,8 @@ function pintarProductoVenta() {
   pintarPieVenta();
 
   const inCantidad = $('#venta-cantidad', cont);
-  prepararCampoNumerico(inCantidad, { decimales: p.decimales ? 3 : 0 });
+  // Por empaque se aceptan fracciones (1.5 cajas = 1 caja + media suelta); lo suelto sigue siendo entero si el producto no es decimal.
+  prepararCampoNumerico(inCantidad, { decimales: p.decimales || factorVenta() > 1 ? 3 : 0 });
   inCantidad.addEventListener('input', () => {
     venta.cantidad = redondearCantidad(leerCantidad(inCantidad) * factorVenta());
     venta.etiqueta = '';
@@ -238,7 +240,8 @@ function actualizarCifrasVenta() {
   const sufijo = $('.sufijo', cont); if (sufijo) sufijo.textContent = pluralUnidad(nombreVenta(), cantVista);
   const equivale = $('.venta-equivale', cont); if (equivale) equivale.textContent = `= ${formatearNumero(venta.cantidad)} ${pluralUnidad(p.unidadBase, venta.cantidad)}`;
   const disponible = redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto));
-  const valido = venta.cantidad > 0 && venta.cantidad <= disponible;
+  const valido = venta.cantidad > 0 && venta.cantidad <= disponible && (p.decimales || Number.isInteger(venta.cantidad));
+  const fraccion = $('.venta-fraccion', cont); if (fraccion) fraccion.hidden = !!(p.decimales || Number.isInteger(venta.cantidad));
   const pie = $('#venta-pie', venta.el);
   $$('[data-accion="agregar-carrito"], [data-accion="cobrar"]:not(#venta-cobrar-carrito)', pie).forEach(b => { b.disabled = !valido; });
   const cobrar = $('[data-accion="cobrar"]:not(#venta-cobrar-carrito)', pie);
@@ -285,7 +288,7 @@ function pintarPieVenta() {
   const pie = $('#venta-pie', venta.el); if (!pie) return;
   const p = venta.producto;
   if (!p && !venta.carrito.length) { pie.innerHTML = ''; actualizarClienteVenta(); return; }
-  const valido = !!p && venta.cantidad > 0 && venta.cantidad <= redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto));
+  const valido = !!p && venta.cantidad > 0 && venta.cantidad <= redondearCantidad(Almacen.stock(p.idProducto) - enCarrito(p.idProducto)) && (p.decimales || Number.isInteger(venta.cantidad));
   const cobrar = venta.carrito.length
     ? html`<button type="button" class="boton boton-venta boton-grande boton-bloque" id="venta-cobrar-carrito" data-accion="cobrar">${seguro(icono('billete'))}<span>Cobrar ${formatearDinero(totalTicketVenta())}</span></button>`
     : html`<button type="button" class="boton boton-venta boton-grande boton-bloque" data-accion="cobrar" ${valido ? '' : 'disabled'}>${seguro(icono('billete'))}Cobrar ${formatearDinero(venta.total)}</button>`;
