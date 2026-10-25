@@ -105,7 +105,6 @@ function pintarAsistenteMigracion(el) {
       u.modo = b.dataset.modo;
       if (u.modo === 'CONVERTIR' && !(u.unidades > 1)) u.unidades = '';
       pintarUnidadesMigracion(el);
-      if (u.modo === 'CONVERTIR') setTimeout(() => { const i = $(`[data-unidades-de="${b.dataset.id}"]`, el); if (i) i.focus(); }, 30);
     }
   });
   el.addEventListener('input', (e) => {

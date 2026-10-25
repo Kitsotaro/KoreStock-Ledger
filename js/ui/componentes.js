@@ -114,7 +114,6 @@ function confirmarFuerte({ titulo, mensaje, palabra = 'CONFIRMAR', textoConfirma
         const input = $('#confirmacion-fuerte', fondo);
         boton.disabled = true;
         input.addEventListener('input', () => { boton.disabled = input.value.trim().toUpperCase() !== palabra; });
-        setTimeout(() => input.focus(), 50);
       },
       onConfirmar: () => resolver(true), onCancelar: () => resolver(false)
     });
@@ -173,7 +172,7 @@ function abrirHoja({ titulo, contenido, acciones = [], alMontar = null, alCerrar
   $$('[data-indice]', hoja).forEach(b => b.addEventListener('click', () => { const a = acciones[Number(b.dataset.indice)]; if (a.fn) a.fn(control); }));
   hojaAbierta = control;
   if (alMontar) alMontar(hoja, control);
-  setTimeout(() => { const f = $('input, select, button:not([data-rol="cerrar"])', $('.cuerpo', hoja)); if (f) f.focus({ preventScroll: true }); }, 60);
+  setTimeout(() => { const f = $('button:not([data-rol="cerrar"])', $('.cuerpo', hoja)); if (f) f.focus({ preventScroll: true }); }, 60);
   return control;
 }
 

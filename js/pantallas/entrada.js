@@ -104,7 +104,6 @@ function elegirProductoEntrada(p) {
   if (ops.length > 1) aplicarEmpaque(ops[1]);
   else if (Shell.modo === 'bodega') { entrada.empaque = ''; entrada.unidades = 0; entrada.empaqueLibre = true; }
   pintarProductoEntrada();
-  setTimeout(() => { const c = $('#entrada-cant', entrada.el); if (c) c.focus(); }, 50);
 }
 
 function empezarProductoNuevo(texto) {
@@ -114,7 +113,6 @@ function empezarProductoNuevo(texto) {
   reiniciarCantidades('');
   entrada.editor = true; // producto nuevo: todo se escribe
   pintarProductoEntrada();
-  setTimeout(() => { const c = $('#nuevo-marca', entrada.el); if (c) c.focus(); }, 50);
 }
 
 // Unidad base vigente (del producto o la escrita en «producto nuevo»).
@@ -595,7 +593,6 @@ async function confirmarValorNuevo(input, campo, [conArticulo, nombre], poner) {
   if (ok) { valoresNuevosAceptados.add(clave); return; }
   input.value = ''; poner('');
   pintarProductoEntrada();
-  setTimeout(() => { const i = document.getElementById(input.id); if (i) i.focus(); }, 50);
 }
 
 async function revisarDuplicadoNuevo() {
@@ -712,7 +709,7 @@ const accionesEntrada = {
     pintarProductoEntrada();
   },
   'modo-editor': (b) => { entrada.editor = b.checked; if (!b.checked) { const ops = empaquesRegistrados(entrada.producto); if (!ops.some(o => o.clave === claveEmpaqueEntrada())) aplicarEmpaque(ops[1] && Shell.modo !== 'tienda' ? ops[1] : ops[0]); entrada.precioNuevo = null; } pintarProductoEntrada(); },
-  'costo-cambio': (b) => { entrada.costoCambio = b.checked; if (!b.checked) { entrada.totalEditado = false; entrada.costoEditado = false; } pintarProductoEntrada(); if (b.checked) setTimeout(() => { const t = $('#entrada-costo', entrada.el); if (t) t.focus(); }, 50); },
+  'costo-cambio': (b) => { entrada.costoCambio = b.checked; if (!b.checked) { entrada.totalEditado = false; entrada.costoEditado = false; } pintarProductoEntrada(); },
   'sabor-entrada': (b) => { entrada.variante = normalizarIdentidad(entrada.variante) === normalizarIdentidad(b.dataset.sabor) ? '' : b.dataset.sabor; pintarProductoEntrada(); },
   'presentaciones-entrada': () => editarPresentaciones(entrada.producto, () => pintarProductoEntrada()),
   'agregar-entrada': () => {
@@ -722,7 +719,6 @@ const accionesEntrada = {
     entrada.producto = null; entrada.nuevo = null;
     pintarProductoEntrada(); pintarCarritoEntrada();
     avisar('Agregado a la factura. Elige el siguiente producto.');
-    entrada.selector.enfocar();
   },
   'quitar-linea-entrada': (b) => { entrada.carrito.splice(Number(b.dataset.i), 1); pintarCarritoEntrada(); pintarProductoEntrada(); },
   'vaciar-entrada': async () => { if (await confirmar({ titulo: '¿Vaciar la factura?', mensaje: 'Se quitan los productos que no has guardado.', textoConfirmar: 'Vaciar' })) { entrada.carrito = []; pintarCarritoEntrada(); pintarProductoEntrada(); } },

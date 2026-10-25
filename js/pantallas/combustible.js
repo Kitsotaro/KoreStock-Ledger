@@ -82,7 +82,6 @@ function elegirVehiculo(placa) {
   combUI.placa = placa;
   $('#carga-vehiculo', combUI.el).value = '';
   pintarCombustible();
-  setTimeout(() => $('#carga-odometro', combUI.el).focus(), 50);
 }
 
 function pintarCombustible() {

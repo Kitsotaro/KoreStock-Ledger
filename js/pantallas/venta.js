@@ -67,7 +67,6 @@ registrarPantalla('venta', {
   mostrar(el, opciones) {
     if (!venta.fecha) venta.fecha = obtenerFechaLocal();
     refrescarVenta();
-    if (!opciones.refresco && !venta.producto && window.matchMedia('(min-width: 720px)').matches) venta.selector.enfocar();
   }
 });
 
@@ -99,7 +98,6 @@ function elegirProductoVenta(p) {
   venta.cobroExtra = false;
   recalcularTotalVenta();
   pintarProductoVenta();
-  setTimeout(() => { const c = $('#venta-cantidad', venta.el); if (c) c.focus(); }, 50);
 }
 
 function recalcularTotalVenta() {
@@ -337,7 +335,6 @@ const accionesVenta = {
     venta.cobroExtra = b.checked;
     if (!venta.cobroExtra) { venta.totalEditado = false; recalcularTotalVenta(); }
     pintarProductoVenta();
-    if (venta.cobroExtra) setTimeout(() => { const i = $('#venta-total', venta.el); if (i) i.focus(); }, 30);
   },
   'elegir-sabor': (b) => { venta.variante = normalizarIdentidad(venta.variante) === normalizarIdentidad(b.dataset.sabor) ? '' : b.dataset.sabor; pintarProductoVenta(); },
   'cambiar-precio': () => editarPrecioProducto(venta.producto, () => { recalcularTotalVenta(); pintarProductoVenta(); }),
@@ -348,7 +345,6 @@ const accionesVenta = {
     venta.producto = null; venta.selector.marcar(null);
     pintarProductoVenta(); pintarCarritoVenta();
     avisar('Agregado al ticket. Elige el siguiente producto.');
-    venta.selector.enfocar();
   },
   'quitar-linea': (b) => { venta.carrito.splice(Number(b.dataset.i), 1); pintarCarritoVenta(); pintarProductoVenta(); },
   'vaciar-carrito': async () => { if (await confirmar({ titulo: '¿Vaciar el ticket?', mensaje: 'Se quitan todos los productos que no has cobrado.', textoConfirmar: 'Vaciar' })) { venta.carrito = []; pintarCarritoVenta(); pintarProductoVenta(); } },
