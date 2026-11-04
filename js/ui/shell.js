@@ -51,6 +51,7 @@ const Shell = {
       'poner-modo': (b) => this.cambiarModo(b.dataset.modoValor),
       'tamano-texto': () => { this.cerrarPanel(); this.elegirTamanoTexto(); },
       'todos-decimales': (b) => this.cambiarTodosLosDecimales(b.type === 'checkbox' ? b.checked : !this.todosLosDecimales()),
+      'actualizar-base': () => { this.cerrarPanel(); this.actualizarBaseDatos(); },
       'salir': () => { this.cerrarPanel(); this.salir(); }
     });
     app.addEventListener('click', (e) => {
@@ -334,6 +335,39 @@ const Shell = {
       this.mostrarFranja('sesion', html`${seguro(icono('reloj', 'icono-sm'))}<span>${min > 0 ? `Tu sesión con Google vence en ${min} min.` : 'Tu sesión con Google venció.'}</span>`, 'info-color',
         { texto: 'Renovar', fn: async () => { try { await Sesion.renovarToken(); this.quitarFranja('sesion'); avisar('Sesión renovada.'); } catch (e) { /* canceló */ } } });
     } else this.quitarFranja('sesion');
+  },
+
+  // Fuerza una lectura COMPLETA desde Drive, reemplaza la copia local y recalcula todo.
+  // Recargar la página no basta: la app vuelve a abrir la copia guardada y solo
+  // trae lo nuevo, así que un dato viejo o dañado en la copia seguiría ahí.
+  // La copia actual solo se reemplaza cuando la lectura nueva salió completa.
+  async actualizarBaseDatos() {
+    if (Sesion.modoDemo || !Almacen.baseId) { avisar('En la demostración no hay copia que actualizar.'); return; }
+    if (Almacen.sinConexion || navigator.onLine === false) { avisar('Sin internet no se puede actualizar. Tu copia actual sigue intacta.', { duracion: 5000 }); return; }
+    if (ColaEscritura.ocupada) { avisar('Hay un guardado en curso. Intenta de nuevo en unos segundos.'); return; }
+    const ok = await confirmar({
+      titulo: 'Actualizar base de datos',
+      mensaje: 'Se vuelve a leer todo desde Google Drive, se reemplaza la copia guardada en este dispositivo y se recalculan stock, ventas y ganancias. Tu información en Drive no cambia.',
+      textoConfirmar: 'Actualizar'
+    });
+    if (!ok) return;
+    avisar('Actualizando… no cierres la app.', { duracion: 4000 });
+    try {
+      const hojas = await leerHojas(Almacen.baseId, NOMBRES_HOJAS);
+      Almacen.sinConexion = false;
+      Almacen.cargar(hojas, Almacen.baseId);
+      Almacen.actualizadoEn = obtenerTimestampLocal();
+      await CacheLocal.borrarTodo();
+      await CacheLocal.guardar(Almacen.instantanea());
+      PeriodosLargos.reiniciar();
+      this.marcarSinConexion(false);
+      this.actualizarEstado();
+      this.actualizarPanel();
+      this.refrescarActual();
+      avisar('Base de datos actualizada y recalculada.');
+    } catch (e) {
+      avisar('No se pudo actualizar; se conserva tu copia anterior. Revisa tu conexión e intenta de nuevo.', { duracion: 6000 });
+    }
   },
 
   async salir() {
