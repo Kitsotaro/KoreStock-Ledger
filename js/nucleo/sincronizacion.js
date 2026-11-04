@@ -111,13 +111,21 @@ async function abrirBase(id, alCargar) {
   }
 }
 
-// «Actualizar base de datos»: lectura COMPLETA desde Drive, reemplazo de la copia
-// local y recálculo. SOLO LECTURA sobre Drive (candado de Hoja): nunca escribe,
-// borra ni mueve nada en el archivo. La copia local actual solo se reemplaza
-// cuando la lectura nueva terminó completa y no vino vacía; si algo falla, queda
-// intacta y se lanza el error.
-async function recargarBaseCompleta(id) {
+// «Actualizar base de datos»: respaldo previo + lectura COMPLETA desde Drive,
+// reemplazo de la copia local y recálculo.
+//   1) Respaldo: copia del archivo más actual de Drive (único cambio permitido:
+//      CREAR un archivo nuevo; el original no se toca). Si falla, no se sigue.
+//   2) Lectura: SOLO LECTURA (candado estricto de Hoja): nunca escribe ni borra.
+//   3) La copia local se reemplaza solo si la lectura salió completa y no vacía;
+//      si algo falla, queda intacta y se lanza el error.
+async function recargarBaseCompleta(id, opciones) {
   if (!id) throw new Error('No hay base abierta.');
+  const { respaldar = true } = opciones || {};
+  let respaldo = null;
+  if (respaldar) {
+    try { respaldo = await Hoja.enSoloLectura(() => hacerRespaldoPrevio(id), ['copiarArchivo']); }
+    catch (e) { e.fase = 'respaldo'; throw e; }
+  }
   const hojas = await Hoja.enSoloLectura(() => leerHojas(id, NOMBRES_HOJAS));
   // Salvaguarda: si la copia actual tiene datos y Drive devolvió el historial o el
   // catálogo vacíos, algo anda mal (permiso, hoja equivocada): no se reemplaza nada.
@@ -132,5 +140,5 @@ async function recargarBaseCompleta(id) {
   Almacen.actualizadoEn = obtenerTimestampLocal();
   await CacheLocal.borrarTodo();
   await CacheLocal.guardar(Almacen.instantanea());
-  return { movimientos: hojas.LOG_TRANS.length };
+  return { movimientos: hojas.LOG_TRANS.length, respaldo };
 }

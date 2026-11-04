@@ -16,6 +16,7 @@
 .barra-superior .titulo-pantalla.venta { color: var(--venta); }
 .estado-sync { display: inline-flex; align-items: center; gap: var(--e-1); font-size: var(--t-xs); color: var(--texto-3); padding: 0 var(--e-2); }
 .estado-sync.sin-conexion { color: var(--aviso); }
+.estado-sync.sincronizando { color: var(--primario); }
 
 .barra-inferior {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-barra);
