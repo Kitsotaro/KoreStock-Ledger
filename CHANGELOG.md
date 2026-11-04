@@ -1,5 +1,10 @@
 # Changelog — KoreStock Ledger
 
+## v3.0.27 — 2026-11-04
+
+- Dashboard: la tarjeta «Hoy» ya no se sale de sus márgenes; la ganancia queda alineada a la derecha, también con cifras largas, y el botón «Stock» deja de cortarse.
+- Panel lateral: nueva opción «Actualizar base de datos» (debajo de «Último respaldo»). Relee todo desde Drive, reemplaza la copia guardada en el dispositivo y recalcula. Es solo lectura: no modifica tu archivo en Drive, y si algo falla conserva la copia anterior.
+
 ## v3.0 — 2026-10-24
 
 Versión nueva, reconstruida desde cero.
