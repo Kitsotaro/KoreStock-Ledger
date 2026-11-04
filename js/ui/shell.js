@@ -347,18 +347,13 @@ const Shell = {
     if (ColaEscritura.ocupada) { avisar('Hay un guardado en curso. Intenta de nuevo en unos segundos.'); return; }
     const ok = await confirmar({
       titulo: 'Actualizar base de datos',
-      mensaje: 'Se vuelve a leer todo desde Google Drive, se reemplaza la copia guardada en este dispositivo y se recalculan stock, ventas y ganancias. Tu información en Drive no cambia.',
+      mensaje: 'Se vuelve a leer todo desde Google Drive, se reemplaza la copia guardada en este dispositivo y se recalculan stock, ventas y ganancias. Es solo lectura: tu archivo en Drive no se modifica.',
       textoConfirmar: 'Actualizar'
     });
     if (!ok) return;
     avisar('Actualizando… no cierres la app.', { duracion: 4000 });
     try {
-      const hojas = await leerHojas(Almacen.baseId, NOMBRES_HOJAS);
-      Almacen.sinConexion = false;
-      Almacen.cargar(hojas, Almacen.baseId);
-      Almacen.actualizadoEn = obtenerTimestampLocal();
-      await CacheLocal.borrarTodo();
-      await CacheLocal.guardar(Almacen.instantanea());
+      await recargarBaseCompleta(Almacen.baseId); // solo lectura sobre Drive
       PeriodosLargos.reiniciar();
       this.marcarSinConexion(false);
       this.actualizarEstado();
