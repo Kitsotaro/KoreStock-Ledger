@@ -24,15 +24,17 @@ const Hoja = {
   get nombreMotor() { return this.motor ? this.motor.nombre : 'ninguno'; },
   // Candado de SOLO LECTURA: mientras haya uno activo, toda escritura o cambio en
   // Drive/Sheets (agregar, actualizar, crear, copiar, renombrar, papelera) se rechaza
-  // antes de llegar al motor. Lo usa «Actualizar base de datos» para que sea
-  // imposible tocar el archivo aunque otro código se cuele en medio.
-  _soloLectura: 0,
-  async enSoloLectura(fn) {
-    this._soloLectura++;
-    try { return await fn(); } finally { this._soloLectura--; }
+  // antes de llegar al motor. Lo usa «Actualizar base de datos». `permitir` lista las
+  // únicas operaciones que ese candado deja pasar (p. ej. ['copiarArchivo'] para el
+  // respaldo previo: crea un archivo NUEVO y nunca modifica el original).
+  _candados: [],
+  async enSoloLectura(fn, permitir) {
+    const candado = Array.isArray(permitir) ? permitir.slice() : [];
+    this._candados.push(candado);
+    try { return await fn(); } finally { const i = this._candados.indexOf(candado); if (i >= 0) this._candados.splice(i, 1); }
   },
   _escritura(nombre) {
-    if (this._soloLectura > 0) throw new Error(`Bloqueado: «${nombre}» escribe en Drive y la app está en modo solo lectura.`);
+    if (this._candados.some(c => !c.includes(nombre))) throw new Error(`Bloqueado: «${nombre}» escribe en Drive y la app está en modo solo lectura.`);
     return this._m();
   },
   _m() { if (!this.motor) throw new Error('No hay conexión de datos activa'); return this.motor; },

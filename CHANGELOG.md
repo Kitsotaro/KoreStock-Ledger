@@ -1,5 +1,11 @@
 # Changelog — KoreStock Ledger
 
+## v3.0.28 — 2026-11-04
+
+- «Actualizar base de datos»: ahora pide confirmación con un mensaje claro (Aceptar / Cancelar), muestra una notificación con animación mientras trabaja y otra al terminar (o si algo falla). La nube de la barra superior también gira mientras se actualiza.
+- Antes de reemplazar la copia local, crea en tu carpeta KoreStock de Drive un respaldo previo del archivo más actual. Solo crea una copia nueva: el archivo original no se modifica y no se borra nada. Si el respaldo falla, no se actualiza.
+- Los respaldos previos no cuentan como el respaldo diario ni los descarta la rotación automática.
+
 ## v3.0.27 — 2026-11-04
 
 - Dashboard: la tarjeta «Hoy» ya no se sale de sus márgenes; la ganancia queda alineada a la derecha, también con cifras largas, y el botón «Stock» deja de cortarse.

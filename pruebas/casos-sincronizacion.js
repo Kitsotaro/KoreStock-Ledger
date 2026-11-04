@@ -107,7 +107,7 @@ prueba('Actualizar base de datos: el candado de solo lectura rechaza toda escrit
     }
   });
   igual(bloqueada, 8);
-  igual(Hoja._soloLectura, 0); // no queda pegado
+  igual(Hoja._candados.length, 0); // no queda pegado
   await Hoja.agregar(id, 'LOG_TRANS', [objetoAFila('LOG_TRANS', { folio: 'FAC-000003', idProducto: 1, tipo: 'ENTRADA' }, true)]); // fuera del candado sí escribe
 });
 
@@ -133,4 +133,54 @@ prueba('Actualizar base de datos: si Drive devuelve vacío, conserva la copia lo
   igual(fallo, true);
   igual(Almacen.movimientos.length, 2);
   igual((await CacheLocal.leer(id)).hojas.LOG_TRANS.length, 2);
+});
+
+prueba('Actualizar base de datos: respaldo previo = solo una copia nueva; el original no cambia y nada se borra', async () => {
+  const id = await baseMinimaV3();
+  await abrirBase(id);
+  const leerTodo = async (i) => JSON.stringify(await Hoja.leerVarios(i, NOMBRES_HOJAS.map(n => rangoDatos(n, 2))));
+  const antes = await leerTodo(id);
+  const archivosAntes = (await Hoja.listarArchivos({})).length;
+  const llamadas = [];
+  const orig = { p: Hoja.papelera, a: Hoja.actualizar, g: Hoja.agregar, u: Hoja.actualizarArchivo };
+  Hoja.papelera = (...x) => { llamadas.push('papelera'); return orig.p.apply(Hoja, x); };
+  Hoja.actualizar = (...x) => { llamadas.push('actualizar'); return orig.a.apply(Hoja, x); };
+  Hoja.agregar = (...x) => { llamadas.push('agregar'); return orig.g.apply(Hoja, x); };
+  Hoja.actualizarArchivo = (...x) => { llamadas.push('actualizarArchivo'); return orig.u.apply(Hoja, x); };
+  let r;
+  try { r = await recargarBaseCompleta(id); } finally { Hoja.papelera = orig.p; Hoja.actualizar = orig.a; Hoja.agregar = orig.g; Hoja.actualizarArchivo = orig.u; }
+  igual(llamadas.length, 0); // ni papelera, ni escrituras, ni renombres
+  igual(await leerTodo(id), antes); // original idéntico
+  igual((await Hoja.listarArchivos({})).length, archivosAntes + 1); // exactamente una copia nueva
+  igual(r.respaldo.filas, 2);
+  igual(await leerTodo(r.respaldo.id), antes); // la copia tiene lo mismo que el original
+  const previos = await Hoja.listarArchivos({ propiedades: { korestock: 'base', tipo: 'respaldo-previo', origen: id } });
+  igual(previos.length, 1);
+  const diarios = await listarRespaldos(id);
+  igual(diarios.length, 0); // no se mezcla con la rotación del respaldo diario
+});
+
+prueba('Actualizar base de datos: si el respaldo previo falla, no se actualiza nada', async () => {
+  const id = await baseMinimaV3();
+  await abrirBase(id);
+  const orig = Hoja.copiarArchivo;
+  Hoja.copiarArchivo = async () => { throw new Error('cuota'); };
+  let fase = '';
+  try { await recargarBaseCompleta(id); } catch (e) { fase = e.fase; } finally { Hoja.copiarArchivo = orig; }
+  igual(fase, 'respaldo');
+  igual(Almacen.movimientos.length, 2);
+  igual((await CacheLocal.leer(id)).hojas.LOG_TRANS.length, 2);
+});
+
+prueba('Actualizar base de datos: el candado con excepción solo deja pasar copiarArchivo', async () => {
+  const id = await baseMinimaV3();
+  let bloqueadas = 0, copia = null;
+  await Hoja.enSoloLectura(async () => {
+    copia = await Hoja.copiarArchivo(id, { nombre: 'x', propiedades: {} });
+    for (const f of [() => Hoja.agregar(id, 'LOG_TRANS', [[1]]), () => Hoja.papelera(copia), () => Hoja.actualizarArchivo(id, { nombre: 'y' })]) {
+      try { await f(); } catch (e) { if (/solo lectura/.test(e.message)) bloqueadas++; }
+    }
+  }, ['copiarArchivo']);
+  igual(bloqueadas, 3);
+  igual(Hoja._candados.length, 0);
 });

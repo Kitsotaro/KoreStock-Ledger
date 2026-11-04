@@ -178,16 +178,29 @@ function abrirHoja({ titulo, contenido, acciones = [], alMontar = null, alCerrar
 
 // ---------- Avisos ----------
 function avisar(texto, opciones) {
-  const { accion = null, alAccion = null, duracion = 4000 } = opciones || {};
+  const { accion = null, alAccion = null, duracion = 4000, cargando = false } = opciones || {};
   let zona = $('#avisos');
   if (!zona) { zona = document.createElement('div'); zona.id = 'avisos'; zona.className = 'avisos'; zona.setAttribute('aria-live', 'polite'); document.body.appendChild(zona); }
   const el = document.createElement('div');
   el.className = 'aviso-flotante';
-  el.innerHTML = html`<span>${texto}</span>${accion ? html`<button type="button" class="boton boton-texto">${accion}</button>` : ''}`.texto;
+  el.innerHTML = html`${cargando ? seguro(icono('actualizar', 'icono-sm giro-aviso')) : ''}<span class="aviso-texto">${texto}</span>${accion ? html`<button type="button" class="boton boton-texto">${accion}</button>` : ''}`.texto;
   zona.appendChild(el);
-  const quitar = () => el.remove();
+  let temporizador = null;
+  const quitar = () => { clearTimeout(temporizador); el.remove(); };
   if (accion) $('button', el).addEventListener('click', () => { quitar(); if (alAccion) alAccion(); });
-  setTimeout(quitar, duracion);
+  // duracion 0 = se queda hasta que se quite o se reemplace con .actualizar().
+  if (duracion > 0) temporizador = setTimeout(quitar, duracion);
+  return {
+    quitar,
+    // Cambia el mensaje (y lo quita solo tras `duracion`); quita el giro si ya no está cargando.
+    actualizar(nuevoTexto, o) {
+      const { duracion: d = 4000, cargando: c = false } = o || {};
+      $('.aviso-texto', el).textContent = nuevoTexto;
+      const g = $('.giro-aviso', el); if (g && !c) g.remove();
+      clearTimeout(temporizador);
+      if (d > 0) temporizador = setTimeout(quitar, d);
+    }
+  };
 }
 
 // ---------- Buscador con autocompletado (heredado de crearAutocomplete) ----------

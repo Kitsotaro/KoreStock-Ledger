@@ -13,7 +13,7 @@
 // control). Restaurar: solo acepta archivos exportados por KoreStock, los
 // valida contra su manifiesto y crea una base NUEVA (nunca mezcla).
 //
-// Expone: GENERACIONES_RESPALDO, listarRespaldos, hacerRespaldo,
+// Expone: GENERACIONES_RESPALDO, listarRespaldos, hacerRespaldo, hacerRespaldoPrevio,
 //   respaldoDiarioSiHaceFalta, totalesManifiesto, construirLibroExportacion,
 //   leerLibroRestauracion, restaurarDesdeLibro, activarBaseNueva.
 // Depende de: hoja.js, base-datos.js, esquema.js, almacen.js, calculos.js,
@@ -50,6 +50,27 @@ async function hacerRespaldo(baseId, motivo) {
   for (const viejo of respaldos.slice(GENERACIONES_RESPALDO)) await Hoja.papelera(viejo.id);
   try { localStorage.setItem(CLAVES_LOCALES.ULTIMO_RESPALDO, ahora); } catch (e) { /* sin almacenamiento */ }
   return { id: idCopia, fecha: ahora };
+}
+
+// Respaldo previo a «Actualizar base de datos»: copia del archivo MÁS ACTUAL de Drive
+// (la copia la hace Drive a partir del archivo vivo, no desde este dispositivo).
+// Solo CREA un archivo nuevo en la carpeta KoreStock: no modifica el original, no
+// rota ni manda nada a la papelera, y no cuenta como el respaldo diario. Lleva
+// tipo propio ('respaldo-previo') para que la rotación diaria nunca lo descarte.
+// Se verifica contra el original (mismo número de filas y mismo último folio).
+async function hacerRespaldoPrevio(baseId) {
+  const carpeta = await asegurarCarpeta();
+  const ahora = obtenerTimestampLocal();
+  const idCopia = await Hoja.copiarArchivo(baseId, {
+    nombre: `${NOMBRE_BASE} · respaldo previo a actualizar ${ahora.slice(0, 16)}`, carpetaId: carpeta,
+    propiedades: { korestock: 'base', tipo: 'respaldo-previo', origen: baseId, fecha: ahora.slice(0, 10), creado: ahora, motivo: 'previo-actualizar' }
+  });
+  const [orig, copia] = await Promise.all([Hoja.leer(baseId, 'LOG_TRANS!A2:A'), Hoja.leer(idCopia, 'LOG_TRANS!A2:A')]);
+  const ultimo = (f) => (f.length ? String(f[f.length - 1][0]) : '');
+  if (orig.length !== copia.length || ultimo(orig) !== ultimo(copia)) {
+    throw new Error('El respaldo previo no salió completo (la copia quedó en tu carpeta KoreStock para revisarla).');
+  }
+  return { id: idCopia, fecha: ahora, filas: orig.length };
 }
 
 // Al abrir: un respaldo por día, sin bloquear la app si falla.

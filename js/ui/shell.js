@@ -285,10 +285,10 @@ const Shell = {
     const el = $('#estado-sync');
     if (!el) return;
     if (Almacen.sinConexion) {
-      el.className = 'estado-sync sin-conexion';
+      el.className = 'estado-sync sin-conexion' + (this._actualizandoBase ? ' sincronizando' : '');
       el.innerHTML = icono('sin-nube', 'icono-sm') + '<span>Sin conexión</span>';
     } else {
-      el.className = 'estado-sync';
+      el.className = 'estado-sync' + (this._actualizandoBase ? ' sincronizando' : '');
       el.innerHTML = Sesion.modoDemo ? '<span class="insignia aviso">Demo</span>' : icono('nube-check', 'icono-sm');
       el.title = Almacen.actualizadoEn ? `Datos al ${Almacen.actualizadoEn}` : '';
     }
@@ -342,26 +342,34 @@ const Shell = {
   // trae lo nuevo, así que un dato viejo o dañado en la copia seguiría ahí.
   // La copia actual solo se reemplaza cuando la lectura nueva salió completa.
   async actualizarBaseDatos() {
+    if (this._actualizandoBase) return;
     if (Sesion.modoDemo || !Almacen.baseId) { avisar('En la demostración no hay copia que actualizar.'); return; }
-    if (Almacen.sinConexion || navigator.onLine === false) { avisar('Sin internet no se puede actualizar. Tu copia actual sigue intacta.', { duracion: 5000 }); return; }
+    if (Almacen.sinConexion || navigator.onLine === false) { avisar('Sin internet no puedo actualizar. Tu copia actual sigue intacta.', { duracion: 5000 }); return; }
     if (ColaEscritura.ocupada) { avisar('Hay un guardado en curso. Intenta de nuevo en unos segundos.'); return; }
     const ok = await confirmar({
-      titulo: 'Actualizar base de datos',
-      mensaje: 'Se vuelve a leer todo desde Google Drive, se reemplaza la copia guardada en este dispositivo y se recalculan stock, ventas y ganancias. Es solo lectura: tu archivo en Drive no se modifica.',
-      textoConfirmar: 'Actualizar'
+      titulo: '¿Actualizar la base de datos?',
+      mensaje: 'Al aceptar se descargará de nuevo tu base de datos de Google Drive reemplazando la base local. Procede si tienes problemas al ingresar datos o si los cálculos parecen no funcionar correctamente. Tu archivo en Drive no se modifica y regresará a una versión estable.',
+      textoConfirmar: 'Aceptar'
     });
     if (!ok) return;
-    avisar('Actualizando… no cierres la app.', { duracion: 4000 });
+    this._actualizandoBase = true;
+    const aviso = avisar('Actualizando tu base de datos…', { duracion: 0, cargando: true });
+    const nube = $('#estado-sync'); if (nube) nube.classList.add('sincronizando');
     try {
-      await recargarBaseCompleta(Almacen.baseId); // solo lectura sobre Drive
+      const r = await recargarBaseCompleta(Almacen.baseId); // respaldo previo + solo lectura
       PeriodosLargos.reiniciar();
       this.marcarSinConexion(false);
       this.actualizarEstado();
       this.actualizarPanel();
       this.refrescarActual();
-      avisar('Base de datos actualizada y recalculada.');
+      aviso.actualizar(`Listo, tu base de datos está actualizada. Recalculé ${formatearNumero(r.movimientos)} movimientos y dejé un respaldo previo en tu carpeta KoreStock de Drive.`, { duracion: 6000 });
     } catch (e) {
-      avisar('No se pudo actualizar; se conserva tu copia anterior. Revisa tu conexión e intenta de nuevo.', { duracion: 6000 });
+      aviso.actualizar(e && e.fase === 'respaldo'
+        ? 'No pude crear el respaldo previo, así que no actualicé nada. Tus datos siguen intactos.'
+        : 'No pude actualizar, pero tus datos siguen intactos. Revisa tu conexión e intenta de nuevo.', { duracion: 7000 });
+    } finally {
+      this._actualizandoBase = false;
+      const n = $('#estado-sync'); if (n) n.classList.remove('sincronizando');
     }
   },
 

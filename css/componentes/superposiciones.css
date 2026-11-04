@@ -80,6 +80,10 @@
   box-shadow: var(--sombra-2); font-weight: var(--peso-medio); animation: aparecer var(--dur-media) var(--curva);
 }
 .aviso-flotante .boton-texto { color: var(--primario-suave); margin-left: auto; }
+.aviso-flotante .giro-aviso { flex: 0 0 auto; }
+@keyframes girar { to { transform: rotate(360deg); } }
+.giro-aviso, .estado-sync.sincronizando .icono { animation: girar 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .giro-aviso, .estado-sync.sincronizando .icono { animation-duration: 2.5s; } }
 .franja {
   display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-4); font-size: var(--t-sm); font-weight: var(--peso-medio);
 }
