@@ -84,3 +84,53 @@ prueba('la copia del dispositivo vence a los 3 días y se borra (auditoría 2026
   igual(await CacheLocal.leer('base-x'), null);
   igual(await CacheLocal.leer('base-x', 'historicos'), null, 'también los históricos');
 });
+
+// Base mínima (sin el archivo xlsx de prueba): 1 producto y 2 movimientos.
+async function baseMinimaV3() {
+  DriveDemo.persistir = false; DriveDemo.reiniciar(); Hoja.usar(MotorDemo); Sesion.modoDemo = true;
+  await CacheLocal.borrarTodo();
+  const fila = (hoja, obj) => obj;
+  return crearBaseV3({ hojas: {
+    CATALOGO: [fila('CATALOGO', { idProducto: 1, estado: 'ACTIVO' })],
+    LOG_TRANS: [fila('LOG_TRANS', { folio: 'FAC-000001', idProducto: 1, tipo: 'ENTRADA' }), fila('LOG_TRANS', { folio: 'FAC-000002', idProducto: 1, tipo: 'ENTRADA' })]
+  } });
+}
+
+prueba('Actualizar base de datos: el candado de solo lectura rechaza toda escritura', async () => {
+  const id = await baseMinimaV3();
+  let bloqueada = 0;
+  await Hoja.enSoloLectura(async () => {
+    for (const f of [() => Hoja.agregar(id, 'LOG_TRANS', [[1]]), () => Hoja.actualizar(id, [{ rango: 'LOG_TRANS!A2', valores: [['x']] }]),
+      () => Hoja.papelera(id), () => Hoja.agregarHojas(id, ['X']), () => Hoja.actualizarArchivo(id, {}), () => Hoja.copiarArchivo(id, {}),
+      () => Hoja.crearCarpeta('x'), () => Hoja.crearHojaCalculo({ titulo: 'x', hojas: [] })]) {
+      try { await f(); } catch (e) { if (/solo lectura/.test(e.message)) bloqueada++; }
+    }
+  });
+  igual(bloqueada, 8);
+  igual(Hoja._soloLectura, 0); // no queda pegado
+  await Hoja.agregar(id, 'LOG_TRANS', [objetoAFila('LOG_TRANS', { folio: 'FAC-000003', idProducto: 1, tipo: 'ENTRADA' }, true)]); // fuera del candado sí escribe
+});
+
+prueba('Actualizar base de datos: no modifica Drive y reemplaza la copia local', async () => {
+  const id = await baseMinimaV3();
+  await abrirBase(id);
+  const antes = JSON.stringify(await Hoja.leerVarios(id, NOMBRES_HOJAS.map(n => rangoDatos(n, 2))));
+  await CacheLocal.guardar(Object.assign({}, Almacen.instantanea(), { hojas: Object.assign({}, Almacen.hojas, { LOG_TRANS: Almacen.hojas.LOG_TRANS.slice(0, 1) }) })); // copia local "dañada"
+  const r = await recargarBaseCompleta(id);
+  igual(r.movimientos, 2);
+  igual(JSON.stringify(await Hoja.leerVarios(id, NOMBRES_HOJAS.map(n => rangoDatos(n, 2)))), antes); // Drive idéntico
+  igual((await CacheLocal.leer(id)).hojas.LOG_TRANS.length, 2); // copia reparada
+  igual(Almacen.movimientos.length, 2);
+});
+
+prueba('Actualizar base de datos: si Drive devuelve vacío, conserva la copia local', async () => {
+  const id = await baseMinimaV3();
+  await abrirBase(id);
+  const original = Hoja.leerVarios;
+  Hoja.leerVarios = async (i, rangos) => rangos.map(() => []);
+  let fallo = false;
+  try { await recargarBaseCompleta(id); } catch (e) { fallo = true; } finally { Hoja.leerVarios = original; }
+  igual(fallo, true);
+  igual(Almacen.movimientos.length, 2);
+  igual((await CacheLocal.leer(id)).hojas.LOG_TRANS.length, 2);
+});

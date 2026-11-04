@@ -22,28 +22,41 @@ const Hoja = {
   motor: null,
   usar(motor) { this.motor = motor; },
   get nombreMotor() { return this.motor ? this.motor.nombre : 'ninguno'; },
+  // Candado de SOLO LECTURA: mientras haya uno activo, toda escritura o cambio en
+  // Drive/Sheets (agregar, actualizar, crear, copiar, renombrar, papelera) se rechaza
+  // antes de llegar al motor. Lo usa «Actualizar base de datos» para que sea
+  // imposible tocar el archivo aunque otro código se cuele en medio.
+  _soloLectura: 0,
+  async enSoloLectura(fn) {
+    this._soloLectura++;
+    try { return await fn(); } finally { this._soloLectura--; }
+  },
+  _escritura(nombre) {
+    if (this._soloLectura > 0) throw new Error(`Bloqueado: «${nombre}» escribe en Drive y la app está en modo solo lectura.`);
+    return this._m();
+  },
   _m() { if (!this.motor) throw new Error('No hay conexión de datos activa'); return this.motor; },
 
   // Lee varios rangos en UNA sola petición. Devuelve un arreglo de filas por rango.
   leerVarios(id, rangos) { return this._m().leerVarios(id, rangos); },
   async leer(id, rango) { return (await this.leerVarios(id, [rango]))[0]; },
   // Agrega filas al final de una hoja. Devuelve { primeraFila, ultimaFila }.
-  agregar(id, hoja, filas) { return this._m().agregar(id, hoja, filas); },
+  agregar(id, hoja, filas) { return this._escritura('agregar').agregar(id, hoja, filas); },
   // Escribe varios rangos en UNA sola petición: [{ rango, valores }].
-  actualizar(id, datos) { return this._m().actualizar(id, datos); },
+  actualizar(id, datos) { return this._escritura('actualizar').actualizar(id, datos); },
   titulosHojas(id) { return this._m().titulosHojas(id); },
-  agregarHojas(id, titulos) { return this._m().agregarHojas(id, titulos); },
+  agregarHojas(id, titulos) { return this._escritura('agregarHojas').agregarHojas(id, titulos); },
   existe(id) { return this._m().existe(id); },
   // Crea una hoja de cálculo con estas pestañas (y sin la pestaña por defecto).
-  crearHojaCalculo(opciones) { return this._m().crearHojaCalculo(opciones); },
+  crearHojaCalculo(opciones) { return this._escritura('crearHojaCalculo').crearHojaCalculo(opciones); },
   buscarCarpeta(nombre, propiedades) { return this._m().buscarCarpeta(nombre, propiedades); },
-  crearCarpeta(nombre, propiedades) { return this._m().crearCarpeta(nombre, propiedades); },
+  crearCarpeta(nombre, propiedades) { return this._escritura('crearCarpeta').crearCarpeta(nombre, propiedades); },
   listarArchivos(filtro) { return this._m().listarArchivos(filtro); },
-  copiarArchivo(id, opciones) { return this._m().copiarArchivo(id, opciones); },
-  actualizarArchivo(id, cambios) { return this._m().actualizarArchivo(id, cambios); },
+  copiarArchivo(id, opciones) { return this._escritura('copiarArchivo').copiarArchivo(id, opciones); },
+  actualizarArchivo(id, cambios) { return this._escritura('actualizarArchivo').actualizarArchivo(id, cambios); },
   buscarPorNombre(nombre) { return this._m().buscarPorNombre(nombre); },
   // Manda a la papelera de Drive un archivo que la app creó (se puede recuperar desde Drive 30 días).
-  papelera(id) { return this._m().papelera(id); },
+  papelera(id) { return this._escritura('papelera').papelera(id); },
   correoUsuario() { return this._m().correoUsuario(); }
 };
 

@@ -15,7 +15,7 @@
 //
 // Sin conexión (D27): si hay copia local, la app abre en solo lectura.
 //
-// Expone: abrirBase, sincronizarBase, guardarCacheBase, HOJAS_COMPLETAS.
+// Expone: abrirBase, sincronizarBase, recargarBaseCompleta, guardarCacheBase, HOJAS_COMPLETAS.
 // Depende de: hoja.js, esquema.js, base-datos.js, cache-local.js, almacen.js.
 // ============================================================
 
@@ -109,4 +109,28 @@ async function abrirBase(id, alCargar) {
     }
     throw err;
   }
+}
+
+// «Actualizar base de datos»: lectura COMPLETA desde Drive, reemplazo de la copia
+// local y recálculo. SOLO LECTURA sobre Drive (candado de Hoja): nunca escribe,
+// borra ni mueve nada en el archivo. La copia local actual solo se reemplaza
+// cuando la lectura nueva terminó completa y no vino vacía; si algo falla, queda
+// intacta y se lanza el error.
+async function recargarBaseCompleta(id) {
+  if (!id) throw new Error('No hay base abierta.');
+  const hojas = await Hoja.enSoloLectura(() => leerHojas(id, NOMBRES_HOJAS));
+  // Salvaguarda: si la copia actual tiene datos y Drive devolvió el historial o el
+  // catálogo vacíos, algo anda mal (permiso, hoja equivocada): no se reemplaza nada.
+  const actual = Almacen.hojas || {};
+  ['LOG_TRANS', 'CATALOGO'].forEach(n => {
+    if ((actual[n] || []).length > 0 && (hojas[n] || []).length === 0) {
+      throw new Error(`Drive devolvió «${n}» vacía; se conserva tu copia local.`);
+    }
+  });
+  Almacen.sinConexion = false;
+  Almacen.cargar(hojas, id);
+  Almacen.actualizadoEn = obtenerTimestampLocal();
+  await CacheLocal.borrarTodo();
+  await CacheLocal.guardar(Almacen.instantanea());
+  return { movimientos: hojas.LOG_TRANS.length };
 }
